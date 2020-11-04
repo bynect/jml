@@ -86,17 +86,17 @@ typedef enum {
 
 
 typedef struct {
-    jml_token_type_t    type;
-    const char         *start;
-    size_t              length;
-    uint16_t            line;
+    jml_token_type_t                type;
+    const char                     *start;
+    size_t                          length;
+    uint16_t                        line;
 } jml_token_t;
 
 
 typedef struct {
-    const char         *start;
-    const char         *current;
-    uint16_t            line;
+    const char                     *start;
+    const char                     *current;
+    uint16_t                        line;
 } jml_lexer_t;
 
 
@@ -129,5 +129,6 @@ jml_is_bracket(char c)
         || (c == '[' || c == ']')
         || (c == '{' || c == '}');
 }
+
 
 #endif /* _JML_LEXER_H_ */
