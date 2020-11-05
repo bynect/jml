@@ -8,8 +8,8 @@ typedef enum {
     /* bracket delimiters */
     TOKEN_RPAREN,
     TOKEN_LPAREN,
-    TOKEN_LSQARE,
     TOKEN_RSQARE,
+    TOKEN_LSQARE,
     TOKEN_RBRACE,
     TOKEN_LBRACE,
 

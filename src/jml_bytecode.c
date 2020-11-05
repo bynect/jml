@@ -184,6 +184,9 @@ jml_bytecode_instruction_disassemble(
         case OP_DIV:
             return jml_bytecode_instruction_simple("OP_DIV", offset);
 
+        case OP_POW:
+            return jml_bytecode_instruction_simple("OP_POW", offset);
+
         case OP_MOD:
             return jml_bytecode_instruction_simple("OP_MOD", offset);
 

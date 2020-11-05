@@ -60,7 +60,7 @@ jml_reallocate(void *ptr,
 
 
 static void
-jml_gc_mark_roots()
+jml_gc_mark_roots(void)
 {
     for (jml_value_t *slot = gc->vm->stack;
         slot < gc->vm->stack_top; slot++) {

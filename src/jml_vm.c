@@ -92,7 +92,7 @@ jml_vm_push(jml_value_t value)
 
 
 jml_value_t
-jml_vm_pop()
+jml_vm_pop(void)
 {
     vm.stack_top--;
     return *vm.stack_top;
@@ -100,7 +100,7 @@ jml_vm_pop()
 
 
 static void
-jml_vm_pop_two()
+jml_vm_pop_two(void)
 {
     vm.stack_top -= 2;
 }
@@ -319,7 +319,7 @@ jml_vm_upvalue_close(jml_value_t *last) {
 
 
 static void
-jml_string_concatenate()
+jml_string_concatenate(void)
 {
     jml_obj_string_t *b = AS_STRING(jml_vm_peek(0));
     jml_obj_string_t *a = AS_STRING(jml_vm_peek(1));
@@ -338,7 +338,7 @@ jml_string_concatenate()
 
 
 static jml_interpret_result
-jml_vm_run_code()
+jml_vm_run(void)
 {
     
 }
@@ -357,5 +357,5 @@ jml_vm_interpret(const char *source)
     jml_vm_push(OBJ_VAL(closure));
     jml_vm_call_value(OBJ_VAL(closure), 0);
 
-    return jml_vm_run_code();
+    return jml_vm_run();
 }
