@@ -41,7 +41,7 @@ typedef struct {
 
 typedef struct jml_compiler_t {
     struct jml_compiler_t          *enclosing;
-    jml_obj_function_t              function;
+    jml_obj_function_t             *function;
     jml_function_type               type;
     jml_local_t                     locals[LOCAL_MAX];
     uint8_t                         local_count;
@@ -74,7 +74,8 @@ typedef enum {
     FUNCTION_FN,
     FUNCTION_METHOD,
     FUNCTION_DUNDER,
-    FUNCTION_MAIN
+    FUNCTION_MAIN,
+    FUNCTION_INITIALIZER
 } jml_function_type;
 
 

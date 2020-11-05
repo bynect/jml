@@ -12,6 +12,7 @@
 #define LOCAL_MAX                   (UINT8_MAX + 1)
 
 #undef JML_NAN_TAGGING
+#undef JML_DISASSEMBLE
 #define JML_TRACE_GC
 
 

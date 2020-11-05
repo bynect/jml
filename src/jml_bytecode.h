@@ -7,6 +7,7 @@
 
 typedef enum {
     OP_POP,
+    OP_POP_TWO,
     OP_ROT,
     OP_CONST,
     OP_NONE,
@@ -35,13 +36,13 @@ typedef enum {
     OP_RETURN,
     OP_SET_LOCAL,
     OP_GET_LOCAL,
-    OP_GET_UPVALUE,
     OP_SET_UPVALUE,
+    OP_GET_UPVALUE,
     OP_SET_GLOBAL,
     OP_GET_GLOBAL,
     OP_DEFINE_GLOBAL,
-    OP_GET_PROPERTY,
     OP_SET_PROPERTY,
+    OP_GET_PROPERTY,
     OP_GET_SUPER,
     OP_SUPER_INVOKE,
     OP_CLASS,
@@ -67,6 +68,13 @@ void jml_bytecode_free(jml_bytecode_t *bytecode);
 
 int jml_bytecode_add_const(jml_bytecode_t *bytecode,
     jml_value_t value);
+
+
+void jml_bytecode_disassemble(jml_bytecode_t *bytecode,
+    const char *name);
+
+int jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode,
+    int offset);
 
 
 #endif /* _JML_BYTECODE_H_ */

@@ -82,11 +82,11 @@ typedef enum {
     TOKEN_LINE,
     TOKEN_ERROR,
     TOKEN_EOF
-} jml_token_type_t;
+} jml_token_type;
 
 
 typedef struct {
-    jml_token_type_t                type;
+    jml_token_type                  type;
     const char                     *start;
     size_t                          length;
     uint16_t                        line;

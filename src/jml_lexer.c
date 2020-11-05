@@ -56,7 +56,7 @@ jml_match(char expected)
 
 
 static jml_token_t
-jml_emit_token(jml_token_type_t type)
+jml_emit_token(jml_token_type type)
 {
     jml_token_t token;
     token.type   = type;
@@ -103,9 +103,9 @@ jml_skip_char(void)
 }
 
 
-static jml_token_type_t
+static jml_token_type
 jml_check_keyword(int start, size_t length,
-    const char *rest, jml_token_type_t type)
+    const char *rest, jml_token_type type)
 {
     if ((lexer.current - lexer.start) == (length + start)
         && memcmp(lexer.start + start, rest, length)) {
@@ -116,7 +116,7 @@ jml_check_keyword(int start, size_t length,
 }
 
 
-static jml_token_type_t
+static jml_token_type
 jml_check_identifier(void)
 {
     switch (lexer.start[0]) {

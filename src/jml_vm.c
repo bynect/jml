@@ -100,9 +100,9 @@ jml_vm_pop()
 
 
 static void
-jml_vm_pop_discard(int qty)
+jml_vm_pop_two()
 {
-    vm.stack_top -= qty;
+    vm.stack_top -= 2;
 }
 
 
@@ -261,7 +261,7 @@ jml_vm_method_bind(jml_obj_class_t *klass,
         jml_vm_peek(0), AS_CLOSURE(method)
     );
 
-    jml_vm_pop_discard(1);
+    jml_vm_pop();
     jml_vm_push(OBJ_VAL(bound));
     return true;
 }
@@ -273,7 +273,7 @@ jml_vm_method_define(jml_obj_string_t *name)
     jml_value_t method = jml_vm_peek(0);
     jml_obj_class_t *klass = AS_CLASS(jml_vm_peek(1));
     jml_hashmap_set(&(klass->methods), name, method);
-    jml_vm_pop_discard(1);
+    jml_vm_pop();
 }
 
 
@@ -332,7 +332,7 @@ jml_string_concatenate()
     chars[length] = '\0';
 
     jml_obj_string_t *result = jml_obj_string_take(chars, length);
-    jml_vm_pop_discard(2);
+    jml_vm_pop_two();
     jml_vm_push(OBJ_VAL(result));
 }
 
@@ -353,7 +353,7 @@ jml_vm_interpret(const char *source)
     jml_vm_push(OBJ_VAL(function));
     jml_obj_closure_t *closure = jml_obj_closure_new(function);
 
-    jml_vm_pop_discard(1);
+    jml_vm_pop();
     jml_vm_push(OBJ_VAL(closure));
     jml_vm_call_value(OBJ_VAL(closure), 0);
 
