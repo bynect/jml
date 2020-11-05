@@ -135,7 +135,7 @@ jml_check_identifier(void)
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'a': return jml_check_keyword(2, 3, "lse", TOKEN_FALSE);
-                    case 'n': return jml_check_keyword(2, 0, "", TOKEN_FUNC);
+                    case 'n': return jml_check_keyword(2, 0, "", TOKEN_FN);
                     case 'o': return jml_check_keyword(2, 1, "r", TOKEN_FOR);
                 }
             }

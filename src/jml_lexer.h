@@ -60,7 +60,7 @@ typedef enum {
     TOKEN_SELF,
     TOKEN_SUPER,
     TOKEN_LET,
-    TOKEN_FUNC,
+    TOKEN_FN,
     TOKEN_RETURN,
     TOKEN_IMPORT,
     TOKEN_AND,

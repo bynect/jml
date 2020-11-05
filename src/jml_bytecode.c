@@ -60,7 +60,7 @@ jml_bytecode_disassemble(jml_bytecode_t *bytecode,
     const char *name)
 {
     printf(
-        "\n===== %s ====="
+        "\n======== %s ========"
         "\nOFFSET       LINE        OPCODE          CONST",
         name
     );
