@@ -104,6 +104,7 @@ jml_obj_class_new(jml_obj_string_t *name)
     return klass;
 }
 
+
 jml_obj_instance_t *
 jml_obj_instance_new(jml_obj_class_t *klass)
 {
@@ -112,6 +113,7 @@ jml_obj_instance_new(jml_obj_class_t *klass)
     jml_hashmap_init(&(instance->fields));
     return instance;
 }
+
 
 jml_obj_method_t *
 jml_obj_method_new(jml_value_t receiver,
@@ -141,7 +143,7 @@ jml_obj_closure_new(jml_obj_function_t *function)
 
 
 jml_obj_upvalue_t *
-newUpvalue(jml_value_t *slot)
+jml_obj_upvalue_new(jml_value_t *slot)
 {
     jml_obj_upvalue_t *upvalue = ALLOCATE_OBJ(jml_obj_upvalue_t, OBJ_UPVALUE);
     upvalue->location = slot;
@@ -152,7 +154,7 @@ newUpvalue(jml_value_t *slot)
 
 
 jml_obj_function_t *
-newFunction()
+jml_obj_function_new(void)
 {
     jml_obj_function_t *function = ALLOCATE_OBJ(jml_obj_function_t, OBJ_FUNCTION);
 
@@ -188,20 +190,26 @@ void
 jml_obj_print(jml_value_t value)
 {
     switch (OBJ_TYPE(value)) {
-        case OBJ_METHOD:
-            jml_obj_function_print(AS_METHOD(value)->method->function);
+        case OBJ_STRING:
+            printf("%s", AS_CSTRING(value));
             break;
+
+        case OBJ_ARRAY:
+            printf("<array>");
+
+        case OBJ_MAP:
+            printf("<map>");
 
         case OBJ_CLASS:
             printf("<class %s>", AS_CLASS(value)->name->chars);
             break;
 
         case OBJ_INSTANCE:
-            printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
+            printf("<instance of %s>", AS_INSTANCE(value)->klass->name->chars);
             break;
 
-        case OBJ_STRING:
-            printf("%s", AS_CSTRING(value));
+        case OBJ_METHOD:
+            jml_obj_function_print(AS_METHOD(value)->method->function);
             break;
 
         case OBJ_FUNCTION:

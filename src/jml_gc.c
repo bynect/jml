@@ -12,7 +12,7 @@
 jml_gc_t *gc;
 
 
-jml_gc_t *
+void
 jml_gc_init(jml_gc_t *gc_ptr, jml_vm_t *vm)
 {
     gc = gc_ptr;

@@ -79,7 +79,9 @@ typedef enum {
 
 
 void jml_compiler_mark_roots(void);
-jml_obj_function_t *compile(const char* source);
+
+jml_obj_function_t *jml_compiler_compile(
+    const char *source);
 
 
 #endif /* _JML_COMPILER_H_ */

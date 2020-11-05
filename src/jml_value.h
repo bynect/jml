@@ -2,7 +2,11 @@
 #define _JML_VALUE_H_
 
 #include <jml_common.h>
+#include <jml_bytecode.h>
 #include <jml_type.h>
+
+
+typedef struct jml_obj_s jml_obj_t;
 
 
 #ifdef JML_NAN_TAGGING
@@ -71,7 +75,7 @@ typedef struct {
         bool                        boolean;
         double                      number;
         jml_obj_t                  *obj;
-    } as;
+    } of;
 } jml_value_t;
 
 
@@ -84,9 +88,9 @@ typedef struct {
 #define OBJ_VAL(object)                                 \
     ((jml_value_t){VAL_OBJ, {.obj = (jml_obj_t*)object}})
 
-#define AS_BOOL(value)              ((value).as.boolean)
-#define AS_NUMBER(value)            ((value).as.number)
-#define AS_OBJ(value)               ((value).as.obj)
+#define AS_BOOL(value)              ((value).of.boolean)
+#define AS_NUMBER(value)            ((value).of.number)
+#define AS_OBJ(value)               ((value).of.obj)
 
 #define IS_BOOL(value)              ((value).type == VAL_BOOL)
 #define IS_NONE(value)              ((value).type == VAL_NONE)
@@ -133,10 +137,6 @@ void jml_hashmap_init(jml_hashmap_t *map);
 
 void jml_hashmap_free(jml_hashmap_t *map);
 
-void jml_hashmap_remove_white(jml_hashmap_t *map);
-
-void jml_hashmap_mark(jml_hashmap_t *map);
-
 bool jml_hashmap_get(jml_hashmap_t *map, jml_obj_string_t *key,
     jml_value_t *value);
 
@@ -149,6 +149,19 @@ void jml_hashmap_add(jml_hashmap_t *source, jml_hashmap_t *dest);
 
 jml_obj_string_t *jml_hashmap_find(jml_hashmap_t *map,
     const char *chars, size_t length, uint32_t hash);
+
+void jml_hashmap_remove_white(jml_hashmap_t *map);
+
+void jml_hashmap_mark(jml_hashmap_t *map);
+
+
+static inline bool
+jml_is_falsey(jml_value_t value)
+{
+    return (IS_NIL(value)
+        || (IS_BOOL(value)
+        && !AS_BOOL(value)));
+}
 
 
 #endif /* _JML_VALUE_H_ */

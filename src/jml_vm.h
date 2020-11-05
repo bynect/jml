@@ -26,6 +26,7 @@ typedef struct {
     jml_hashmap_t                   globals;
     jml_hashmap_t                   strings;
     jml_obj_string_t               *init_string;
+    jml_obj_string_t               *call_string;
     jml_obj_upvalue_t              *open_upvalues;
 
     jml_gc_t                        gc;
@@ -47,10 +48,10 @@ typedef enum {
 } jml_vm_status;
 
 
-void jml_vm_init(void);
-void jml_vm_free(void);
+void jml_vm_init(jml_vm_t *vm);
+void jml_vm_free(jml_vm_t *vm);
 
-jml_interpret_result interpret(const char *source);
+jml_interpret_result jml_vm_interpret(const char *source);
 
 void jml_vm_push(jml_value_t value);
 jml_value_t jml_vm_pop();
