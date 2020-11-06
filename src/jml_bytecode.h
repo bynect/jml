@@ -3,6 +3,7 @@
 
 #include <jml_common.h>
 #include <jml_value.h>
+#include <jml_type.h>
 
 
 typedef enum {
@@ -21,34 +22,34 @@ typedef enum {
     OP_MOD,
     OP_NOT,
     OP_NEGATE,
-    OP_JMP,
-    OP_JMP_IF_FALSE,
-    OP_LOOP,
     OP_EQUAL,
     OP_GREATER,
     OP_GREATEREQ,
     OP_LESS,
     OP_LESSEQ,
     OP_NOTEQ,
+    OP_JMP,
+    OP_JMP_IF_FALSE,
+    OP_LOOP,
     OP_CALL,
     OP_METHOD,
     OP_INVOKE,
+    OP_SUPER_INVOKE,
     OP_CLOSURE,
-    OP_CLOSE_UPVALUE,
     OP_RETURN,
+    OP_CLASS,
+    OP_INHERIT,
     OP_SET_LOCAL,
     OP_GET_LOCAL,
     OP_SET_UPVALUE,
     OP_GET_UPVALUE,
+    OP_CLOSE_UPVALUE,
     OP_SET_GLOBAL,
     OP_GET_GLOBAL,
     OP_DEFINE_GLOBAL,
     OP_SET_PROPERTY,
     OP_GET_PROPERTY,
     OP_GET_SUPER,
-    OP_SUPER_INVOKE,
-    OP_CLASS,
-    OP_INHERIT,
 } jml_bytecode_op;
 
 

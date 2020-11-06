@@ -33,7 +33,7 @@ jml_value_print(jml_value_t value)
             printf("none");
             break;
 
-        case VAL_NUMBER:
+        case VAL_NUM:
             printf("%g", AS_NUMBER(value));
             break;
 
@@ -60,7 +60,7 @@ jml_value_equal(jml_value_t a, jml_value_t b)
     switch (a.type) {
         case VAL_BOOL:      return AS_BOOL(a) == AS_BOOL(b);
         case VAL_NONE:      return true;
-        case VAL_NUMBER:    return AS_NUMBER(a) == AS_NUMBER(b);
+        case VAL_NUM:    return AS_NUMBER(a) == AS_NUMBER(b);
         case VAL_OBJ:       return AS_OBJ(a) == AS_OBJ(b);
 
         default:            return false; 
@@ -131,7 +131,7 @@ jml_hashmap_find_entry(jml_hashmap_entry_t *entries,
         jml_hashmap_entry_t *entry = &entries[index];
 
         if (entry->key == NULL) {
-            if (IS_NIL(entry->value)) {
+            if (IS_NONE(entry->value)) {
                 return tombstone != NULL ? tombstone : entry;
             } else {
                 if (tombstone == NULL) tombstone = entry;
@@ -158,7 +158,7 @@ jml_hashmap_adjust_capacity(jml_hashmap_t *map,
 
     map->count = 0;
     for (int i = 0; i <= map->capacity; i++) {
-        jml_hashmap_entry_t *entry = &(map->entries[i]);
+        jml_hashmap_entry_t *entry = &map->entries[i];
         if (entry->key == NULL) continue;
 
         jml_hashmap_entry_t *dest = jml_hashmap_find_entry(
@@ -236,7 +236,7 @@ jml_hashmap_add(jml_hashmap_t *source,
     jml_hashmap_t *dest)
 {
     for (int i = 0; i <= source->capacity; i++) {
-        jml_hashmap_entry_t *entry = &(source->entries[i]);
+        jml_hashmap_entry_t *entry = source->entries[i];
 
         if (entry->key != NULL) {
             jml_hashmap_set(dest, entry->key, entry->value);
@@ -253,10 +253,10 @@ jml_hashmap_find(jml_hashmap_t *map, const char *chars,
     uint32_t index = hash & map->capacity;
 
     for ( ;; ) {
-        jml_hashmap_entry_t *entry= &(map->entries[index]);
+        jml_hashmap_entry_t *entry= &map->entries[index];
 
         if (entry->key == NULL) {
-            if (IS_NIL(entry->value)) return NULL;
+            if (IS_NONE(entry->value)) return NULL;
         } else if (entry->key->length == length &&
             entry->key->hash == hash &&
             memcmp(entry->key->chars, chars, length) == 0) {
@@ -282,7 +282,7 @@ void
 jml_hashmap_remove_white(jml_hashmap_t *map)
 {
     for (int i = 0; i <= map->capacity; i++) {
-        jml_hashmap_entry_t *entry = &(map->entries[i]);
+        jml_hashmap_entry_t *entry = &map->entries[i];
         if (entry->key != NULL && !(entry->key->obj.marked)) {
             jml_hashmap_del(map, entry->key);
         }
@@ -294,7 +294,7 @@ void
 jml_hashmap_mark(jml_hashmap_t *map)
 {
     for (int i = 0; i <= map->capacity; i++) {
-        jml_hashmap_entry_t *entry = &(map->entries[i]);
+        jml_hashmap_entry_t *entry = map->entries[i];
         jml_gc_mark_obj((jml_obj_t*)entry->key);
         jml_gc_mark_value(entry->value);
     }

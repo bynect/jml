@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include <jml_common.h>
+#include <jml_bytecode.h>
 #include <jml_type.h>
 #include <jml_value.h>
 #include <jml_gc.h>
@@ -39,7 +40,7 @@ jml_obj_string_allocate(char *chars,
     string->hash = hash;
 
     jml_vm_push(OBJ_VAL(string));
-    tableSet(&(gc->vm->strings), string, NONE_VAL);
+    jml_hashmap_set(&gc->vm->strings, string, NONE_VAL);
     jml_vm_pop();
 
     return string;
@@ -65,7 +66,7 @@ jml_obj_string_take(char *chars, size_t length)
 {
     uint32_t hash = jml_obj_string_hash(chars, length);
     jml_obj_string_t *interned = jml_hashmap_find(
-        &(gc->vm->strings),chars, length, hash
+        &gc->vm->strings,chars, length, hash
     );
 
     if (interned != NULL) {
@@ -82,7 +83,7 @@ jml_obj_string_copy(const char *chars, size_t length)
 {
     uint32_t hash = jml_obj_string_hash(chars, length);
     jml_obj_string_t *interned = jml_hashmap_find(
-        &(gc->vm->strings),chars, length, hash
+        &gc->vm->strings,chars, length, hash
     );
 
     if (interned != NULL) return interned;
@@ -100,7 +101,7 @@ jml_obj_class_new(jml_obj_string_t *name)
 {
     jml_obj_class_t *klass = ALLOCATE_OBJ(jml_obj_class_t, OBJ_CLASS);
     klass->name = name;
-    jml_hashmap_init(&(klass->methods));
+    jml_hashmap_init(&klass->methods);
     return klass;
 }
 
@@ -110,7 +111,7 @@ jml_obj_instance_new(jml_obj_class_t *klass)
 {
     jml_obj_instance_t *instance = ALLOCATE_OBJ(jml_obj_instance_t, OBJ_INSTANCE);
     instance->klass = klass;
-    jml_hashmap_init(&(instance->fields));
+    jml_hashmap_init(&instance->fields);
     return instance;
 }
 
@@ -161,7 +162,7 @@ jml_obj_function_new(void)
     function->arity = 0;
     function->upvalue_count = 0;
     function->name = NULL;
-    jml_bytecode_init(&(function->bytecode));
+    jml_bytecode_init(&function->bytecode);
     return function;
 }
 
@@ -196,9 +197,11 @@ jml_obj_print(jml_value_t value)
 
         case OBJ_ARRAY:
             printf("<array>");
+            break;
 
         case OBJ_MAP:
-            printf("<map>");
+            printf("<map>");\
+            break;
 
         case OBJ_CLASS:
             printf("<class %s>", AS_CLASS(value)->name->chars);

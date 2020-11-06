@@ -13,7 +13,7 @@ jml_bytecode_init(jml_bytecode_t *bytecode)
     bytecode->code = NULL;
     bytecode->lines = NULL;
     bytecode->capacity = 0;
-    jml_value_array_free(&(bytecode->constants));
+    jml_value_array_free(&bytecode->constants);
 }
 
 
@@ -37,18 +37,21 @@ jml_bytecode_write(jml_bytecode_t *bytecode,
 
 
 void
-jml_bytecode_free(jml_bytecode_t *bytecode) {
+jml_bytecode_free(jml_bytecode_t *bytecode)
+{
     FREE_ARRAY(uint8_t, bytecode->code, bytecode->capacity);
     FREE_ARRAY(int, bytecode->lines, bytecode->capacity);
-    jml_value_array_free(&(bytecode->constants));
+    jml_value_array_free(&bytecode->constants);
     jml_bytecode_init(bytecode);
 }
 
 
 int
-jml_bytecode_add_const(jml_bytecode_t *bytecode, jml_value_t value) {
+jml_bytecode_add_const(jml_bytecode_t *bytecode,
+    jml_value_t value)
+{
     jml_vm_push(value);
-    jml_value_array_write(&(bytecode->constants), value);
+    jml_value_array_write(&bytecode->constants, value);
     jml_vm_pop();
 
     return bytecode->constants.count - 1;
@@ -196,6 +199,21 @@ jml_bytecode_instruction_disassemble(
         case OP_NEGATE:
             return jml_bytecode_instruction_simple("OP_NEGATE", offset);
 
+        case OP_EQUAL:
+            return jml_bytecode_instruction_simple("OP_EQUAL", offset);
+
+        case OP_GREATER:
+            return jml_bytecode_instruction_simple("OP_GREATER", offset);
+
+        case OP_GREATEREQ:
+            return jml_bytecode_instruction_simple("OP_GREATEREQ", offset);
+
+        case OP_LESS:
+            return jml_bytecode_instruction_simple("OP_LESS", offset);
+
+        case OP_LESSEQ:
+            return jml_bytecode_instruction_simple("OP_LESSEQ", offset);
+
         case OP_JMP:
             return jml_bytecode_instruction_jump("OP_JUMP", 1, bytecode, offset);
 
@@ -204,21 +222,6 @@ jml_bytecode_instruction_disassemble(
 
         case OP_LOOP:
             return jml_bytecode_instruction_jump("OP_LOOP", -1, bytecode, offset);
-
-        case OP_EQUAL:
-            return jml_bytecode_instruction_simple("OP_EQUAL", offset);
-
-        case OP_GREATER:
-            return jml_bytecode_instruction_simple("OP_GREATER", offset);
-
-        case OP_GREATERQUAL:
-            return jml_bytecode_instruction_simple("OP_GREATERQUAL", offset);
-
-        case OP_LESS:
-            return jml_bytecode_instruction_simple("OP_LESS", offset);
-
-        case OP_LESSEQUAL:
-            return jml_bytecode_instruction_simple("OP_LESSEQUAL", offset);
 
         case OP_CALL:
             return jml_bytecode_instruction_byte("OP_CALL", bytecode, offset);
@@ -229,11 +232,14 @@ jml_bytecode_instruction_disassemble(
         case OP_INVOKE:
             return jml_bytecode_instruction_invoke("OP_INVOKE", bytecode, offset);
 
-        case OP_CLOSURE:
+        case OP_SUPER_INVOKE:
+            return jml_bytecode_instruction_invoke("OP_SUPER_INVOKE", bytecode, offset);
+
+        case OP_CLOSURE: {
             offset++;
             uint8_t constant = bytecode->code[offset++];
             printf("%-16s   %4d   ", "OP_CLOSURE", constant);
-            printValue(bytecode->constants.values[constant]);
+            jml_value_print(bytecode->constants.values[constant]);
             printf("\n");
 
             jml_obj_function_t *function = AS_FUNCTION(bytecode->constants.values[constant]);
@@ -245,12 +251,16 @@ jml_bytecode_instruction_disassemble(
                     offset - 2, local ? "local" : "upvalue", index);
             }
             return offset;
-
-        case OP_CLOSE_UPVALUE:
-            return jml_bytecode_instruction_simple("OP_CLOSE_UPVALUE", offset);
+        }
 
         case OP_RETURN:
             return jml_bytecode_instruction_simple("OP_RETURN", offset);
+
+        case OP_CLASS:
+            return jml_bytecode_instruction_const("OP_CLASS", bytecode, offset);
+
+        case OP_INHERIT:
+            return jml_bytecode_instruction_simple("OP_INHERIT", offset);
 
         case OP_SET_LOCAL:
             return jml_bytecode_instruction_byte("OP_SET_LOCAL", bytecode, offset);
@@ -263,6 +273,9 @@ jml_bytecode_instruction_disassemble(
 
         case OP_GET_UPVALUE:
             return jml_bytecode_instruction_byte("OP_GET_UPVALUE", bytecode, offset);
+
+        case OP_CLOSE_UPVALUE:
+            return jml_bytecode_instruction_simple("OP_CLOSE_UPVALUE", offset);
 
         case OP_SET_GLOBAL:
             return jml_bytecode_instruction_const("OP_SET_GLOBAL", bytecode, offset);
@@ -281,15 +294,6 @@ jml_bytecode_instruction_disassemble(
 
         case OP_GET_SUPER:
             return jml_bytecode_instruction_const("OP_GET_SUPER", bytecode, offset);
-
-        case OP_SUPER_INVOKE:
-            return jml_bytecode_instruction_invoke("OP_SUPER_INVOKE", bytecode, offset);
-
-        case OP_CLASS:
-            return jml_bytecode_instruction_const("OP_CLASS", bytecode, offset);
-
-        case OP_INHERIT:
-            return jml_bytecode_instruction_simple("OP_INHERIT", offset);
 
         default:
             printf("Unknown opcode %d\n", instruction);

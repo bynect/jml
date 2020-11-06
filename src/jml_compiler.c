@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include <jml_common.h>
+#include <jml_bytecode.h>
 #include <jml_compiler.h>
 #include <jml_type.h>
 #include <jml_type.h>
@@ -21,7 +22,7 @@ jml_bytecode_t *compiled;
 static jml_bytecode_t *
 jml_bytecode_current(void)
 {
-  return &(current->function->bytecode);
+    return &current->function->bytecode;
 }
 
 
@@ -56,7 +57,7 @@ jml_parser_error_at(jml_token_t *token,
     } else if (token->type == TOKEN_ERROR) {
         /*pass*/
     } else {
-        fprintf(stderr, " at '%.*s'", token->length, token->start);
+        fprintf(stderr, " at '%.*s'", (int)token->length, token->start);
     }
 
     fprintf(stderr, ": %s\n", message);
@@ -66,7 +67,7 @@ jml_parser_error_at(jml_token_t *token,
 static void
 jml_parser_error(const char *message)
 {
-    jml_parser_error_at(&(parser.previous), message);
+    jml_parser_error_at(&parser.previous, message);
 }
 
 static void
@@ -246,7 +247,7 @@ jml_compiler_init(jml_compiler_t *compiler,
         );
     }
 
-    jml_local_t *local = &(current->locals[current->local_count++]);
+    jml_local_t *local = &current->locals[current->local_count++];
     local->depth = 0;
 
     if (type != FUNCTION_FN) {
@@ -309,9 +310,9 @@ jml_scope_end(void)
 /*forwarded declaration*/
 static void jml_expression();
 
-static void statement();
+static void jml_statement();
 
-static void declaration();
+static void jml_declaration();
 
 static jml_parser_rule *jml_parser_rule_get(
     jml_token_type type);
@@ -368,8 +369,8 @@ jml_identifier_equal(jml_token_t *a,
 static int
 jml_local_resolve(jml_compiler_t *compiler, jml_token_t *name) {
     for (int i = compiler->local_count - 1; i >= 0; i--) {
-        jml_local_t *local = &(compiler->locals[i]);
-        if (jml_identifier_equal(name, &(local->name))) {
+        jml_local_t *local = &compiler->locals[i];
+        if (jml_identifier_equal(name, &local->name)) {
         if (local->depth == -1) {
             jml_parser_error("Can't read local variable in its own initializer.");
         }
@@ -388,7 +389,7 @@ jml_local_add(jml_token_t name) {
         return;
     }
 
-    jml_local_t *local = &(current->locals[current->local_count++]);
+    jml_local_t *local = &current->locals[current->local_count++];
     local->name = name;
     local->depth = -1;
     local->captured = false;
@@ -441,7 +442,7 @@ static void
 jml_variable_declaration_(void) {
     if (current->scope_depth == 0) return;
 
-    jml_token_t *name = &(parser.previous);
+    jml_token_t *name = &parser.previous;
 
     for (int i = current->local_count - 1; i >= 0; i--) {
         jml_local_t *local = &current->locals[i];
@@ -450,7 +451,7 @@ jml_variable_declaration_(void) {
             break;
         }
         
-        if (jml_identifier_equal(name, &(local->name))) {
+        if (jml_identifier_equal(name, &local->name)) {
             jml_parser_error(
                 "Already variable with this name in this scope."
             );
@@ -469,7 +470,7 @@ jml_variable_parse(const char *message)
     jml_variable_declaration_(); /*global declaration*/
     if (current->scope_depth > 0) return 0;
 
-    return jml_identifier_const(&(parser.previous));
+    return jml_identifier_const(&parser.previous);
 }
 
 
@@ -573,7 +574,7 @@ static void
 jml_dot(bool assignable)
 {
     jml_parser_consume(TOKEN_NAME, "Expect property name after '.'.");
-    uint8_t name = identifierConstant(&parser.previous);
+    uint8_t name = jml_identifier_const(&parser.previous);
 
     if (assignable && jml_parser_match(TOKEN_EQUAL)) {
         jml_expression();
@@ -621,7 +622,8 @@ static void
 jml_string(bool assignable)
 {
     jml_bytecode_emit_const(
-        OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2))
+        OBJ_VAL(jml_obj_string_copy(parser.previous.start + 1,
+            parser.previous.length - 2))
     );
 }
 
@@ -655,7 +657,7 @@ jml_variable_named(jml_token_t name,
 }
 
 
-static void variable(bool assignable) {
+static void jml_variable(bool assignable) {
     jml_variable_named(parser.previous, assignable);
 }
 
@@ -672,7 +674,7 @@ jml_super(bool assignable)
     jml_parser_consume(TOKEN_DOT, "Expect '.' after 'super'.");
     jml_parser_consume(TOKEN_NAME, "Expect superclass method name.");
 
-    uint8_t name = jml_identifier_const(&(parser.previous));
+    uint8_t name = jml_identifier_const(&parser.previous);
     jml_variable_named(jml_token_synthetic("self"), false);
 
     if (jml_parser_match(TOKEN_LPAREN)) {
@@ -771,12 +773,13 @@ jml_parser_rule rules[] = {
     [TOKEN_NOT]         = {jml_unary,   NULL,       PREC_NONE},
     [TOKEN_OR]          = {NULL,        jml_or,     PREC_OR},
 
+    /*TODO*/
     [TOKEN_ATOM]        = {NULL,        NULL,       PREC_NONE},
     [TOKEN_TRUE]        = {jml_literal, NULL,       PREC_NONE},
     [TOKEN_FALSE]       = {jml_literal, NULL,       PREC_NONE},
     [TOKEN_NONE]        = {jml_literal, NULL,       PREC_NONE},
 
-    [TOKEN_NAME]        = {NULL,        NULL,       PREC_NONE},
+    [TOKEN_NAME]        = {jml_variable,NULL,       PREC_NONE},
     [TOKEN_NUMBER]      = {jml_number,  NULL,       PREC_NONE},
     [TOKEN_STRING]      = {jml_string,  NULL,       PREC_NONE},
 
@@ -882,7 +885,7 @@ static void
 jml_method(void)
 {
     jml_parser_consume(TOKEN_NAME, "Expect method name.");
-    uint8_t constant = jml_identifier_const(&(parser.previous));
+    uint8_t constant = jml_identifier_const(&parser.previous);
 
     jml_function_type type = FUNCTION_METHOD;
     if (parser.previous.length == 4 &&
@@ -899,7 +902,7 @@ jml_class_declaration(void)
 {
     jml_parser_consume(TOKEN_NAME, "Expect class name.");
     jml_token_t class_name = parser.previous;
-    uint8_t name_const = jml_identifier_const(&(parser.previous));
+    uint8_t name_const = jml_identifier_const(&parser.previous);
     jml_variable_declaration_(); /*global declaration*/
 
     jml_bytecode_emit_bytes(OP_CLASS, name_const);
@@ -915,7 +918,7 @@ jml_class_declaration(void)
         jml_parser_consume(TOKEN_NAME, "Expect superclass name.");
         jml_variable(false);
 
-        if (identifiersEqual(&class_name, &(parser.previous))) {
+        if (jml_identifier_equal(&class_name, &parser.previous)) {
             jml_parser_error("A class can't inherit from itself.");
         }
 
@@ -1121,7 +1124,7 @@ static void
 jml_statement(void)
 {
     if (jml_parser_match(TOKEN_RETURN)) {
-        jml_statement();
+        jml_return_statement();
     } else if (jml_parser_match(TOKEN_FOR)) {
         jml_for_statement();
     } else if (jml_parser_match(TOKEN_IF)) {
@@ -1142,7 +1145,7 @@ jml_obj_function_t *
 jml_compiler_compile(const char *source)
 {
     jml_lexer_init(source);
-    jml_class_compiler_t compiler;
+    jml_compiler_t compiler;
     jml_compiler_init(&compiler, FUNCTION_MAIN);
 
     parser.w_error = false;
@@ -1153,7 +1156,7 @@ jml_compiler_compile(const char *source)
         jml_declaration();
     }
 
-    jml_obj_function_t *function = endCompiler();
+    jml_obj_function_t *function = jml_compiler_end();
     return parser.w_error ? NULL : function;
 }
 

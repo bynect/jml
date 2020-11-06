@@ -2,8 +2,9 @@
 #define _JML_VALUE_H_
 
 #include <jml_common.h>
-#include <jml_bytecode.h>
 #include <jml_type.h>
+#include <jml_bytecode.h>
+#include <jml_compiler.h>
 
 
 typedef struct jml_obj_s jml_obj_t;
@@ -64,7 +65,7 @@ jml_value_to_num(jml_value_t value)
 typedef enum {
     VAL_BOOL,
     VAL_NONE,
-    VAL_NUMBER,
+    VAL_NUM,
     VAL_OBJ
 } jml_value_type;
 
@@ -84,7 +85,7 @@ typedef struct {
 #define NONE_VAL                                        \
     ((jml_value_t){VAL_NONE, {.number = 0}})
 #define NUMBER_VAL(value)                               \
-    ((jml_value_t){VAL_NUMBER, {.number = value}})
+    ((jml_value_t){VAL_NUM, {.number = value}})
 #define OBJ_VAL(object)                                 \
     ((jml_value_t){VAL_OBJ, {.obj = (jml_obj_t*)object}})
 
@@ -94,7 +95,7 @@ typedef struct {
 
 #define IS_BOOL(value)              ((value).type == VAL_BOOL)
 #define IS_NONE(value)              ((value).type == VAL_NONE)
-#define IS_NUMBER(value)            ((value).type == VAL_NUMBER)
+#define IS_NUMBER(value)            ((value).type == VAL_NUM)
 #define IS_OBJ(value)               ((value).type == VAL_OBJ)
 
 #endif
@@ -158,7 +159,7 @@ void jml_hashmap_mark(jml_hashmap_t *map);
 static inline bool
 jml_is_falsey(jml_value_t value)
 {
-    return (IS_NIL(value)
+    return (IS_NONE(value)
         || (IS_BOOL(value)
         && !AS_BOOL(value)));
 }

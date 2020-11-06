@@ -10,6 +10,20 @@
 #define STACK_MAX                   (FRAMES_MAX * LOCAL_MAX)
 
 
+typedef enum {
+    INTERPRET_OK,
+    INTERPRET_COMPILE_ERROR,
+    INTERPRET_RUNTIME_ERROR
+} jml_interpret_result;
+
+
+typedef enum {
+    VM_INITIALIZED,
+    VM_FREED,
+    VM_ERROR
+} jml_vm_status;
+
+
 typedef struct {
     jml_obj_closure_t              *closure;
     uint8_t                        *pc;
@@ -32,20 +46,6 @@ typedef struct {
     jml_gc_t                        gc;
     jml_vm_status                   status;
 } jml_vm_t;
-
-
-typedef enum {
-    INTERPRET_OK,
-    INTERPRET_COMPILE_ERROR,
-    INTERPRET_RUNTIME_ERROR
-} jml_interpret_result;
-
-
-typedef enum {
-    VM_INITIALIZED,
-    VM_FREED,
-    VM_ERROR
-} jml_vm_status;
 
 
 void jml_vm_init(jml_vm_t *vm);

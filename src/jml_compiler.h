@@ -3,6 +3,8 @@
 
 #include <jml_common.h>
 #include <jml_lexer.h>
+#include <jml_value.h>
+#include <jml_bytecode.h>
 #include <jml_type.h>
 
 
@@ -39,19 +41,19 @@ typedef struct {
 } jml_parser_rule;
 
 
-typedef struct jml_compiler_t {
-    struct jml_compiler_t          *enclosing;
+typedef struct jml_compiler_s {
+    struct jml_compiler_s          *enclosing;
     jml_obj_function_t             *function;
     jml_function_type               type;
     jml_local_t                     locals[LOCAL_MAX];
-    uint8_t                         local_count;
+    int                             local_count;
     jml_upvalue_t                   upvalues[LOCAL_MAX];
-    uint8_t                         scope_depth;
+    int                             scope_depth;
 } jml_compiler_t;
 
 
-typedef struct jml_class_compiler_t {
-    struct jml_class_compiler_t    *enclosing;
+typedef struct jml_class_compiler_s {
+    struct jml_class_compiler_s    *enclosing;
     jml_token_t                     name;
     bool                            w_superclass;
 } jml_class_compiler_t;

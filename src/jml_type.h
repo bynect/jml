@@ -3,6 +3,7 @@
 
 #include <jml_common.h>
 #include <jml_value.h>
+#include <jml_compiler.h>
 #include <jml_bytecode.h>
 
 
@@ -47,7 +48,7 @@ typedef enum {
 } jml_obj_type;
 
 
-typedef struct jml_obj_s {
+struct jml_obj_s {
     jml_obj_type                    type;
     bool                            marked;
     struct jml_obj_s               *next;
@@ -77,8 +78,8 @@ typedef struct {
 
 typedef struct {
     jml_obj_t                       obj;
-    uint8_t                         arity;
-    uint8_t                         upvalue_count;
+    int                             arity;
+    int                             upvalue_count;
     jml_bytecode_t                  bytecode;
     jml_obj_string_t               *name;
 } jml_obj_function_t;

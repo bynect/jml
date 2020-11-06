@@ -6,15 +6,15 @@
 
 #include <dlfcn.h>
 #include <unistd.h>
-//dlopen etc
+/*TODO*/
 
 #elif   JML_IMPORT  ==  1
 
 #include <windows.h>
-//dll
+/*TODO*/
 
 #else
 
-//TODO
+/*TODO*/
 
 #endif

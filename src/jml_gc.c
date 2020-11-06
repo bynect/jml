@@ -1,5 +1,9 @@
+#include <stdlib.h>
+
 #include <jml_common.h>
+#include <jml_bytecode.h>
 #include <jml_gc.h>
+#include <jml_vm.h>
 
 #ifdef JML_TRACE_GC
 #include <stdio.h>
@@ -24,8 +28,6 @@ jml_gc_init(jml_gc_t *gc_ptr, jml_vm_t *vm)
     gc->gray_capacity = 4;
     gc->gray_stack = NULL;
     gc->vm = vm;
-
-    return gc;
 }
 
 
@@ -52,7 +54,7 @@ jml_reallocate(void *ptr,
         return NULL;
     }
 
-    void *result = realloc();
+    void *result = realloc(ptr, new_size);
     if (result == NULL) exit(1);
 
     return result;
@@ -78,7 +80,7 @@ jml_gc_mark_roots(void)
         jml_gc_mark_obj((jml_obj_t*)upvalue);
     }
 
-    jml_hashmap_mark(&(gc->vm->globals));
+    jml_hashmap_mark(&gc->vm->globals);
     markCompilerRoots();
     jml_gc_mark_obj((jml_obj_t*)gc->vm->init_string);
 }
@@ -167,7 +169,7 @@ jml_free_object(jml_obj_t *object)
 
         case OBJ_CLASS:
             jml_obj_class_t *klass = (jml_obj_class_t*)object;
-            freeTable(&klass->methods);
+            jml_hashmap_free(&klass->methods);
             FREE(jml_obj_class_t, object);
             break;
 
@@ -189,7 +191,7 @@ jml_gc_free_objs(void)
         object          = next;
     }
 
-    free(gc->gray_stack);
+    jml_gc_free(gc->gray_stack);
 }
 
 
@@ -232,13 +234,13 @@ jml_gc_blacken_obj(jml_obj_t *object)
         case OBJ_INSTANCE:
             jml_obj_instance_t *instance = (jml_obj_instance_t*)object;
             jml_gc_mark_obj((jml_obj_t*)instance->klass);
-            jml_hashmap_mark(&(instance->fields));
+            jml_hashmap_mark(&instance->fields);
             break;
 
         case OBJ_CLASS:
             jml_obj_class_t *klass = (jml_obj_class_t*)object;
             jml_gc_mark_obj((jml_obj_t*)klass->name);
-            jml_hashmap_mark(&(klass->methods));
+            jml_hashmap_mark(&klass->methods);
             break;
 
         case OBJ_METHOD:
@@ -256,9 +258,9 @@ jml_gc_blacken_obj(jml_obj_t *object)
             break;
 
         case OBJ_FUNCTION:
-            jml_obj_function_t* function = (jml_obj_function_t*)object;
+            jml_obj_function_t *function = (jml_obj_function_t*)object;
             jml_gc_mark_obj((jml_obj_t*)function->name);
-            jml_gc_mark_array(&(function->bytecode.constants));
+            jml_gc_mark_array(&function->bytecode.constants);
             break;
 
         case OBJ_UPVALUE:
@@ -293,7 +295,7 @@ jml_gc_collect(jml_gc_t *gc)
 
     jml_gc_mark_roots();
     jml_gc_trace_refs();
-    jml_hashmap_remove_white(&(gc->vm->strings));
+    jml_hashmap_remove_white(&gc->vm->strings);
     jml_gc_sweep();
 
     gc->next_gc = gc->allocated * GC_HEAP_GROW_FACTOR;
@@ -301,7 +303,7 @@ jml_gc_collect(jml_gc_t *gc)
 #ifdef JML_TRACE_GC
     time_t elapsed = (double)clock() - start;
     size_t after = gc->allocated;
-    printf("|gc ended {current: %lu, collected: %lu, next: %lu, elapsed:%.3fs}|\n",
+    printf("|gc ended {current: %lu, collected: %lu, next: %lu, elapsed:%.3ld}|\n",
         (unsigned long)after,
         (unsigned long)(before - after),
         (unsigned long)gc->next_gc,

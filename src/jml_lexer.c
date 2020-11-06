@@ -107,7 +107,7 @@ static jml_token_type
 jml_check_keyword(int start, size_t length,
     const char *rest, jml_token_type type)
 {
-    if ((lexer.current - lexer.start) == (length + start)
+    if ((lexer.current - lexer.start) == (int)(length + start)
         && memcmp(lexer.start + start, rest, length)) {
         return type;
     }
