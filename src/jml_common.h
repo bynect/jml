@@ -13,6 +13,7 @@
 
 #undef JML_NAN_TAGGING
 #undef JML_DISASSEMBLE
+#undef JML_STRESS_GC
 #define JML_TRACE_GC
 
 

@@ -2,10 +2,8 @@
 #include <string.h>
 
 #include <jml_common.h>
-#include <jml_bytecode.h>
 #include <jml_type.h>
 #include <jml_value.h>
-#include <jml_gc.h>
 #include <jml_vm.h>
 
 
@@ -16,12 +14,13 @@
 static jml_obj_t *
 jml_obj_allocate(size_t size, jml_obj_type type)
 {
-    jml_obj_t *object = (jml_obj_t*)jml_reallocate(NULL, 0, size);
-    object->type = type;
-    object->marked = false;
+    jml_obj_t *object           = (jml_obj_t*)jml_reallocate(
+        NULL, 0, size);
+    object->type                = type;
+    object->marked              = false;
 
-    object->next = gc->objects;
-    gc->objects = object;
+    object->next                = vm->objects;
+    vm->objects                 = object;
 
 #ifdef JML_TRACE_GC
     printf("%p allocate %ld for %d\n", (void*)object, size, type);
@@ -34,13 +33,15 @@ static jml_obj_string_t *
 jml_obj_string_allocate(char *chars,
     size_t length, uint32_t hash)
 {
-    jml_obj_string_t *string = ALLOCATE_OBJ(jml_obj_string_t, OBJ_STRING);
-    string->length = length;
-    string->chars = chars;
-    string->hash = hash;
+    jml_obj_string_t *string    = ALLOCATE_OBJ(
+        jml_obj_string_t, OBJ_STRING
+    );
+    string->length              = length;
+    string->chars               = chars;
+    string->hash                = hash;
 
     jml_vm_push(OBJ_VAL(string));
-    jml_hashmap_set(&gc->vm->strings, string, NONE_VAL);
+    jml_hashmap_set(&vm->strings, string, NONE_VAL);
     jml_vm_pop();
 
     return string;
@@ -52,7 +53,7 @@ jml_obj_string_hash(const char *key, size_t length)
 {
     uint32_t hash = 2166136261u;
 
-    for (int i = 0; i < length; i++) {
+    for (int i = 0; i < (int)length; i++) {
         hash ^= key[i];
         hash *= 16777619;
     }
@@ -66,7 +67,7 @@ jml_obj_string_take(char *chars, size_t length)
 {
     uint32_t hash = jml_obj_string_hash(chars, length);
     jml_obj_string_t *interned = jml_hashmap_find(
-        &gc->vm->strings,chars, length, hash
+        &vm->strings,chars, length, hash
     );
 
     if (interned != NULL) {
@@ -83,7 +84,7 @@ jml_obj_string_copy(const char *chars, size_t length)
 {
     uint32_t hash = jml_obj_string_hash(chars, length);
     jml_obj_string_t *interned = jml_hashmap_find(
-        &gc->vm->strings,chars, length, hash
+        &vm->strings,chars, length, hash
     );
 
     if (interned != NULL) return interned;

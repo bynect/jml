@@ -2,12 +2,10 @@
 #define _JML_VALUE_H_
 
 #include <jml_common.h>
-#include <jml_type.h>
-#include <jml_bytecode.h>
-#include <jml_compiler.h>
 
 
-typedef struct jml_obj_s jml_obj_t;
+typedef struct jml_obj_s    jml_obj_t;
+typedef struct jml_string_s jml_obj_string_t;
 
 
 #ifdef JML_NAN_TAGGING

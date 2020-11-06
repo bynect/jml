@@ -1,12 +1,9 @@
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <jml_common.h>
-#include <jml_bytecode.h>
 #include <jml_compiler.h>
-#include <jml_type.h>
-#include <jml_type.h>
 #include <jml_gc.h>
 
 
@@ -1004,7 +1001,7 @@ jml_if_statement(void)
     jml_bytecode_patch_jump(then_jump);
     jml_bytecode_emit_byte(OP_POP);
 
-    if (jml_parser_match(TOKEN_ELSE)) statement();
+    if (jml_parser_match(TOKEN_ELSE)) jml_statement();
     jml_bytecode_patch_jump(else_jump);
 }
 

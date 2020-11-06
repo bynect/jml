@@ -6,6 +6,7 @@
 #include <jml_type.h>
 #include <jml_gc.h>
 
+
 #define FRAMES_MAX                  64
 #define STACK_MAX                   (FRAMES_MAX * LOCAL_MAX)
 
@@ -15,13 +16,6 @@ typedef enum {
     INTERPRET_COMPILE_ERROR,
     INTERPRET_RUNTIME_ERROR
 } jml_interpret_result;
-
-
-typedef enum {
-    VM_INITIALIZED,
-    VM_FREED,
-    VM_ERROR
-} jml_vm_status;
 
 
 typedef struct {
@@ -43,18 +37,29 @@ typedef struct {
     jml_obj_string_t               *call_string;
     jml_obj_upvalue_t              *open_upvalues;
 
-    jml_gc_t                        gc;
-    jml_vm_status                   status;
+    size_t                          allocated;
+    size_t                          next_gc;
+    jml_obj_t                      *objects;
+    int                             gray_count;
+    int                             gray_capacity;
+    jml_obj_t                     **gray_stack;
 } jml_vm_t;
 
 
+jml_vm_t *jml_vm_new(void);
+
 void jml_vm_init(jml_vm_t *vm);
+
 void jml_vm_free(jml_vm_t *vm);
 
 jml_interpret_result jml_vm_interpret(const char *source);
 
 void jml_vm_push(jml_value_t value);
+
 jml_value_t jml_vm_pop();
+
+
+extern jml_vm_t *vm;
 
 
 #endif /* _JML_VM_H_ */

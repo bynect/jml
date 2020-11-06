@@ -3,7 +3,6 @@
 
 #include <jml_common.h>
 #include <jml_value.h>
-#include <jml_type.h>
 
 
 typedef enum {

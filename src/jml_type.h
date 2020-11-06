@@ -3,7 +3,6 @@
 
 #include <jml_common.h>
 #include <jml_value.h>
-#include <jml_compiler.h>
 #include <jml_bytecode.h>
 
 
@@ -55,12 +54,12 @@ struct jml_obj_s {
 };
 
 
-typedef struct {
+struct jml_string_s {
     jml_obj_t                       obj;
     char                           *chars;
     size_t                          length;
     uint32_t                        hash;
-} jml_obj_string_t;
+};
 
 
 typedef struct {
@@ -74,6 +73,20 @@ typedef struct {
     jml_obj_string_t               *name;
     jml_hashmap_t                   map;
 } jml_obj_map_t;
+
+
+typedef struct {
+    jml_obj_t                       obj;
+    jml_obj_string_t               *name;
+    jml_hashmap_t                   methods;
+} jml_obj_class_t;
+
+
+typedef struct {
+    jml_obj_t                       obj;
+    jml_obj_class_t                *klass;
+    jml_hashmap_t                   fields;
+} jml_obj_instance_t;
 
 
 typedef struct {
@@ -99,20 +112,6 @@ typedef struct {
     jml_obj_upvalue_t             **upvalues;
     uint8_t                         upvalue_count;
 } jml_obj_closure_t;
-
-
-typedef struct {
-    jml_obj_t                       obj;
-    jml_obj_string_t               *name;
-    jml_hashmap_t                   methods;
-} jml_obj_class_t;
-
-
-typedef struct {
-    jml_obj_t                       obj;
-    jml_obj_class_t                *klass;
-    jml_hashmap_t                   fields;
-} jml_obj_instance_t;
 
 
 typedef struct {
@@ -158,7 +157,8 @@ void jml_obj_print(jml_value_t value);
 static inline bool
 jml_is_obj(jml_value_t value, jml_obj_type type)
 {
-    return IS_OBJ(value) && AS_OBJ(value)->type == type;
+    return IS_OBJ(value)
+        && AS_OBJ(value)->type == type;
 }
 
 

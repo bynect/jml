@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 #include <jml_common.h>
-#include <jml_value.h>
 #include <jml_type.h>
+#include <jml_value.h>
 #include <jml_gc.h>
 
 
@@ -60,7 +60,7 @@ jml_value_equal(jml_value_t a, jml_value_t b)
     switch (a.type) {
         case VAL_BOOL:      return AS_BOOL(a) == AS_BOOL(b);
         case VAL_NONE:      return true;
-        case VAL_NUM:    return AS_NUMBER(a) == AS_NUMBER(b);
+        case VAL_NUM:       return AS_NUMBER(a) == AS_NUMBER(b);
         case VAL_OBJ:       return AS_OBJ(a) == AS_OBJ(b);
 
         default:            return false; 
@@ -236,7 +236,7 @@ jml_hashmap_add(jml_hashmap_t *source,
     jml_hashmap_t *dest)
 {
     for (int i = 0; i <= source->capacity; i++) {
-        jml_hashmap_entry_t *entry = source->entries[i];
+        jml_hashmap_entry_t *entry = &source->entries[i];
 
         if (entry->key != NULL) {
             jml_hashmap_set(dest, entry->key, entry->value);
@@ -294,7 +294,7 @@ void
 jml_hashmap_mark(jml_hashmap_t *map)
 {
     for (int i = 0; i <= map->capacity; i++) {
-        jml_hashmap_entry_t *entry = map->entries[i];
+        jml_hashmap_entry_t *entry = &map->entries[i];
         jml_gc_mark_obj((jml_obj_t*)entry->key);
         jml_gc_mark_value(entry->value);
     }

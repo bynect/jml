@@ -12,11 +12,11 @@
 #include <jml_compiler.h>
 
 
-extern jml_vm_t vm;
+jml_vm_t *vm;
 
 
 static void
-jml_vm_stack_reset(jml_vm_t *vm)
+jml_vm_stack_reset()
 {
     vm->stack_top = vm->stack;
     vm->frame_count = 0;
@@ -36,9 +36,9 @@ jml_vm_error(const char *format, ...)
 #ifdef JML_TRACE_BACK
     for (int i = 0; i < vm->frame_count; i++) {
 #else
-    for (int i = vm.frame_count - 1; i >= 0; i--) {
+    for (int i = vm->frame_count - 1; i >= 0; i--) {
 #endif
-        jml_call_frame_t    *frame    = vm.frames[i];
+        jml_call_frame_t    *frame    = &vm->frames[i];
         jml_obj_function_t  *function = frame->closure->function;
 
         size_t instruction = frame->pc - function->bytecode.code - 1;
@@ -58,20 +58,41 @@ jml_vm_error(const char *format, ...)
 }
 
 
+jml_vm_t *
+jml_vm_new(void)
+{
+    jml_vm_t *pvm = (jml_vm_t*)jml_reallocate_base(NULL, sizeof(*pvm));
+
+    memset(pvm, 0, sizeof(jml_vm_t));
+
+    jml_vm_init(pvm);
+
+    vm = pvm;
+
+    return pvm;
+}
+
+
 void
 jml_vm_init(jml_vm_t *vm)
 {
     jml_vm_stack_reset(vm);
 
-    jml_gc_t gc;
-    jml_gc_init(&gc, vm);
-    vm->gc = gc;
+    vm->objects         = NULL;
+    vm->allocated       = 0;
+    vm->next_gc         = 1024 * 1024 * 4;
 
-    vm->init_string = NULL;
-    vm->call_string = NULL;
+    vm->gray_count      = 0;
+    vm->gray_capacity   = 0;
+    vm->gray_stack      = NULL;
+    jml_hashmap_init(&vm->strings);
+    jml_hashmap_init(&vm->globals);
 
-    vm->init_string = jml_obj_string_copy("__init", 6);
-    vm->call_string = jml_obj_string_copy("__call", 6);
+    vm->init_string     = NULL;
+    vm->call_string     = NULL;
+
+    vm->init_string     = jml_obj_string_copy("__init", 6);
+    vm->call_string     = jml_obj_string_copy("__call", 6);
 }
 
 
@@ -81,38 +102,38 @@ jml_vm_free(jml_vm_t *vm)
     jml_hashmap_free(&vm->strings);
     jml_hashmap_free(&vm->globals);
     vm->init_string = NULL;
+    vm->call_string = NULL;
 
     jml_gc_free_objs();
-    jml_gc_free(&vm->gc);
 }
 
 void
 jml_vm_push(jml_value_t value)
 {
-    *vm.stack_top = value;
-    vm.stack_top++;
+    *vm->stack_top = value;
+    vm->stack_top++;
 }
 
 
 jml_value_t
 jml_vm_pop(void)
 {
-    vm.stack_top--;
-    return *vm.stack_top;
+    vm->stack_top--;
+    return *vm->stack_top;
 }
 
 
 static void
 jml_vm_pop_two(void)
 {
-    vm.stack_top -= 2;
+    vm->stack_top -= 2;
 }
 
 
 static jml_value_t
 jml_vm_peek(int distance)
 {
-  return vm.stack_top[-1 - distance];
+  return vm->stack_top[-1 - distance];
 }
 
 
@@ -127,16 +148,16 @@ jml_vm_call(jml_obj_closure_t *closure,
         return false;
     }
 
-    if (vm.frame_count == FRAMES_MAX) {
+    if (vm->frame_count == FRAMES_MAX) {
         jml_vm_error("Recursion depth overflow.");
         return false;
     }
 
-    jml_call_frame_t *frame = &vm.frames[vm.frame_count++];
+    jml_call_frame_t *frame = &vm->frames[vm->frame_count++];
     frame->closure = closure;
     frame->pc = closure->function->bytecode.code;
 
-    frame->slots = vm.stack_top - arg_count - 1;
+    frame->slots = vm->stack_top - arg_count - 1;
     return true;
 }
 
@@ -148,18 +169,18 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
         switch (OBJ_TYPE(callee)) {
             case OBJ_CFUNCTION: {
                 jml_cfunction cfunction = AS_CFUNCTION(callee);
-                jml_value_t result = cfunction(arg_count, vm.stack_top - arg_count);
-                vm.stack_top -= arg_count + 1;
+                jml_value_t result = cfunction(arg_count, vm->stack_top - arg_count);
+                vm->stack_top -= arg_count + 1;
                 jml_vm_push(result);
                 return true;
             }
 
             case OBJ_CLASS: {
                 jml_obj_class_t *klass = AS_CLASS(callee);
-                vm.stack_top[-arg_count - 1] = OBJ_VAL(jml_obj_instance_new(klass));
+                vm->stack_top[-arg_count - 1] = OBJ_VAL(jml_obj_instance_new(klass));
                 jml_value_t initializer;
 
-                if (jml_hashmap_get(&klass->methods, vm.init_string, &initializer)) {
+                if (jml_hashmap_get(&klass->methods, vm->init_string, &initializer)) {
                 return jml_vm_call(AS_CLOSURE(initializer), arg_count);
                 } else if (arg_count != 0) {
                     jml_vm_error(
@@ -172,7 +193,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
             case OBJ_METHOD: {
                 jml_obj_method_t *bound = AS_METHOD(callee);
-                vm.stack_top[-arg_count - 1] = bound->receiver;
+                vm->stack_top[-arg_count - 1] = bound->receiver;
                 return jml_vm_call(bound->method, arg_count);
             }
 
@@ -182,12 +203,12 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
             // case OBJ_INSTANCE: {
             //     jml_obj_instance_t *instance = AS_INSTANCE(callee);
-            //     vm.stack_top[-arg_count - 1] = OBJ_VAL(jml_obj_instance_new(klass));
+            //     vm->stack_top[-arg_count - 1] = OBJ_VAL(jml_obj_instance_new(klass));
 
             //     jml_value_t caller;
 
             //     if (jml_hashmap_get(&instance->klass->methods,
-            //         vm.call_string, &caller)) {
+            //         vm->call_string, &caller)) {
                     
             //         return jml_vm_call(AS_CLOSURE(caller), arg_count);
             //     } else if (arg_count != 0) {
@@ -242,7 +263,7 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
     jml_value_t value;
     if (jml_hashmap_get(&instance->fields, name, &value)) {
-        vm.stack_top[-arg_count - 1] = value;
+        vm->stack_top[-arg_count - 1] = value;
         return jml_vm_call_value(value, arg_count);
     }
 
@@ -289,7 +310,7 @@ static jml_obj_upvalue_t *
 jml_vm_upvalue_capture(jml_value_t *local)
 {
     jml_obj_upvalue_t *previous = NULL;
-    jml_obj_upvalue_t *upvalue = vm.open_upvalues;
+    jml_obj_upvalue_t *upvalue = vm->open_upvalues;
 
     while (upvalue != NULL && upvalue->location > local) {
         previous = upvalue;
@@ -304,7 +325,7 @@ jml_vm_upvalue_capture(jml_value_t *local)
     new_upvalue->next = upvalue;
 
     if (previous == NULL) {
-        vm.open_upvalues = new_upvalue;
+        vm->open_upvalues = new_upvalue;
     } else {
         previous->next = new_upvalue;
     }
@@ -315,13 +336,13 @@ jml_vm_upvalue_capture(jml_value_t *local)
 
 static void
 jml_vm_upvalue_close(jml_value_t *last) {
-    while ((vm.open_upvalues != NULL )
-        && (vm.open_upvalues->location >= last)) {
+    while ((vm->open_upvalues != NULL )
+        && (vm->open_upvalues->location >= last)) {
 
-        jml_obj_upvalue_t *upvalue = vm.open_upvalues;
+        jml_obj_upvalue_t *upvalue = vm->open_upvalues;
         upvalue->closed = *upvalue->location;
         upvalue->location = &upvalue->closed;
-        vm.open_upvalues = upvalue->next;
+        vm->open_upvalues = upvalue->next;
     }
 }
 
@@ -348,7 +369,7 @@ jml_string_concatenate(void)
 static jml_interpret_result
 jml_vm_run(void)
 {
-    jml_call_frame_t *frame = &vm.frames[vm.frame_count - 1];
+    jml_call_frame_t *frame = &vm->frames[vm->frame_count - 1];
     register uint8_t *pc = frame->pc;
 
 #define READ_BYTE()                 (*pc++)
@@ -559,7 +580,7 @@ jml_vm_run(void)
                 if (!jml_vm_call_value(jml_vm_peek(arg_count), arg_count))
                     return INTERPRET_RUNTIME_ERROR;
 
-                frame = &vm.frames[vm.frame_count - 1];
+                frame = &vm->frames[vm->frame_count - 1];
                 pc = frame->pc;
                 break;
             }
@@ -577,7 +598,7 @@ jml_vm_run(void)
                 if (!jml_vm_invoke(method, arg_count))
                     return INTERPRET_RUNTIME_ERROR;
                 
-                frame = &vm.frames[vm.frame_count - 1];
+                frame = &vm->frames[vm->frame_count - 1];
                 pc = frame->pc;
                 break;
             }
@@ -591,7 +612,7 @@ jml_vm_run(void)
                 if (!jml_vm_invoke_class(superclass, method, arg_count))
                     return INTERPRET_RUNTIME_ERROR;
 
-                frame = &vm.frames[vm.frame_count - 1];
+                frame = &vm->frames[vm->frame_count - 1];
                 pc = frame->pc;
                 break;
             }
@@ -615,16 +636,16 @@ jml_vm_run(void)
             case OP_RETURN: {
                 jml_value_t result = jml_vm_pop();
                 jml_vm_upvalue_close(frame->slots);
-                vm.frame_count--;
+                vm->frame_count--;
 
-                if (vm.frame_count == 0) {
+                if (vm->frame_count == 0) {
                     jml_vm_pop();
                     return INTERPRET_OK;
                 }
 
-                vm.stack_top = frame->slots;
+                vm->stack_top = frame->slots;
                 jml_vm_push(result);
-                frame = &vm.frames[vm.frame_count - 1];
+                frame = &vm->frames[vm->frame_count - 1];
                 pc = frame->pc;
                 break;
             }
@@ -677,15 +698,15 @@ jml_vm_run(void)
             }
 
             case OP_CLOSE_UPVALUE: {
-                jml_vm_upvalue_close(vm.stack_top - 1);
+                jml_vm_upvalue_close(vm->stack_top - 1);
                 jml_vm_pop();
                 break;
             }
 
             case OP_SET_GLOBAL: {
                 jml_obj_string_t *name = READ_STRING();
-                if (jml_hashmap_set(&vm.globals, name, jml_vm_peek(0))) {
-                    jml_hashmap_del(&vm.globals, name);
+                if (jml_hashmap_set(&vm->globals, name, jml_vm_peek(0))) {
+                    jml_hashmap_del(&vm->globals, name);
                     frame->pc = pc;
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
@@ -696,7 +717,7 @@ jml_vm_run(void)
             case OP_GET_GLOBAL: {
                 jml_obj_string_t *name = READ_STRING();
                 jml_value_t value;
-                if (!jml_hashmap_get(&vm.globals, name, &value)) {
+                if (!jml_hashmap_get(&vm->globals, name, &value)) {
                     frame->pc = pc;
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
@@ -707,7 +728,7 @@ jml_vm_run(void)
 
             case OP_DEFINE_GLOBAL: {
                 jml_obj_string_t *name = READ_STRING();
-                jml_hashmap_set(&vm.globals, name, jml_vm_peek(0));
+                jml_hashmap_set(&vm->globals, name, jml_vm_peek(0));
                 jml_vm_pop();
                 break;
             }

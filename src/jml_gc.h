@@ -3,7 +3,6 @@
 
 #include <jml_common.h>
 #include <jml_type.h>
-#include <jml_value.h>
 #include <jml_vm.h>
 
 
@@ -28,30 +27,15 @@
 void *jml_reallocate(void *ptr,
     size_t old_size, size_t new_size);
 
-
-typedef struct {
-    jml_vm_t                       *vm;
-
-    size_t                          allocated;
-    size_t                          next_gc;
-    jml_obj_t                      *objects;
-    int                             gray_count;
-    int                             gray_capacity;
-    jml_obj_t                     **gray_stack;
-} jml_gc_t;
-
-
-void jml_gc_init(jml_gc_t *gc, jml_vm_t *vm);
-void jml_gc_free(jml_gc_t *gc);
+void *jml_reallocate_base(void *ptr, size_t new_size);
 
 void jml_gc_free_objs(void);
-void jml_gc_collect(jml_gc_t *gc);
+
+void jml_gc_collect(void);
 
 void jml_gc_mark_value(jml_value_t value);
+
 void jml_gc_mark_obj(jml_obj_t *object);
-
-
-extern jml_gc_t *gc;
 
 
 #endif /* _JML_GC_H_ */

@@ -1,11 +1,9 @@
 #ifndef _JML_COMPILER_H_
 #define _JML_COMPILER_H_
 
-#include <jml_common.h>
-#include <jml_lexer.h>
-#include <jml_value.h>
-#include <jml_bytecode.h>
 #include <jml_type.h>
+#include <jml_vm.h>
+#include <jml_lexer.h>
 
 
 typedef struct {
@@ -31,6 +29,15 @@ typedef enum {
 } jml_parser_precedence;
 
 
+typedef enum {
+    FUNCTION_FN,
+    FUNCTION_METHOD,
+    FUNCTION_DUNDER,
+    FUNCTION_MAIN,
+    FUNCTION_INITIALIZER
+} jml_function_type;
+
+
 typedef void (*jml_parser_fn)(bool assignable);
 
 
@@ -39,6 +46,19 @@ typedef struct {
     jml_parser_fn                   infix;
     jml_parser_precedence           precedence;
 } jml_parser_rule;
+
+
+typedef struct {
+    int                             index;
+    bool                            local;
+} jml_upvalue_t;
+
+
+typedef struct {
+    jml_token_t                     name;
+    int                             depth;
+    bool                            captured;
+} jml_local_t;
 
 
 typedef struct jml_compiler_s {
@@ -59,32 +79,9 @@ typedef struct jml_class_compiler_s {
 } jml_class_compiler_t;
 
 
-typedef struct {
-    jml_token_t                     name;
-    uint8_t                         depth;
-    bool                            captured;
-} jml_local_t;
-
-
-typedef struct {
-    uint8_t                         index;
-    bool                            local;
-} jml_upvalue_t;
-
-
-typedef enum {
-    FUNCTION_FN,
-    FUNCTION_METHOD,
-    FUNCTION_DUNDER,
-    FUNCTION_MAIN,
-    FUNCTION_INITIALIZER
-} jml_function_type;
-
-
 void jml_compiler_mark_roots(void);
 
-jml_obj_function_t *jml_compiler_compile(
-    const char *source);
+jml_obj_function_t *jml_compiler_compile(const char *source);
 
 
 #endif /* _JML_COMPILER_H_ */
