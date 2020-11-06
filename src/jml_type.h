@@ -1,7 +1,8 @@
 #ifndef _JML_TYPE_H_
 #define _JML_TYPE_H_
 
-#include <jml_common.h>
+#include <jml.h>
+
 #include <jml_value.h>
 #include <jml_bytecode.h>
 

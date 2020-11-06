@@ -3,20 +3,20 @@
 #include <math.h>
 #include <string.h>
 
+#include <jml.h>
+
 #include <jml_common.h>
-#include <jml_value.h>
-#include <jml_type.h>
 #include <jml_vm.h>
 #include <jml_gc.h>
-#include <jml_bytecode.h>
 #include <jml_compiler.h>
+#include <jml_type.h>
 
 
 jml_vm_t *vm;
 
 
 static void
-jml_vm_stack_reset()
+jml_vm_stack_reset(void)
 {
     vm->stack_top = vm->stack;
     vm->frame_count = 0;
@@ -54,20 +54,20 @@ jml_vm_error(const char *format, ...)
         }
     }
 
-    jml_vm_stack_reset(&vm);
+    jml_vm_stack_reset();
 }
 
 
 jml_vm_t *
 jml_vm_new(void)
 {
-    jml_vm_t *pvm = (jml_vm_t*)jml_reallocate_base(NULL, sizeof(*pvm));
+    jml_vm_t *pvm = (jml_vm_t*)malloc(sizeof(jml_vm_t));
 
     memset(pvm, 0, sizeof(jml_vm_t));
 
-    jml_vm_init(pvm);
-
     vm = pvm;
+
+    jml_vm_init(vm);
 
     return pvm;
 }
@@ -76,7 +76,7 @@ jml_vm_new(void)
 void
 jml_vm_init(jml_vm_t *vm)
 {
-    jml_vm_stack_reset(vm);
+    jml_vm_stack_reset();
 
     vm->objects         = NULL;
     vm->allocated       = 0;
@@ -106,6 +106,7 @@ jml_vm_free(jml_vm_t *vm)
 
     jml_gc_free_objs();
 }
+
 
 void
 jml_vm_push(jml_value_t value)
@@ -786,6 +787,28 @@ jml_vm_run(void)
             default: break; /*unreachable*/
         }
     }
+#undef READ_BYTE
+#undef READ_SHORT
+#undef READ_STRING
+#undef READ_CONST
+
+#undef BINARY_OP
+#undef BINARY_FN
+}
+
+
+void
+jml_cfunction_register(const char *name,
+    jml_cfunction function)
+{
+    jml_vm_push(OBJ_VAL(jml_obj_string_copy(name,
+        (int)strlen(name))));
+
+    jml_vm_push(OBJ_VAL(jml_obj_cfunction_new(function)));
+    jml_hashmap_set(
+        &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]
+    );
+    jml_vm_pop_two();
 }
 
 

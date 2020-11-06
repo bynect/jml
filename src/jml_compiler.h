@@ -1,6 +1,8 @@
 #ifndef _JML_COMPILER_H_
 #define _JML_COMPILER_H_
 
+#include <jml.h>
+
 #include <jml_type.h>
 #include <jml_vm.h>
 #include <jml_lexer.h>

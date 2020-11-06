@@ -1,7 +1,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <jml_common.h>
+#include <jml.h>
+
 #include <jml_type.h>
 #include <jml_value.h>
 #include <jml_gc.h>

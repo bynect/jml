@@ -1,6 +1,5 @@
 #include <stdlib.h>
 
-#include <jml_common.h>
 #include <jml_gc.h>
 #include <jml_compiler.h>
 

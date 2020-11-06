@@ -1,6 +1,8 @@
 #ifndef _JML_VALUE_H_
 #define _JML_VALUE_H_
 
+#include <string.h>
+
 #include <jml_common.h>
 
 
@@ -47,7 +49,7 @@ static inline double
 jml_value_to_num(jml_value_t value)
 {
   double num;
-  memcpy(&num, &value, sizeof(Value));
+  memcpy(&num, &value, sizeof(jml_value_t));
   return num;
 }
 

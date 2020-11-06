@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <jml_common.h>
 #include <jml_compiler.h>
 #include <jml_gc.h>
 
@@ -268,7 +267,7 @@ jml_compiler_end(void)
 #ifdef JML_DISASSEMBLE
     if (!parser.w_error) {
         jml_bytecode_disassemble(jml_bytecode_current(),
-        function->name != NULL ? function->name->chars : "<fn __main>");
+        function->name != NULL ? function->name->chars : "__main");
     }
 #endif
 

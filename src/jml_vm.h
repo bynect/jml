@@ -1,21 +1,13 @@
 #ifndef _JML_VM_H_
 #define _JML_VM_H_
 
-#include <jml_common.h>
 #include <jml_value.h>
 #include <jml_type.h>
-#include <jml_gc.h>
+#include <jml_bytecode.h>
 
 
 #define FRAMES_MAX                  64
 #define STACK_MAX                   (FRAMES_MAX * LOCAL_MAX)
-
-
-typedef enum {
-    INTERPRET_OK,
-    INTERPRET_COMPILE_ERROR,
-    INTERPRET_RUNTIME_ERROR
-} jml_interpret_result;
 
 
 typedef struct {
@@ -25,7 +17,7 @@ typedef struct {
 } jml_call_frame_t;
 
 
-typedef struct {
+typedef struct jml_vm_s {
     jml_call_frame_t                frames[FRAMES_MAX];
     uint8_t                         frame_count;
 
@@ -46,17 +38,13 @@ typedef struct {
 } jml_vm_t;
 
 
-jml_vm_t *jml_vm_new(void);
-
 void jml_vm_init(jml_vm_t *vm);
-
-void jml_vm_free(jml_vm_t *vm);
-
-jml_interpret_result jml_vm_interpret(const char *source);
 
 void jml_vm_push(jml_value_t value);
 
 jml_value_t jml_vm_pop();
+
+void jml_cfunction_register(const char *name, jml_cfunction function);
 
 
 extern jml_vm_t *vm;
