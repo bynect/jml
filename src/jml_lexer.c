@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 
 #include <jml_lexer.h>
 
@@ -10,7 +11,7 @@ void
 jml_lexer_init(const char *source) {
     lexer.start   = source;
     lexer.current = source;
-    lexer.line    = 0;
+    lexer.line    = 1;
 }
 
 
@@ -36,7 +37,14 @@ jml_peek_next_char(void)
 }
 
 
-static char
+static inline char
+jml_previous_char(void)
+{
+    return lexer.current[- 1];
+}
+
+
+static inline char
 jml_advance(void)
 {
     lexer.current++;
@@ -56,7 +64,7 @@ jml_match(char expected)
 
 
 static jml_token_t
-jml_emit_token(jml_token_type type)
+jml_token_emit(jml_token_type type)
 {
     jml_token_t token;
     token.type   = type;
@@ -69,7 +77,7 @@ jml_emit_token(jml_token_type type)
 
 
 static jml_token_t
-jml_emit_error_token(const char *message)
+jml_token_emit_error(const char *message)
 {
     jml_token_t token;
     token.type   = TOKEN_ERROR;
@@ -84,8 +92,18 @@ jml_emit_error_token(const char *message)
 static void
 jml_skip_char(void)
 {
+    static bool commented = false;
+
     while (true) {
         char c = jml_peek_char();
+
+        if (commented
+            && c != '!'
+            && c != '\n') {
+            jml_advance();
+            continue;
+        }
+
         switch (c) {
             case  ' ':
             case '\t':
@@ -97,6 +115,20 @@ jml_skip_char(void)
                 while (jml_peek_char() != '\n' && !jml_is_eol()) jml_advance();
                 break;
 
+            case '\n':
+                lexer.line++;
+                jml_advance();
+                break;
+
+            case '\\':
+                jml_advance();
+                break;
+
+            case '!':
+                commented = !commented;
+                jml_advance();
+                break;
+
             default: return;
         }
     }
@@ -104,11 +136,11 @@ jml_skip_char(void)
 
 
 static jml_token_type
-jml_check_keyword(int start, size_t length,
+jml_check_keyword(int start, int length,
     const char *rest, jml_token_type type)
 {
-    if ((lexer.current - lexer.start) == (int)(length + start)
-        && memcmp(lexer.start + start, rest, length)) {
+    if ((lexer.current - lexer.start) == (length + start)
+        && memcmp(lexer.start + start, rest, length) == 0) {
         return type;
     }
 
@@ -117,7 +149,7 @@ jml_check_keyword(int start, size_t length,
 
 
 static jml_token_type
-jml_check_identifier(void)
+jml_identifier_check(void)
 {
     switch (lexer.start[0]) {
         case 'a': 
@@ -187,10 +219,10 @@ jml_check_identifier(void)
 static jml_token_t
 jml_identifier_literal(void)
 {
-  while (jml_is_alpha(jml_peek_char())
+    while (jml_is_alpha(jml_peek_char())
         || jml_is_digit(jml_peek_char())) jml_advance();
 
-  return jml_emit_token(jml_check_identifier());
+    return jml_token_emit(jml_identifier_check());
 }
 
 
@@ -204,10 +236,10 @@ jml_string_literal(const char delimiter)
     }
 
     if (jml_is_eol())
-        return jml_emit_error_token("Unterminated string.");
+        return jml_token_emit_error("Unterminated string.");
 
     jml_advance();
-    return jml_emit_token(TOKEN_STRING);
+    return jml_token_emit(TOKEN_STRING);
 }
 
 
@@ -221,7 +253,7 @@ jml_number_literal(void)
         while (jml_is_digit(jml_peek_char())) jml_advance();
     }
 
-    return jml_emit_token(TOKEN_NUMBER);
+    return jml_token_emit(TOKEN_NUMBER);
 }
 
 
@@ -231,60 +263,307 @@ jml_lexer_tokenize(void)
     jml_skip_char();
 
     lexer.start =           lexer.current;
-    if (jml_is_eol())       return jml_emit_token(TOKEN_EOF);
-
+    if (jml_is_eol())       return jml_token_emit(TOKEN_EOF);
     char c      =           jml_advance();
     if (jml_is_alpha(c))    return jml_identifier_literal();
     if (jml_is_digit(c))    return jml_number_literal();
 
     switch (c) {
-        case  '(':  return jml_emit_token(TOKEN_RPAREN);
-        case  ')':  return jml_emit_token(TOKEN_LPAREN);
-        case  '[':  return jml_emit_token(TOKEN_RSQARE);
-        case  ']':  return jml_emit_token(TOKEN_LSQARE);
-        case  '{':  return jml_emit_token(TOKEN_RBRACE);
-        case  '}':  return jml_emit_token(TOKEN_LBRACE);
+        case  '(':  return jml_token_emit(TOKEN_RPAREN);
+        case  ')':  return jml_token_emit(TOKEN_LPAREN);
+        case  '[':  return jml_token_emit(TOKEN_RSQARE);
+        case  ']':  return jml_token_emit(TOKEN_LSQARE);
+        case  '{':  return jml_token_emit(TOKEN_RBRACE);
+        case  '}':  return jml_token_emit(TOKEN_LBRACE);
 
-        case  ':':  return jml_emit_token(TOKEN_COLON);
-        case  ';':  return jml_emit_token(TOKEN_SEMI);
-        case  ',':  return jml_emit_token(TOKEN_COMMA);
-        case  '.':  return jml_emit_token(TOKEN_DOT);
+        case  ':':  return jml_token_emit(TOKEN_COLON);
+        case  ';':  return jml_token_emit(TOKEN_SEMI);
+        case  ',':  return jml_token_emit(TOKEN_COMMA);
+        case  '.':  return jml_token_emit(TOKEN_DOT);
 
-        case  '+':  return jml_emit_token(TOKEN_PLUS);
+        case  '+':  return jml_token_emit(TOKEN_PLUS);
         case  '*':
-            return  jml_emit_token(jml_match('*')
+            return  jml_token_emit(jml_match('*')
                     ? TOKEN_STARSTAR : TOKEN_STAR);
-        case  '/':  return jml_emit_token(TOKEN_SLASH);
-        case  '%':  return jml_emit_token(TOKEN_PERCENT);
+        case  '/':  return jml_token_emit(TOKEN_SLASH);
+        case  '%':  return jml_token_emit(TOKEN_PERCENT);
         case  '-':
-            return  jml_emit_token(jml_match('>')
+            return  jml_token_emit(jml_match('>')
                     ? TOKEN_ARROW : TOKEN_MINUS);
 
         case  '=':
-            return  jml_emit_token(jml_match('=')
+            return  jml_token_emit(jml_match('=')
                     ? TOKEN_EQEQUAL : TOKEN_EQUAL);
         case  '<':
-            return  jml_emit_token(jml_match('=')
+            return  jml_token_emit(jml_match('=')
                     ? TOKEN_LESSEQ : TOKEN_LESS);
         case  '>':
-            return  jml_emit_token(jml_match('=')
+            return  jml_token_emit(jml_match('=')
                     ? TOKEN_GREATEREQ : TOKEN_GREATER);
 
         case '\'':  return jml_string_literal('\'');
         case  '"':  return jml_string_literal('"');
 
-        case  '@':  return jml_emit_token(TOKEN_AT);
-        case  '|':  return jml_emit_token(TOKEN_PIPE);
-        case  '~':  return jml_emit_token(TOKEN_TILDE);
-        case  '&':  return jml_emit_token(TOKEN_AMP);
-        case  '^':  return jml_emit_token(TOKEN_CARET);
-        case  '?':  return jml_emit_token(TOKEN_QUEST);
-        case  '#':  return jml_emit_token(TOKEN_HASH);
-        case  '!':  return jml_emit_token(TOKEN_BANG);
+        case  '@':  return jml_token_emit(TOKEN_AT);
+        case  '|':  return jml_token_emit(TOKEN_PIPE);
+        case  '~':  return jml_token_emit(TOKEN_TILDE);
+        case  '&':  return jml_token_emit(TOKEN_AMP);
+        case  '^':  return jml_token_emit(TOKEN_CARET);
+        case  '?':  return jml_token_emit(TOKEN_QUEST);
+        case  '#':  return jml_token_emit(TOKEN_HASH);
+        case  '!':  return jml_token_emit(TOKEN_BANG);
 
-        case '\n':
-            lexer.line++;
-            return jml_emit_token(TOKEN_LINE);
     }
-    return jml_emit_error_token("Unexpected character.");
+    return jml_token_emit_error("Unexpected character.");
+}
+
+
+void
+jml_token_type_print(jml_token_type type)
+{
+    switch(type) {
+        case TOKEN_RPAREN:
+            printf("%s\n", "TOKEN_RPAREN");
+            break;
+
+        case TOKEN_LPAREN:
+            printf("%s\n", "TOKEN_LPAREN");
+            break;
+
+        case TOKEN_RSQARE:
+            printf("%s\n", "TOKEN_RSQARE");
+            break;
+
+        case TOKEN_LSQARE:
+            printf("%s\n", "TOKEN_LSQARE");
+            break;
+
+        case TOKEN_RBRACE:
+            printf("%s\n", "TOKEN_RBRACE");
+            break;
+
+        case TOKEN_LBRACE:
+            printf("%s\n", "TOKEN_LBRACE");
+            break;
+
+        case TOKEN_COLON:
+            printf("%s\n", "TOKEN_COLON");
+            break;
+
+        case TOKEN_SEMI:
+            printf("%s\n", "TOKEN_SEMI");
+            break;
+
+        case TOKEN_COMMA:
+            printf("%s\n", "TOKEN_COMMA");
+            break;
+
+        case TOKEN_DOT:
+            printf("%s\n", "TOKEN_DOT");
+            break;
+
+        case TOKEN_PIPE:
+            printf("%s\n", "TOKEN_PIPE");
+            break;
+
+        case TOKEN_CARET:
+            printf("%s\n", "TOKEN_CARET");
+            break;
+
+        case TOKEN_AMP:
+            printf("%s\n", "TOKEN_AMP");
+            break;
+
+        case TOKEN_TILDE:
+            printf("%s\n", "TOKEN_TILDE");
+            break;
+
+        case TOKEN_QUEST:
+            printf("%s\n", "TOKEN_QUEST");
+            break;
+
+        case TOKEN_BANG:
+            printf("%s\n", "TOKEN_BANG");
+            break;
+
+        case TOKEN_HASH:
+            printf("%s\n", "TOKEN_HASH");
+            break;
+
+        case TOKEN_AT:
+            printf("%s\n", "TOKEN_AT");
+            break;
+
+        case TOKEN_ARROW:
+            printf("%s\n", "TOKEN_ARROW");
+            break;
+
+        case TOKEN_PLUS:
+            printf("%s\n", "TOKEN_PLUS");
+            break;
+
+        case TOKEN_MINUS:
+            printf("%s\n", "TOKEN_MINUS");
+            break;
+
+        case TOKEN_STAR:
+            printf("%s\n", "TOKEN_STAR");
+            break;
+
+        case TOKEN_STARSTAR:
+            printf("%s\n", "TOKEN_STARSTAR");
+            break;
+
+        case TOKEN_SLASH:
+            printf("%s\n", "TOKEN_SLASH");
+            break;
+
+        case TOKEN_PERCENT:
+            printf("%s\n", "TOKEN_PERCENT");
+            break;
+
+        case TOKEN_EQUAL:
+            printf("%s\n", "TOKEN_EQUAL");
+            break;
+
+        case TOKEN_EQEQUAL:
+            printf("%s\n", "TOKEN_EQEQUAL");
+            break;
+
+        case TOKEN_GREATER:
+            printf("%s\n", "TOKEN_GREATER");
+            break;
+
+        case TOKEN_GREATEREQ:
+            printf("%s\n", "TOKEN_GREATEREQ");
+            break;
+
+        case TOKEN_LESS:
+            printf("%s\n", "TOKEN_LESS");
+            break;
+
+        case TOKEN_LESSEQ:
+            printf("%s\n", "TOKEN_LESSEQ");
+            break;
+
+        case TOKEN_NOTEQ:
+            printf("%s\n", "TOKEN_NOTEQ");
+            break;
+
+        case TOKEN_FOR:
+            printf("%s\n", "TOKEN_FOR");
+            break;
+
+        case TOKEN_WHILE:
+            printf("%s\n", "TOKEN_WHILE");
+            break;
+
+        case TOKEN_BREAK:
+            printf("%s\n", "TOKEN_BREAK");
+            break;
+
+        case TOKEN_SKIP:
+            printf("%s\n", "TOKEN_SKIP");
+            break;
+
+        case TOKEN_IN:
+            printf("%s\n", "TOKEN_IN");
+            break;
+
+        case TOKEN_WITH:
+            printf("%s\n", "TOKEN_WITH");
+            break;
+
+        case TOKEN_IF:
+            printf("%s\n", "TOKEN_IF");
+            break;
+
+        case TOKEN_ELSE:
+            printf("%s\n", "TOKEN_ELSE");
+            break;
+
+        case TOKEN_CLASS:
+            printf("%s\n", "TOKEN_CLASS");
+            break;
+
+        case TOKEN_SELF:
+            printf("%s\n", "TOKEN_SELF");
+            break;
+
+        case TOKEN_SUPER:
+            printf("%s\n", "TOKEN_SUPER");
+            break;
+
+        case TOKEN_LET:
+            printf("%s\n", "TOKEN_LET");
+            break;
+
+        case TOKEN_FN:
+            printf("%s\n", "TOKEN_FN");
+            break;
+
+        case TOKEN_RETURN:
+            printf("%s\n", "TOKEN_RETURN");
+            break;
+
+        case TOKEN_IMPORT:
+            printf("%s\n", "TOKEN_IMPORT");
+            break;
+
+        case TOKEN_AND:
+            printf("%s\n", "TOKEN_AND");
+            break;
+
+        case TOKEN_NOT:
+            printf("%s\n", "TOKEN_NOT");
+            break;
+
+        case TOKEN_OR:
+            printf("%s\n", "TOKEN_OR");
+            break;
+
+        case TOKEN_ATOM:
+            printf("%s\n", "TOKEN_ATOM");
+            break;
+
+        case TOKEN_TRUE:
+            printf("%s\n", "TOKEN_TRUE");
+            break;
+
+        case TOKEN_FALSE:
+            printf("%s\n", "TOKEN_FALSE");
+            break;
+
+        case TOKEN_NONE:
+            printf("%s\n", "TOKEN_NONE");
+            break;
+
+        case TOKEN_NAME:
+            printf("%s\n", "TOKEN_NAME");
+            break;
+
+        case TOKEN_NUMBER:
+            printf("%s\n", "TOKEN_NUMBER");
+            break;
+
+        case TOKEN_STRING:
+            printf("%s\n", "TOKEN_STRING");
+            break;
+
+        case TOKEN_LINE:
+            printf("%s\n", "TOKEN_LINE");
+            break;
+
+        case TOKEN_ERROR:
+            printf("%s\n", "TOKEN_ERROR");
+            break;
+
+        case TOKEN_EOF:
+            printf("%s\n", "TOKEN_EOF");
+            break;
+
+        default:
+            printf("%s\n", "|unknown token type|");
+            break;
+    }
 }

@@ -3,7 +3,7 @@
 
 #include <jml_common.h>
 #include <jml_type.h>
-#include <jml_vm.h>
+#include <jml_compiler.h>
 
 
 #define ALLOCATE(type, count)                           \

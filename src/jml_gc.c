@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 #include <jml_gc.h>
-#include <jml_compiler.h>
+#include <jml_vm.h>
 
 #ifdef JML_TRACE_GC
 #include <stdio.h>
@@ -132,6 +132,11 @@ jml_free_object(jml_obj_t *object)
             FREE(jml_obj_string_t, object);
             break;
         }
+
+        case OBJ_ARRAY:
+        case OBJ_MAP:
+            /*TODO*/
+            break;
 
         case OBJ_FUNCTION: {
             jml_obj_function_t *function = (jml_obj_function_t*)object;
@@ -275,6 +280,11 @@ jml_gc_blacken_obj(jml_obj_t *object)
 
         case OBJ_CFUNCTION:
         case OBJ_STRING:
+            break;
+
+        case OBJ_ARRAY:
+        case OBJ_MAP:
+            /*TODO*/
             break;
     }
 }

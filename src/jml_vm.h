@@ -6,10 +6,6 @@
 #include <jml_bytecode.h>
 
 
-#define FRAMES_MAX                  64
-#define STACK_MAX                   (FRAMES_MAX * LOCAL_MAX)
-
-
 typedef struct {
     jml_obj_closure_t              *closure;
     uint8_t                        *pc;

@@ -48,7 +48,7 @@ jml_vm_error(const char *format, ...)
         );
 
         if (function->name == NULL) {
-            fprintf(stderr, "__main");
+            fprintf(stderr, "__main\n");
         } else {
             fprintf(stderr, "%s()\n", function->name->chars);
         }

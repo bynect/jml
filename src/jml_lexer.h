@@ -88,22 +88,23 @@ typedef enum {
 typedef struct {
     jml_token_type                  type;
     const char                     *start;
-    size_t                          length;
-    uint16_t                        line;
+    int                             length;
+    int                             line;
 } jml_token_t;
 
 
 typedef struct {
     const char                     *start;
     const char                     *current;
-    uint16_t                        line;
+    int                             line;
 } jml_lexer_t;
 
 
 void jml_lexer_init(const char *source);
 
-
 jml_token_t jml_lexer_tokenize(void);
+
+void jml_token_type_print(jml_token_type type);
 
 
 static inline bool
