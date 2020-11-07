@@ -19,6 +19,7 @@
 #define IS_FUNCTION(value)          jml_is_obj(value, OBJ_FUNCTION)
 #define IS_CLOSURE(value)           jml_is_obj(value, OBJ_CLOSURE)
 #define IS_CFUNCTION(value)         jml_is_obj(value, OBJ_CFUNCTION)
+#define IS_EXCEPTION(value)         jml_is_obj(value, OBJ_EXCEPTION)
 
 
 #define AS_STRING(value)            ((jml_obj_string_t*)AS_OBJ(value))
@@ -32,6 +33,7 @@
 #define AS_CLOSURE(value)           ((jml_obj_closure_t*)AS_OBJ(value))
 #define AS_CFUNCTION(value)                             \
     (((jml_obj_cfunction_t*)AS_OBJ(value))->function)
+#define AS_EXCEPTION(value)         ((jml_obj_exception_t*)AS_OBJ(value))
 
 
 typedef enum {
@@ -45,6 +47,7 @@ typedef enum {
     OBJ_CLOSURE,
     OBJ_UPVALUE,
     OBJ_CFUNCTION,
+    OBJ_EXCEPTION
 } jml_obj_type;
 
 
@@ -65,14 +68,20 @@ struct jml_string_s {
 
 typedef struct {
     jml_obj_t                       obj;
-    jml_value_array_t               values;
+    jml_obj_string_t               *name;
+    jml_obj_string_t               *message;
+} jml_obj_exception_t;
+
+
+typedef struct {
+    jml_obj_t                       obj;
+    jml_value_array_t              *values;
 } jml_obj_array_t;
 
 
 typedef struct {
     jml_obj_t                       obj;
-    jml_obj_string_t               *name;
-    jml_hashmap_t                   map;
+    jml_hashmap_t                  *hashmap;
 } jml_obj_map_t;
 
 
@@ -137,20 +146,27 @@ jml_obj_string_t *jml_obj_string_take(char *chars,
 jml_obj_string_t *jml_obj_string_copy(const char *chars,
     size_t length);
 
-jml_obj_method_t *jml_obj_method_new(jml_value_t receiver,
-    jml_obj_closure_t *method);
+jml_obj_array_t *jml_obj_array_new(void);
 
-jml_obj_instance_t *jml_obj_instance_new(jml_obj_class_t *klass);
+jml_obj_map_t *jml_obj_map_new(void);
 
 jml_obj_class_t *jml_obj_class_new(jml_obj_string_t *name);
 
-jml_obj_closure_t *jml_obj_closure_new(jml_obj_function_t *function);
+jml_obj_instance_t *jml_obj_instance_new(jml_obj_class_t *klass);
+
+jml_obj_method_t *jml_obj_method_new(jml_value_t receiver,
+    jml_obj_closure_t *method);
 
 jml_obj_function_t *jml_obj_function_new(void);
 
-jml_obj_cfunction_t *jml_obj_cfunction_new(jml_cfunction function);
+jml_obj_closure_t *jml_obj_closure_new(jml_obj_function_t *function);
 
 jml_obj_upvalue_t *jml_obj_upvalue_new(jml_value_t *slot);
+
+jml_obj_cfunction_t *jml_obj_cfunction_new(jml_cfunction function);
+
+jml_obj_exception_t *jml_obj_exception_new(const char *name,
+    const char *message);
 
 void jml_obj_print(jml_value_t value);
 

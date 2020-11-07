@@ -10,6 +10,7 @@
 #include <jml_gc.h>
 #include <jml_compiler.h>
 #include <jml_type.h>
+#include <jml_module.h>
 
 
 jml_vm_t *vm;
@@ -27,10 +28,10 @@ jml_vm_stack_reset(void)
 static void
 jml_vm_error(const char *format, ...)
 {
-    va_list params;
-    va_start(params, format);
-    vfprintf(stderr, format, params);
-    va_end(params);
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
     fputs("\n", stderr);
 
 #ifdef JML_TRACE_BACK
@@ -43,14 +44,14 @@ jml_vm_error(const char *format, ...)
 
         size_t instruction = frame->pc - function->bytecode.code - 1;
 
-        fprintf(stderr, "[line %d] in ",
+        fprintf(stderr, "[line %d] ",
             function->bytecode.lines[instruction]
         );
 
         if (function->name == NULL) {
             fprintf(stderr, "__main\n");
         } else {
-            fprintf(stderr, "%s()\n", function->name->chars);
+            fprintf(stderr, "in %s()\n", function->name->chars);
         }
     }
 
@@ -58,53 +59,71 @@ jml_vm_error(const char *format, ...)
 }
 
 
+static void
+jml_vm_exception(jml_obj_exception_t *exc)
+{
+    jml_vm_error(
+        "%.*s: %.*s",
+        (int)exc->name->length, exc->name->chars,
+        (int)exc->message->length, exc->message->chars
+    );
+}
+
+
 jml_vm_t *
 jml_vm_new(void)
 {
-    jml_vm_t *pvm = (jml_vm_t*)malloc(sizeof(jml_vm_t));
+    jml_vm_t *vm_ptr = (jml_vm_t*)jml_reallocate_base(NULL, sizeof(jml_vm_t));
 
-    memset(pvm, 0, sizeof(jml_vm_t));
+    memset(vm_ptr, 0, sizeof(jml_vm_t));
 
-    vm = pvm;
+    vm = vm_ptr;
 
     jml_vm_init(vm);
 
-    return pvm;
+    return vm_ptr;
 }
 
 
 void
-jml_vm_init(jml_vm_t *vm)
+jml_vm_init(jml_vm_t *vm_ptr)
 {
     jml_vm_stack_reset();
 
-    vm->objects         = NULL;
-    vm->allocated       = 0;
-    vm->next_gc         = 1024 * 1024 * 4;
+    vm_ptr->objects         = NULL;
+    vm_ptr->allocated       = 0;
+    vm_ptr->next_gc         = 1024 * 1024 * 4;
 
-    vm->gray_count      = 0;
-    vm->gray_capacity   = 0;
-    vm->gray_stack      = NULL;
-    jml_hashmap_init(&vm->strings);
-    jml_hashmap_init(&vm->globals);
+    vm_ptr->gray_count      = 0;
+    vm_ptr->gray_capacity   = 0;
+    vm_ptr->gray_stack      = NULL;
+    jml_hashmap_init(&vm_ptr->strings);
+    jml_hashmap_init(&vm_ptr->globals);
 
-    vm->init_string     = NULL;
-    vm->call_string     = NULL;
+    vm_ptr->init_string     = NULL;
+    vm_ptr->call_string     = NULL;
 
-    vm->init_string     = jml_obj_string_copy("__init", 6);
-    vm->call_string     = jml_obj_string_copy("__call", 6);
+    vm_ptr->init_string     = jml_obj_string_copy("__init", 6);
+    vm_ptr->call_string     = jml_obj_string_copy("__call", 6);
+
+    jml_core_register();
 }
 
 
 void
-jml_vm_free(jml_vm_t *vm)
+jml_vm_free(jml_vm_t *vm_ptr)
 {
-    jml_hashmap_free(&vm->strings);
-    jml_hashmap_free(&vm->globals);
-    vm->init_string = NULL;
-    vm->call_string = NULL;
+    jml_hashmap_free(&vm_ptr->strings);
+    jml_hashmap_free(&vm_ptr->globals);
+    vm_ptr->init_string = NULL;
+    vm_ptr->call_string = NULL;
 
     jml_gc_free_objs();
+
+    ASSERT(
+        !vm->allocated,
+        "bytes not freed from vm"
+    );
 }
 
 
@@ -172,8 +191,15 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 jml_cfunction cfunction = AS_CFUNCTION(callee);
                 jml_value_t result = cfunction(arg_count, vm->stack_top - arg_count);
                 vm->stack_top -= arg_count + 1;
-                jml_vm_push(result);
-                return true;
+
+                if (IS_EXCEPTION(result)) {
+
+                    jml_vm_exception(AS_EXCEPTION(result));
+                    return false;
+                } else {
+                    jml_vm_push(result);
+                    return true;
+                }
             }
 
             case OBJ_CLASS: {
@@ -182,7 +208,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 jml_value_t initializer;
 
                 if (jml_hashmap_get(&klass->methods, vm->init_string, &initializer)) {
-                return jml_vm_call(AS_CLOSURE(initializer), arg_count);
+                    return jml_vm_call(AS_CLOSURE(initializer), arg_count);
                 } else if (arg_count != 0) {
                     jml_vm_error(
                         "Expected 0 arguments but got %d.", arg_count
@@ -202,34 +228,12 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 return jml_vm_call(AS_CLOSURE(callee), arg_count);
             }
 
-            // case OBJ_INSTANCE: {
-            //     jml_obj_instance_t *instance = AS_INSTANCE(callee);
-            //     vm->stack_top[-arg_count - 1] = OBJ_VAL(jml_obj_instance_new(klass));
-
-            //     jml_value_t caller;
-
-            //     if (jml_hashmap_get(&instance->klass->methods,
-            //         vm->call_string, &caller)) {
-                    
-            //         return jml_vm_call(AS_CLOSURE(caller), arg_count);
-            //     } else if (arg_count != 0) {
-            //         jml_vm_error(
-            //             "Expected 0 arguments but got %d.", arg_count
-            //         );
-            //     } else {
-            //         jml_vm_error(
-            //             "Instance of '%s' is not callable.", instance->klass->name
-            //         );
-            //     }
-            //     return true;
-            // }
-
             default: break;
         }
     }
 
     jml_vm_error(
-        "Can only call functions, classes and instances."
+        "Can only call functions and classes."
     );
     return false;
 }
@@ -313,12 +317,16 @@ jml_vm_upvalue_capture(jml_value_t *local)
     jml_obj_upvalue_t *previous = NULL;
     jml_obj_upvalue_t *upvalue = vm->open_upvalues;
 
-    while (upvalue != NULL && upvalue->location > local) {
+    while (upvalue != NULL 
+        && upvalue->location > local) {
+
         previous = upvalue;
         upvalue = upvalue->next;
     }
 
-    if (upvalue != NULL && upvalue->location == local) {
+    if (upvalue != NULL
+        && upvalue->location == local) {
+
         return upvalue;
     }
 
@@ -326,9 +334,9 @@ jml_vm_upvalue_capture(jml_value_t *local)
     new_upvalue->next = upvalue;
 
     if (previous == NULL) {
-        vm->open_upvalues = new_upvalue;
+        vm->open_upvalues   = new_upvalue;
     } else {
-        previous->next = new_upvalue;
+        previous->next      = new_upvalue;
     }
 
     return new_upvalue;
@@ -340,10 +348,10 @@ jml_vm_upvalue_close(jml_value_t *last) {
     while ((vm->open_upvalues != NULL )
         && (vm->open_upvalues->location >= last)) {
 
-        jml_obj_upvalue_t *upvalue = vm->open_upvalues;
-        upvalue->closed = *upvalue->location;
-        upvalue->location = &upvalue->closed;
-        vm->open_upvalues = upvalue->next;
+        jml_obj_upvalue_t *upvalue  = vm->open_upvalues;
+        upvalue->closed             = *upvalue->location;
+        upvalue->location           = &upvalue->closed;
+        vm->open_upvalues           = upvalue->next;
     }
 }
 
@@ -455,14 +463,12 @@ jml_vm_run(void)
             case OP_ADD: {
                 if (IS_STRING(jml_vm_peek(0))
                     && IS_STRING(jml_vm_peek(1))) {
-
+                    
                     jml_string_concatenate();
-                } else if (IS_NUMBER(jml_vm_peek(0))
+                } else if(IS_NUMBER(jml_vm_peek(0))
                         && IS_NUMBER(jml_vm_peek(1))) {
 
-                    double b = AS_NUMBER(jml_vm_pop());
-                    double a = AS_NUMBER(jml_vm_pop());
-                    jml_vm_push(NUMBER_VAL(a + b));
+                    BINARY_OP(NUMBER_VAL, +, double);
                 } else {
                     frame->pc = pc;
                     jml_vm_error(
@@ -472,7 +478,7 @@ jml_vm_run(void)
                 }
                 break;
             }
-            
+
             case OP_SUB: {
                 BINARY_OP(NUMBER_VAL, -, double);
                 break;
@@ -784,7 +790,9 @@ jml_vm_run(void)
                 break;
             }
 
-            default: break; /*unreachable*/
+            default:
+                UNREACHABLE();
+                break;
         }
     }
 #undef READ_BYTE

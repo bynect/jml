@@ -269,12 +269,12 @@ jml_lexer_tokenize(void)
     if (jml_is_digit(c))    return jml_number_literal();
 
     switch (c) {
-        case  '(':  return jml_token_emit(TOKEN_RPAREN);
-        case  ')':  return jml_token_emit(TOKEN_LPAREN);
-        case  '[':  return jml_token_emit(TOKEN_RSQARE);
-        case  ']':  return jml_token_emit(TOKEN_LSQARE);
-        case  '{':  return jml_token_emit(TOKEN_RBRACE);
-        case  '}':  return jml_token_emit(TOKEN_LBRACE);
+        case  ')':  return jml_token_emit(TOKEN_RPAREN);
+        case  '(':  return jml_token_emit(TOKEN_LPAREN);
+        case  ']':  return jml_token_emit(TOKEN_RSQARE);
+        case  '[':  return jml_token_emit(TOKEN_LSQARE);
+        case  '}':  return jml_token_emit(TOKEN_RBRACE);
+        case  '{':  return jml_token_emit(TOKEN_LBRACE);
 
         case  ':':  return jml_token_emit(TOKEN_COLON);
         case  ';':  return jml_token_emit(TOKEN_SEMI);

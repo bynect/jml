@@ -17,8 +17,8 @@
 
 #define GROW_ARRAY(type, ptr, old_count, new_count)     \
     (type*)jml_reallocate(ptr,                          \
-        sizeof(type) * (old_count),                     \
-        sizeof(type) * (new_count))
+    sizeof(type) * (old_count),                         \
+    sizeof(type) * (new_count))
 
 #define FREE_ARRAY(type, ptr, old_count)                \
     jml_reallocate(ptr, sizeof(type) * (old_count), 0)

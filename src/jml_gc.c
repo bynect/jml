@@ -133,20 +133,43 @@ jml_free_object(jml_obj_t *object)
             break;
         }
 
-        case OBJ_ARRAY:
-        case OBJ_MAP:
-            /*TODO*/
+        case OBJ_ARRAY: {
+            jml_obj_array_t *array = (jml_obj_array_t*)object;
+            FREE_ARRAY(jml_value_array_t*, array->values->values, array->values->count);
+            FREE(jml_obj_array_t, object);
             break;
+        }
+
+        case OBJ_MAP: {
+            jml_obj_map_t *map = (jml_obj_map_t*)object;
+            jml_hashmap_free(map->hashmap);
+            FREE(jml_obj_map_t, object);
+            break;
+        }
+
+        case OBJ_CLASS: {
+            jml_obj_class_t *klass = (jml_obj_class_t*)object;
+            jml_hashmap_free(&klass->methods);
+            FREE(jml_obj_class_t, object);
+            break;
+        }
+
+        case OBJ_INSTANCE: {
+            jml_obj_instance_t *instance = (jml_obj_instance_t*)object;
+            jml_hashmap_free(&instance->fields);
+            FREE(jml_obj_instance_t, object);
+            break;
+        }
+
+        case OBJ_METHOD: {
+            FREE(jml_obj_method_t, object);
+            break;
+        }
 
         case OBJ_FUNCTION: {
             jml_obj_function_t *function = (jml_obj_function_t*)object;
             jml_bytecode_free(&function->bytecode);
             FREE(jml_obj_function_t, object);
-            break;
-        }
-
-        case OBJ_CFUNCTION: {
-            FREE(jml_obj_cfunction_t, object);
             break;
         }
 
@@ -162,22 +185,14 @@ jml_free_object(jml_obj_t *object)
             break;
         }
 
-        case OBJ_INSTANCE: {
-            jml_obj_instance_t *instance = (jml_obj_instance_t*)object;
-            jml_hashmap_free(&instance->fields);
-            FREE(jml_obj_instance_t, object);
+        case OBJ_CFUNCTION: {
+            FREE(jml_obj_cfunction_t, object);
             break;
         }
 
-        case OBJ_CLASS: {
-            jml_obj_class_t *klass = (jml_obj_class_t*)object;
-            jml_hashmap_free(&klass->methods);
-            FREE(jml_obj_class_t, object);
-            break;
-        }
 
-        case OBJ_METHOD: {
-            FREE(jml_obj_method_t, object);
+        case OBJ_EXCEPTION: {
+            FREE(jml_obj_exception_t, object);
             break;
         }
     }
@@ -279,6 +294,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
         }
 
         case OBJ_CFUNCTION:
+        case OBJ_EXCEPTION:
         case OBJ_STRING:
             break;
 

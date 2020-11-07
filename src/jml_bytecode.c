@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include <jml_bytecode.h>
 #include <jml_gc.h>
+#include <jml_bytecode.h>
 #include <jml_vm.h>
 
 

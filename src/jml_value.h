@@ -6,8 +6,8 @@
 #include <jml_common.h>
 
 
-typedef struct jml_obj_s    jml_obj_t;
-typedef struct jml_string_s jml_obj_string_t;
+typedef struct jml_obj_s        jml_obj_t;
+typedef struct jml_string_s     jml_obj_string_t;
 
 
 #ifdef JML_NAN_TAGGING

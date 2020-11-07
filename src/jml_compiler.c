@@ -53,7 +53,7 @@ jml_parser_error_at(jml_token_t *token,
     } else if (token->type == TOKEN_ERROR) {
         /*pass*/
     } else {
-        fprintf(stderr, " at '%.*s'", (int)token->length, token->start);
+        fprintf(stderr, " at '%.*s'", token->length, token->start);
     }
 
     fprintf(stderr, ": %s\n", message);
@@ -496,9 +496,8 @@ jml_arguments_list(void)
     if (!jml_parser_check(TOKEN_RPAREN)) {
         do {
             jml_expression();
-            if (arg_count == 255) {
+            if (arg_count == 255)
                 jml_parser_error("Can't have more than 255 arguments.");
-            }
 
             arg_count++;
         } while (jml_parser_match(TOKEN_COMMA));
@@ -560,7 +559,9 @@ jml_binary(bool assignable)
         case TOKEN_STARSTAR:        jml_bytecode_emit_byte(OP_POW);         break;
         case TOKEN_PERCENT:         jml_bytecode_emit_byte(OP_MOD);         break;
 
-        default: return; /*unreachable*/
+        default:
+            UNREACHABLE();
+            return;
     }
 }
 
@@ -600,7 +601,7 @@ jml_literal(bool assignable)
         case TOKEN_NONE:    jml_bytecode_emit_byte(OP_NONE);        break;
         case TOKEN_TRUE:    jml_bytecode_emit_byte(OP_TRUE);        break;
 
-        default: return; /*unreachable*/
+        default:            UNREACHABLE();  return;
     }
 }
 
@@ -712,14 +713,14 @@ jml_unary(bool assignable)
         case TOKEN_NOT:         jml_bytecode_emit_byte(OP_NOT);       break;
         case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_NEGATE);    break;
 
-        default: return; /*unreachable*/
+        default:                UNREACHABLE(); return;
     }
 }
 
 
 jml_parser_rule rules[] = {
-    [TOKEN_RPAREN]      = {jml_grouping, jml_call,  PREC_CALL},
-    [TOKEN_LPAREN]      = {NULL,        NULL,       PREC_NONE},
+    [TOKEN_RPAREN]      = {NULL,        NULL,       PREC_NONE},
+    [TOKEN_LPAREN]      = {jml_grouping, jml_call,  PREC_CALL},
     [TOKEN_RSQARE]      = {NULL,        NULL,       PREC_NONE},
     [TOKEN_LSQARE]      = {NULL,        NULL,       PREC_NONE},
     [TOKEN_RBRACE]      = {NULL,        NULL,       PREC_NONE},
@@ -728,7 +729,7 @@ jml_parser_rule rules[] = {
     [TOKEN_COLON]       = {NULL,        NULL,       PREC_NONE},
     [TOKEN_SEMI]        = {NULL,        NULL,       PREC_NONE},
     [TOKEN_COMMA]       = {NULL,        NULL,       PREC_NONE},
-    [TOKEN_DOT]         = {NULL,        jml_dot,    PREC_NONE},
+    [TOKEN_DOT]         = {NULL,        jml_dot,    PREC_CALL},
 
     [TOKEN_PIPE]        = {NULL,        NULL,       PREC_NONE},
     [TOKEN_CARET]       = {NULL,        NULL,       PREC_NONE},
@@ -740,7 +741,7 @@ jml_parser_rule rules[] = {
     [TOKEN_AT]          = {NULL,        NULL,       PREC_NONE},
     [TOKEN_ARROW]       = {NULL,        NULL,       PREC_NONE},
 
-    [TOKEN_PLUS]        = {NULL,        NULL,       PREC_NONE},
+    [TOKEN_PLUS]        = {NULL,        jml_binary, PREC_TERM},
     [TOKEN_MINUS]       = {jml_unary,   jml_binary, PREC_TERM},
     [TOKEN_STAR]        = {NULL,        jml_binary, PREC_FACTOR},
     [TOKEN_STARSTAR]    = {NULL,        jml_binary, PREC_FACTOR},

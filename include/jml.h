@@ -25,7 +25,7 @@ typedef struct jml_vm_s jml_vm_t;
 
 jml_vm_t *jml_vm_new(void);
 
-void jml_vm_free(jml_vm_t *vm);
+void jml_vm_free(jml_vm_t *vm_ptr);
 
 jml_interpret_result jml_vm_interpret(const char *source);
 
