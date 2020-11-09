@@ -40,7 +40,7 @@ jml_reallocate(void *ptr,
 
 
 void *
-jml_reallocate_base(void *ptr,
+jml_realloc(void *ptr,
     size_t new_size)
 {
     if (new_size == 0) {

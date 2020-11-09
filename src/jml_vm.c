@@ -44,14 +44,17 @@ jml_vm_error(const char *format, ...)
 
         size_t instruction = frame->pc - function->bytecode.code - 1;
 
-        fprintf(stderr, "[line %d] ",
+        fprintf(stderr, "[line %d] in ",
             function->bytecode.lines[instruction]
         );
 
         if (function->name == NULL) {
-            fprintf(stderr, "__main\n");
+            if (vm->external != NULL)
+                fprintf(stderr, "%s()\n", vm->external->chars);
+            else
+                fprintf(stderr, "__main\n");
         } else {
-            fprintf(stderr, "in %s()\n", function->name->chars);
+            fprintf(stderr, "%s()\n", function->name->chars);
         }
     }
 
@@ -60,7 +63,8 @@ jml_vm_error(const char *format, ...)
 
 
 static void
-jml_vm_exception(jml_obj_exception_t *exc)
+jml_vm_exception(jml_obj_cfunction_t *cfunction,
+    jml_obj_exception_t *exc)
 {
     jml_vm_error(
         "%.*s: %.*s",
@@ -73,7 +77,7 @@ jml_vm_exception(jml_obj_exception_t *exc)
 jml_vm_t *
 jml_vm_new(void)
 {
-    jml_vm_t *vm_ptr = (jml_vm_t*)jml_reallocate_base(NULL, sizeof(jml_vm_t));
+    jml_vm_t *vm_ptr = (jml_vm_t*)jml_realloc(NULL, sizeof(jml_vm_t));
 
     memset(vm_ptr, 0, sizeof(jml_vm_t));
 
@@ -97,15 +101,16 @@ jml_vm_init(jml_vm_t *vm_ptr)
     vm_ptr->gray_count      = 0;
     vm_ptr->gray_capacity   = 0;
     vm_ptr->gray_stack      = NULL;
+
     jml_hashmap_init(&vm_ptr->strings);
     jml_hashmap_init(&vm_ptr->globals);
 
     vm_ptr->init_string     = NULL;
     vm_ptr->call_string     = NULL;
-
     vm_ptr->init_string     = jml_obj_string_copy("__init", 6);
     vm_ptr->call_string     = jml_obj_string_copy("__call", 6);
 
+    vm_ptr->external        = NULL;
     jml_core_register();
 }
 
@@ -121,8 +126,9 @@ jml_vm_free(jml_vm_t *vm_ptr)
     jml_gc_free_objs();
 
     ASSERT(
-        !vm->allocated,
-        "bytes not freed from vm"
+        (vm->allocated == 0),
+        "%zd bytes not freed\n",
+        vm->allocated
     );
 }
 
@@ -161,8 +167,17 @@ static bool
 jml_vm_call(jml_obj_closure_t *closure,
     int arg_count)
 {
-    if (arg_count != closure->function->arity) {
-        jml_vm_error("Expected %d arguments but got %d.",
+    if (arg_count < closure->function->arity) {
+        jml_vm_error(
+            "TooFewArgs: Expected '%d' arguments but got '%d'.",
+            closure->function->arity, arg_count
+        );
+        return false;
+    }
+
+    if (arg_count > closure->function->arity) {
+        jml_vm_error(
+            "TooManyArgs: Expected '%d' arguments but got '%d'.",
             closure->function->arity, arg_count
         );
         return false;
@@ -188,12 +203,16 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
             case OBJ_CFUNCTION: {
-                jml_cfunction cfunction = AS_CFUNCTION(callee);
-                jml_value_t result = cfunction(arg_count, vm->stack_top - arg_count);
-                vm->stack_top -= arg_count + 1;
+                jml_obj_cfunction_t *cfunction_obj  = AS_CFUNCTION(callee);
+                jml_cfunction        cfunction      = cfunction_obj->function;
+
+                jml_value_t result  = cfunction(arg_count,
+                    vm->stack_top   - arg_count);
+                vm->stack_top       -= arg_count + 1;
 
                 if (IS_EXCEPTION(result)) {
-                    jml_vm_exception(AS_EXCEPTION(result));
+                    vm->external = cfunction_obj->name;
+                    jml_vm_exception(cfunction_obj, AS_EXCEPTION(result));
                     return false;
                 } else {
                     jml_vm_push(result);
@@ -202,13 +221,17 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
             }
 
             case OBJ_CLASS: {
-                jml_obj_class_t *klass = AS_CLASS(callee);
-                vm->stack_top[-arg_count - 1] = OBJ_VAL(jml_obj_instance_new(klass));
+                jml_obj_class_t *klass        = AS_CLASS(callee);
+                vm->stack_top[-arg_count - 1] = OBJ_VAL(
+                    jml_obj_instance_new(klass));
                 jml_value_t initializer;
 
-                if (jml_hashmap_get(&klass->methods, vm->init_string, &initializer)) {
+                if (jml_hashmap_get(&klass->methods,
+                    vm->init_string, &initializer)) {
+
                     return jml_vm_call(AS_CLOSURE(initializer), arg_count);
                 } else if (arg_count != 0) {
+
                     jml_vm_error(
                         "Expected 0 arguments but got %d.", arg_count
                     );
@@ -732,7 +755,7 @@ jml_vm_run(void)
                 break;
             }
 
-            case OP_DEFINE_GLOBAL: {
+            case OP_DEF_GLOBAL: {
                 jml_obj_string_t *name = READ_STRING();
                 jml_hashmap_set(&vm->globals, name, jml_vm_peek(0));
                 jml_vm_pop();
@@ -779,7 +802,7 @@ jml_vm_run(void)
                 break;
             }
 
-            case OP_GET_SUPER: {
+            case OP_SUPER: {
                 jml_obj_string_t *name = READ_STRING();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
                 if (!jml_vm_method_bind(superclass, name)) {
@@ -808,14 +831,14 @@ void
 jml_cfunction_register(const char *name,
     jml_cfunction function)
 {
-    jml_vm_push(OBJ_VAL(jml_obj_string_copy(name,
-        (int)strlen(name))));
+    jml_vm_push(OBJ_VAL(jml_obj_cfunction_new(name,
+        function)));
 
-    jml_vm_push(OBJ_VAL(jml_obj_cfunction_new(function)));
     jml_hashmap_set(
-        &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]
+        &vm->globals, AS_CFUNCTION(vm->stack[0])->name,
+            vm->stack[0]
     );
-    jml_vm_pop_two();
+    jml_vm_pop();
 }
 
 

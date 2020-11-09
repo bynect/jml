@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 
 #include <jml_util.h>
 
@@ -47,12 +48,12 @@ jml_strtok(char *input, char *delimiter)
 char *
 jml_strdup(const char *str)
 {
-    size_t length = strlen(str);
-    char *dest = (char*)realloc(NULL, length + 1);
+    size_t length = strlen(str) + 1;
+    char *dest = (char*)realloc(NULL, length);
     if (!dest) return NULL;
 
     return (char*)memcpy(dest, str,
-        length + 1);
+        length);
 }
 
 

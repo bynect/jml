@@ -23,14 +23,14 @@ jml_is_eol(void)
 
 
 static inline char
-jml_peek_char(void)
+jml_lexer_peek(void)
 {
     return *lexer.current;
 }
 
 
 static inline char
-jml_peek_next_char(void)
+jml_lexer_peek_next(void)
 {
     if (jml_is_eol()) return '\0';
     return lexer.current[1];
@@ -45,7 +45,7 @@ jml_previous_char(void)
 
 
 static inline char
-jml_advance(void)
+jml_lexer_advance(void)
 {
     lexer.current++;
     return lexer.current[-1];
@@ -95,12 +95,12 @@ jml_skip_char(void)
     static bool commented = false;
 
     while (true) {
-        char c = jml_peek_char();
+        char c = jml_lexer_peek();
 
         if (commented
             && c != '!'
             && c != '\n') {
-            jml_advance();
+            jml_lexer_advance();
             continue;
         }
 
@@ -108,25 +108,25 @@ jml_skip_char(void)
             case  ' ':
             case '\t':
             case '\r':
-                jml_advance();
+                jml_lexer_advance();
                 break;
 
             case  '?':
-                while (jml_peek_char() != '\n' && !jml_is_eol()) jml_advance();
+                while (jml_lexer_peek() != '\n' && !jml_is_eol()) jml_lexer_advance();
                 break;
 
             case '\n':
                 lexer.line++;
-                jml_advance();
+                jml_lexer_advance();
                 break;
 
             case '\\':
-                jml_advance();
+                jml_lexer_advance();
                 break;
 
             case '!':
                 commented = !commented;
-                jml_advance();
+                jml_lexer_advance();
                 break;
 
             default: return;
@@ -136,7 +136,7 @@ jml_skip_char(void)
 
 
 static jml_token_type
-jml_check_keyword(int start, int length,
+jml_keyword_match(int start, int length,
     const char *rest, jml_token_type type)
 {
     if ((lexer.current - lexer.start) == (length + start)
@@ -155,29 +155,29 @@ jml_identifier_check(void)
         case 'a': 
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'n': return jml_check_keyword(2, 1, "d", TOKEN_AND);
-                    case 't': return jml_check_keyword(2, 2, "om", TOKEN_ATOM);
+                    case 'n': return jml_keyword_match(2, 1, "d", TOKEN_AND);
+                    case 't': return jml_keyword_match(2, 2, "om", TOKEN_ATOM);
                 }
             }
             break;
-        case 'b': return jml_check_keyword(1, 4, "reak", TOKEN_BREAK);
-        case 'c': return jml_check_keyword(1, 4, "lass", TOKEN_CLASS);
-        case 'e': return jml_check_keyword(1, 3, "lse", TOKEN_ELSE);
+        case 'b': return jml_keyword_match(1, 4, "reak", TOKEN_BREAK);
+        case 'c': return jml_keyword_match(1, 4, "lass", TOKEN_CLASS);
+        case 'e': return jml_keyword_match(1, 3, "lse", TOKEN_ELSE);
         case 'f':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'a': return jml_check_keyword(2, 3, "lse", TOKEN_FALSE);
-                    case 'n': return jml_check_keyword(2, 0, "", TOKEN_FN);
-                    case 'o': return jml_check_keyword(2, 1, "r", TOKEN_FOR);
+                    case 'a': return jml_keyword_match(2, 3, "lse", TOKEN_FALSE);
+                    case 'n': return jml_keyword_match(2, 0, "", TOKEN_FN);
+                    case 'o': return jml_keyword_match(2, 1, "r", TOKEN_FOR);
                 }
             }
             break;
         case 'i':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'f': return jml_check_keyword(2, 0, "", TOKEN_IF);
-                    case 'n': return jml_check_keyword(2, 0, "", TOKEN_IN);
-                    case 'm': return jml_check_keyword(2, 4, "port", TOKEN_IMPORT);
+                    case 'f': return jml_keyword_match(2, 0, "", TOKEN_IF);
+                    case 'n': return jml_keyword_match(2, 0, "", TOKEN_IN);
+                    case 'm': return jml_keyword_match(2, 4, "port", TOKEN_IMPORT);
                 }
             }
             break;
@@ -185,29 +185,29 @@ jml_identifier_check(void)
             if (lexer.current - lexer.start > 1
                 && lexer.start[1] == 'o') {
                 switch (lexer.start[2]) {
-                    case 'n': return jml_check_keyword(3, 1, "e", TOKEN_NONE);
-                    case 't': return jml_check_keyword(3, 0, "", TOKEN_NOT);
+                    case 'n': return jml_keyword_match(3, 1, "e", TOKEN_NONE);
+                    case 't': return jml_keyword_match(3, 0, "", TOKEN_NOT);
                 }
             }
             break;
-        case 'o': return jml_check_keyword(1, 1, "r", TOKEN_OR);
-        case 'l': return jml_check_keyword(1, 2, "et", TOKEN_LET);
-        case 'r': return jml_check_keyword(1, 5, "eturn", TOKEN_RETURN);
+        case 'o': return jml_keyword_match(1, 1, "r", TOKEN_OR);
+        case 'l': return jml_keyword_match(1, 2, "et", TOKEN_LET);
+        case 'r': return jml_keyword_match(1, 5, "eturn", TOKEN_RETURN);
         case 's': 
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'e': return jml_check_keyword(2, 2, "lf", TOKEN_SELF);
-                    case 'k': return jml_check_keyword(2, 2, "ip", TOKEN_SKIP);
-                    case 'u': return jml_check_keyword(2, 3, "per", TOKEN_SUPER);
+                    case 'e': return jml_keyword_match(2, 2, "lf", TOKEN_SELF);
+                    case 'k': return jml_keyword_match(2, 2, "ip", TOKEN_SKIP);
+                    case 'u': return jml_keyword_match(2, 3, "per", TOKEN_SUPER);
                 }
             }
             break;
-        case 't': return jml_check_keyword(1, 3, "rue", TOKEN_TRUE);
+        case 't': return jml_keyword_match(1, 3, "rue", TOKEN_TRUE);
         case 'w': 
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'i': return jml_check_keyword(2, 2, "th", TOKEN_WITH);
-                    case 'h': return jml_check_keyword(2, 3, "ile", TOKEN_WHILE);
+                    case 'i': return jml_keyword_match(2, 2, "th", TOKEN_WITH);
+                    case 'h': return jml_keyword_match(2, 3, "ile", TOKEN_WHILE);
                 }
             }
             break;
@@ -219,8 +219,8 @@ jml_identifier_check(void)
 static jml_token_t
 jml_identifier_literal(void)
 {
-    while (jml_is_alpha(jml_peek_char())
-        || jml_is_digit(jml_peek_char())) jml_advance();
+    while (jml_is_alpha(jml_lexer_peek())
+        || jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
 
     return jml_token_emit(jml_identifier_check());
 }
@@ -229,17 +229,17 @@ jml_identifier_literal(void)
 static jml_token_t
 jml_string_literal(const char delimiter)
 {
-    while (jml_peek_char() != delimiter) {
-        char c =        jml_peek_char();
+    while (jml_lexer_peek() != delimiter) {
+        char c =        jml_lexer_peek();
 
         if  (c == '\n') lexer.line++;
         if  (jml_is_eol())
             return jml_token_emit_error("Unterminated string.");
 
-        jml_advance();
+        jml_lexer_advance();
     }
 
-    jml_advance();
+    jml_lexer_advance();
     return jml_token_emit(TOKEN_STRING);
 }
 
@@ -247,11 +247,11 @@ jml_string_literal(const char delimiter)
 static jml_token_t
 jml_number_literal(void)
 {
-    while (jml_is_digit(jml_peek_char())) jml_advance();
+    while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
 
-    if (jml_peek_char() == '.' && jml_is_digit(jml_peek_next_char())) {
-        jml_advance();
-        while (jml_is_digit(jml_peek_char())) jml_advance();
+    if (jml_lexer_peek() == '.' && jml_is_digit(jml_lexer_peek_next())) {
+        jml_lexer_advance();
+        while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
     }
 
     return jml_token_emit(TOKEN_NUMBER);
@@ -265,7 +265,7 @@ jml_lexer_tokenize(void)
 
     lexer.start =           lexer.current;
     if (jml_is_eol())       return jml_token_emit(TOKEN_EOF);
-    char c      =           jml_advance();
+    char c      =           jml_lexer_advance();
     if (jml_is_alpha(c))    return jml_identifier_literal();
     if (jml_is_digit(c))    return jml_number_literal();
 

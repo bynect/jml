@@ -45,10 +45,10 @@ typedef enum {
     OP_CLOSE_UPVALUE,
     OP_SET_GLOBAL,
     OP_GET_GLOBAL,
-    OP_DEFINE_GLOBAL,
+    OP_DEF_GLOBAL,
     OP_SET_PROPERTY,
     OP_GET_PROPERTY,
-    OP_GET_SUPER,
+    OP_SUPER,
 } jml_bytecode_op;
 
 

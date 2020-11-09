@@ -25,15 +25,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ASSERT(cond, msg)                               \
+#define ASSERT(condition, format, ...)                  \
     do {                                                \
-        if (!cond) {                                    \
+        if (!condition) {                               \
             fprintf(                                    \
-                stderr, "[%s:%d] Assert failed %s:%s\n",\
-                __FILE__, __LINE__, __func__, msg       \
+                stderr,                                 \
+                "[%s:%d] Assert failed in %s: ",        \
+                __FILE__, __LINE__, __func__            \
             );                                          \
+            fprintf(                                    \
+                stderr,                                 \
+                format, __VA_ARGS__                     \
+            );                                          \
+            abort();                                    \
         }                                               \
-        abort();                                        \
     } while (false)
 
 #define UNREACHABLE()                                   \
@@ -47,7 +52,7 @@
 
 #else
 
-#define ASSERT(cond, msg) do { } while (false)
+#define ASSERT(condition, format, ...) do { } while (false)
 #define UNREACHABLE()
 
 #endif

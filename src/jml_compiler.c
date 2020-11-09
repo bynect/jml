@@ -485,7 +485,7 @@ jml_variable_definition(uint8_t global)
         return;
     }
 
-    jml_bytecode_emit_bytes(OP_DEFINE_GLOBAL, global);
+    jml_bytecode_emit_bytes(OP_DEF_GLOBAL, global);
 }
 
 
@@ -687,7 +687,7 @@ jml_super(bool assignable)
         jml_bytecode_emit_byte(arg_count);
     } else {
         jml_variable_named(jml_token_emit_synthetic("super"), false);
-        jml_bytecode_emit_bytes(OP_GET_SUPER, name);
+        jml_bytecode_emit_bytes(OP_SUPER, name);
     }
 }
 

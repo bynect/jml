@@ -31,8 +31,7 @@
 #define AS_METHOD(value)            ((jml_obj_method_t*)AS_OBJ(value))
 #define AS_FUNCTION(value)          ((jml_obj_function_t*)AS_OBJ(value))
 #define AS_CLOSURE(value)           ((jml_obj_closure_t*)AS_OBJ(value))
-#define AS_CFUNCTION(value)                             \
-    (((jml_obj_cfunction_t*)AS_OBJ(value))->function)
+#define AS_CFUNCTION(value)         (((jml_obj_cfunction_t*)AS_OBJ(value)))
 #define AS_EXCEPTION(value)         ((jml_obj_exception_t*)AS_OBJ(value))
 
 
@@ -164,7 +163,8 @@ jml_obj_closure_t *jml_obj_closure_new(jml_obj_function_t *function);
 
 jml_obj_upvalue_t *jml_obj_upvalue_new(jml_value_t *slot);
 
-jml_obj_cfunction_t *jml_obj_cfunction_new(jml_cfunction function);
+jml_obj_cfunction_t *jml_obj_cfunction_new(
+    const char *name, jml_cfunction function);
 
 jml_obj_exception_t *jml_obj_exception_new(const char *name,
     const char *message);

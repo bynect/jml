@@ -16,6 +16,7 @@ typedef struct {
 typedef struct jml_vm_s {
     jml_call_frame_t                frames[FRAMES_MAX];
     uint8_t                         frame_count;
+    jml_obj_string_t               *external;
 
     jml_value_t                     stack[STACK_MAX];
     jml_value_t                    *stack_top;

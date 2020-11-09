@@ -7,27 +7,27 @@
 
 
 #define ALLOCATE(type, count)                           \
-    (type*)jml_reallocate(NULL, 0, sizeof(type) * (count))
+    (type*)jml_reallocate(NULL, 0UL, sizeof(type) * (count))
 
 #define FREE(type, ptr)                                 \
-    jml_reallocate(ptr, sizeof(type), 0)
+    jml_reallocate(ptr, sizeof(type), 0UL)
 
 #define GROW_CAPACITY(capacity)                         \
     ((capacity) < 8 ? 8 : (capacity) * 2)
 
 #define GROW_ARRAY(type, ptr, old_count, new_count)     \
     (type*)jml_reallocate(ptr,                          \
-    sizeof(type) * (old_count),                         \
-    sizeof(type) * (new_count))
+        sizeof(type) * (old_count),                     \
+        sizeof(type) * (new_count))
 
 #define FREE_ARRAY(type, ptr, old_count)                \
-    jml_reallocate(ptr, sizeof(type) * (old_count), 0)
+    jml_reallocate(ptr, sizeof(type) * (old_count), 0UL)
 
 
 void *jml_reallocate(void *ptr,
     size_t old_size, size_t new_size);
 
-void *jml_reallocate_base(void *ptr, size_t new_size);
+void *jml_realloc(void *ptr, size_t new_size);
 
 void jml_gc_free_objs(void);
 

@@ -282,8 +282,8 @@ jml_bytecode_instruction_disassemble(
         case OP_GET_GLOBAL:
             return jml_bytecode_instruction_const("OP_GET_GLOBAL", bytecode, offset);
 
-        case OP_DEFINE_GLOBAL:
-            return jml_bytecode_instruction_const("OP_DEFINE_GLOBAL", bytecode, offset);
+        case OP_DEF_GLOBAL:
+            return jml_bytecode_instruction_const("OP_DEF_GLOBAL", bytecode, offset);
             
         case OP_SET_PROPERTY:
             return jml_bytecode_instruction_const("OP_SET_PROPERTY", bytecode, offset);
@@ -291,8 +291,8 @@ jml_bytecode_instruction_disassemble(
         case OP_GET_PROPERTY:
             return jml_bytecode_instruction_const("OP_GET_PROPERTY", bytecode, offset);
 
-        case OP_GET_SUPER:
-            return jml_bytecode_instruction_const("OP_GET_SUPER", bytecode, offset);
+        case OP_SUPER:
+            return jml_bytecode_instruction_const("OP_SUPER", bytecode, offset);
 
         default:
             printf("Unknown opcode %d\n", instruction);

@@ -15,7 +15,8 @@ static jml_obj_t *
 jml_obj_allocate(size_t size, jml_obj_type type)
 {
     jml_obj_t *object           = (jml_obj_t*)jml_reallocate(
-        NULL, 0, size);
+        NULL, 0UL, size);
+
     object->type                = type;
     object->marked              = false;
 
@@ -23,7 +24,7 @@ jml_obj_allocate(size_t size, jml_obj_type type)
     vm->objects                 = object;
 
 #ifdef JML_TRACE_GC
-    printf("%p allocate %ld for %d\n", (void*)object, size, type);
+    printf("|%p allocate %zd for %d|\n", (void*)object, size, type);
 #endif
   return object;
 }
@@ -211,12 +212,16 @@ jml_obj_function_new(void)
 
 
 jml_obj_cfunction_t *
-jml_obj_cfunction_new(jml_cfunction function)
+jml_obj_cfunction_new(const char *name, 
+jml_cfunction function)
 {
     jml_obj_cfunction_t *cfunction = ALLOCATE_OBJ(
         jml_obj_cfunction_t, OBJ_CFUNCTION);
 
+     cfunction->name = jml_obj_string_copy(
+        name, strlen(name));
     cfunction->function = function;
+
     return cfunction;
 }
 
