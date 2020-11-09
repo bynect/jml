@@ -17,8 +17,8 @@ jml_value_print(jml_value_t value)
         printf(AS_BOOL(value) ? "true" : "false");
     } else if (IS_NONE(value)) {
         printf("none");
-    } else if (IS_NUMBER(value)) {
-        printf("%g", AS_NUMBER(value));
+    } else if (IS_NUM(value)) {
+        printf("%g", AS_NUM(value));
     } else if (IS_OBJ(value)) {
         jml_obj_print(value);
     }
@@ -33,7 +33,7 @@ jml_value_print(jml_value_t value)
             break;
 
         case VAL_NUM:
-            printf("%g", AS_NUMBER(value));
+            printf("%g", AS_NUM(value));
             break;
 
         case VAL_OBJ:
@@ -54,9 +54,9 @@ jml_value_stringify(jml_value_t value)
     } else if (IS_NONE(value)) {
         return jml_strdup("none");
 
-    } else if (IS_NUMBER(value)) {
+    } else if (IS_NUM(value)) {
         char str[13];
-        sprintf(str, "%g", AS_NUMBER(value));
+        sprintf(str, "%g", AS_NUM(value));
         return jml_strdup(str);
 
     } else if (IS_OBJ(value)) {
@@ -72,7 +72,7 @@ jml_value_stringify(jml_value_t value)
 
         case VAL_NUM: {
             char str[13];
-            sprintf(str, "%g", AS_NUMBER(value));
+            sprintf(str, "%g", AS_NUM(value));
             return jml_strdup(str);
         }
 
@@ -88,8 +88,8 @@ bool
 jml_value_equal(jml_value_t a, jml_value_t b)
 {
 #ifdef JML_NAN_TAGGING
-    if (IS_NUMBER(a) && IS_NUMBER(b)) {
-        return AS_NUMBER(a) == AS_NUMBER(b);
+    if (IS_NUM(a) && IS_NUM(b)) {
+        return AS_NUM(a) == AS_NUM(b);
     }
     return a == b;
 
@@ -99,7 +99,7 @@ jml_value_equal(jml_value_t a, jml_value_t b)
     switch (a.type) {
         case VAL_BOOL:      return AS_BOOL(a) == AS_BOOL(b);
         case VAL_NONE:      return true;
-        case VAL_NUM:       return AS_NUMBER(a) == AS_NUMBER(b);
+        case VAL_NUM:       return AS_NUM(a) == AS_NUM(b);
         case VAL_OBJ:       return AS_OBJ(a) == AS_OBJ(b);
 
         default:            return false; 

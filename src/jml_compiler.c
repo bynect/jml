@@ -618,7 +618,7 @@ static void
 jml_number(bool assignable)
 {
     double value = strtod(parser.previous.start, NULL);
-    jml_bytecode_emit_const(NUMBER_VAL(value));
+    jml_bytecode_emit_const(NUM_VAL(value));
 }
 
 

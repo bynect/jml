@@ -411,31 +411,31 @@ jml_vm_run(void)
 
 #define BINARY_OP(type, op, num_type)                   \
     do {                                                \
-        if (!IS_NUMBER(jml_vm_peek(0))                  \
-            || !IS_NUMBER(jml_vm_peek(1))) {            \
+        if (!IS_NUM(jml_vm_peek(0))                  \
+            || !IS_NUM(jml_vm_peek(1))) {            \
             frame->pc = pc;                             \
             jml_vm_error(                               \
                 "Operands must be numbers."             \
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
         }                                               \
-        num_type b = AS_NUMBER(jml_vm_pop());           \
-        num_type a = AS_NUMBER(jml_vm_pop());           \
+        num_type b = AS_NUM(jml_vm_pop());           \
+        num_type a = AS_NUM(jml_vm_pop());           \
         jml_vm_push(type(a op b));                      \
     } while (false)
 
 #define BINARY_FN(type, fn, num_type)                   \
     do {                                                \
-        if (!IS_NUMBER(jml_vm_peek(0))                  \
-            || !IS_NUMBER(jml_vm_peek(1))) {            \
+        if (!IS_NUM(jml_vm_peek(0))                  \
+            || !IS_NUM(jml_vm_peek(1))) {            \
             frame->pc = pc;                             \
             jml_vm_error(                               \
                 "Operands must be numbers."             \
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
         }                                               \
-        num_type b = AS_NUMBER(jml_vm_pop());           \
-        num_type a = AS_NUMBER(jml_vm_pop());           \
+        num_type b = AS_NUM(jml_vm_pop());           \
+        num_type a = AS_NUM(jml_vm_pop());           \
         jml_vm_push(type(fn(a, b)));                    \
     } while (false)
 
@@ -487,10 +487,10 @@ jml_vm_run(void)
                     && IS_STRING(jml_vm_peek(1))) {
                     
                     jml_string_concatenate();
-                } else if(IS_NUMBER(jml_vm_peek(0))
-                        && IS_NUMBER(jml_vm_peek(1))) {
+                } else if(IS_NUM(jml_vm_peek(0))
+                        && IS_NUM(jml_vm_peek(1))) {
 
-                    BINARY_OP(NUMBER_VAL, +, double);
+                    BINARY_OP(NUM_VAL, +, double);
                 } else {
                     frame->pc = pc;
                     jml_vm_error(
@@ -502,27 +502,27 @@ jml_vm_run(void)
             }
 
             case OP_SUB: {
-                BINARY_OP(NUMBER_VAL, -, double);
+                BINARY_OP(NUM_VAL, -, double);
                 break;
             }
 
             case OP_MUL: {
-                BINARY_OP(NUMBER_VAL, *, double);
+                BINARY_OP(NUM_VAL, *, double);
                 break;
             }
 
             case OP_DIV: {
-                BINARY_OP(NUMBER_VAL, /, double);
+                BINARY_OP(NUM_VAL, /, double);
                 break;
             }
 
             case OP_MOD: {
-                BINARY_OP(NUMBER_VAL, %, int);
+                BINARY_OP(NUM_VAL, %, int);
                 break;
             }
 
             case OP_POW: {
-                BINARY_FN(NUMBER_VAL, pow, double);
+                BINARY_FN(NUM_VAL, pow, double);
                 break;
             }
 
@@ -534,7 +534,7 @@ jml_vm_run(void)
             }
 
             case OP_NEGATE: {
-                if (!IS_NUMBER(jml_vm_peek(0))) {
+                if (!IS_NUM(jml_vm_peek(0))) {
                     frame->pc = pc;
                     jml_vm_error(
                         "Operand must be a number."
@@ -542,7 +542,7 @@ jml_vm_run(void)
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 jml_vm_push(
-                    NUMBER_VAL(-AS_NUMBER(jml_vm_pop()))
+                    NUM_VAL(-AS_NUM(jml_vm_pop()))
                 );
                 break;
             }

@@ -44,7 +44,7 @@ jml_core_clock(int arg_count, jml_value_t *args)
     if (exc != NULL)
         return OBJ_VAL(exc);
 
-    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+    return NUM_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
 
@@ -120,17 +120,39 @@ jml_core_reverse(int arg_count, jml_value_t *args)
     if (IS_STRING(value)) {
         jml_obj_string_t *string_obj = AS_STRING(value);
 
-        char *string = string_obj->chars;
+        char *str       = jml_strdup(string_obj->chars);
+        int length      = string_obj->length;
 
-        int length = strlen(string);
         for (int i = 0; i < length / 2; ++i) {
-            char temp = string[i];
-            string[i] = string[length-1-i];
-            string[length-1-i] = temp;
+            char temp = str[i];
+            str[i] = str[length-1-i];
+            str[length-1-i] = temp;
         }
 
-        return OBJ_VAL(string);
+        jml_obj_string_t *string_res = jml_obj_string_take(
+            str, strlen(str));
+
+        return OBJ_VAL(string_res);
     }
+
+    return NONE_VAL;
+}
+
+
+static jml_value_t
+jml_core_size(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 1
+    );
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    jml_value_t value = args[0];
+
+    if (IS_STRING(value))
+        return NUM_VAL(AS_STRING(value)->length);
 
     return NONE_VAL;
 }
@@ -141,7 +163,8 @@ jml_module_function core_functions[] = {
     {"clock",                       &jml_core_clock},
     {"print",                       &jml_core_print},
     {"printfmt",                    &jml_core_print_fmt},
-    {"reverse",                     &jml_core_reverse}
+    {"reverse",                     &jml_core_reverse},
+    {"size",                        &jml_core_size},
 };
 
 

@@ -27,7 +27,7 @@ typedef uint64_t                    jml_value_t;
 #define TRUE_VAL                    ((jml_value_t)(uint64_t)(QNAN | TAG_TRUE))
 #define BOOL_VAL(b)                 ((b) ? TRUE_VAL : FALSE_VAL)
 #define NONE_VAL                    ((jml_value_t)(uint64_t)(QNAN | TAG_NONE))
-#define NUMBER_VAL(num)             jml_num_to_val(num)
+#define NUM_VAL(num)             jml_num_to_val(num)
 #define OBJ_VAL(obj)                                    \
     (jml_value_t)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
 
@@ -41,7 +41,7 @@ jml_num_to_val(double num)
 
 
 #define AS_BOOL(value)              ((value) == TRUE_VAL)
-#define AS_NUMBER(value)            jml_value_to_num(value)
+#define AS_NUM(value)            jml_value_to_num(value)
 #define AS_OBJ(value)                                   \
     ((jml_obj_t*)(uintptr_t)((value) & ~(SIGN_BIT | QNAN)))
 
@@ -56,7 +56,7 @@ jml_value_to_num(jml_value_t value)
 
 #define IS_BOOL(value)              (((value) | 1) == TRUE_VAL)
 #define IS_NONE(value)               ((value) == NONE_VAL)
-#define IS_NUMBER(value)            (((value) & QNAN) != QNAN)
+#define IS_NUM(value)            (((value) & QNAN) != QNAN)
 #define IS_OBJ(value)                                   \
     (((value) & (QNAN | SIGN_BIT)) == (QNAN | SIGN_BIT))
 
@@ -84,18 +84,18 @@ typedef struct {
     ((jml_value_t){VAL_BOOL, {.boolean = value}})
 #define NONE_VAL                                        \
     ((jml_value_t){VAL_NONE, {.number = 0}})
-#define NUMBER_VAL(value)                               \
+#define NUM_VAL(value)                               \
     ((jml_value_t){VAL_NUM, {.number = value}})
 #define OBJ_VAL(object)                                 \
     ((jml_value_t){VAL_OBJ, {.obj = (jml_obj_t*)object}})
 
 #define AS_BOOL(value)              ((value).of.boolean)
-#define AS_NUMBER(value)            ((value).of.number)
+#define AS_NUM(value)            ((value).of.number)
 #define AS_OBJ(value)               ((value).of.obj)
 
 #define IS_BOOL(value)              ((value).type == VAL_BOOL)
 #define IS_NONE(value)              ((value).type == VAL_NONE)
-#define IS_NUMBER(value)            ((value).type == VAL_NUM)
+#define IS_NUM(value)            ((value).type == VAL_NUM)
 #define IS_OBJ(value)               ((value).type == VAL_OBJ)
 
 #endif
