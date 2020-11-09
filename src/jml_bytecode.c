@@ -12,7 +12,7 @@ jml_bytecode_init(jml_bytecode_t *bytecode)
     bytecode->code = NULL;
     bytecode->lines = NULL;
     bytecode->capacity = 0;
-    jml_value_array_free(&bytecode->constants);
+    jml_value_array_init(&bytecode->constants);
 }
 
 

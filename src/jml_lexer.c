@@ -229,14 +229,15 @@ jml_identifier_literal(void)
 static jml_token_t
 jml_string_literal(const char delimiter)
 {
-    while (jml_peek_char() != delimiter && !jml_is_eol()) {
+    while (jml_peek_char() != delimiter) {
         char c =        jml_peek_char();
+
         if  (c == '\n') lexer.line++;
+        if  (jml_is_eol())
+            return jml_token_emit_error("Unterminated string.");
+
         jml_advance();
     }
-
-    if (jml_is_eol())
-        return jml_token_emit_error("Unterminated string.");
 
     jml_advance();
     return jml_token_emit(TOKEN_STRING);

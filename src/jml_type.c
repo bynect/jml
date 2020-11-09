@@ -4,6 +4,7 @@
 #include <jml_type.h>
 #include <jml_gc.h>
 #include <jml_vm.h>
+#include <jml_util.h>
 
 
 #define ALLOCATE_OBJ(type, obj_type)                    \
@@ -241,7 +242,9 @@ jml_obj_function_print(jml_obj_function_t *function)
         printf("<fn __main>");
         return;
     }
-    printf("<fn %s/%d>", function->name->chars, function->arity);
+
+    printf("<fn %s/%d>", function->name->chars,
+        function->arity);
 }
 
 
@@ -266,11 +269,13 @@ jml_obj_print(jml_value_t value)
             break;
 
         case OBJ_INSTANCE:
-            printf("<instance of %s>", AS_INSTANCE(value)->klass->name->chars);
+            printf("<instance of %s>", 
+                AS_INSTANCE(value)->klass->name->chars);
             break;
 
         case OBJ_METHOD:
-            jml_obj_function_print(AS_METHOD(value)->method->function);
+            jml_obj_function_print(
+                AS_METHOD(value)->method->function);
             break;
 
         case OBJ_FUNCTION:
@@ -278,7 +283,8 @@ jml_obj_print(jml_value_t value)
             break;
 
         case OBJ_CLOSURE:
-            jml_obj_function_print(AS_CLOSURE(value)->function);
+            jml_obj_function_print(
+                AS_CLOSURE(value)->function);
             break;
 
         case OBJ_UPVALUE:
@@ -293,4 +299,74 @@ jml_obj_print(jml_value_t value)
             printf("<exception>");
             break;
     }
+}
+
+
+static char *
+jml_obj_function_stringify(jml_obj_function_t *function)
+{
+    if (function->name == NULL) {
+        return jml_strdup("<fn __main>");
+    }
+
+    char fn[11];
+    sprintf(fn, "<fn %s/%d>", function->name->chars,
+        function->arity);
+
+    return jml_strdup(fn);
+}
+
+
+char *
+jml_obj_stringify(jml_value_t value)
+{
+    switch (OBJ_TYPE(value)) {
+        case OBJ_STRING:
+            return jml_strdup(AS_CSTRING(value));
+
+        case OBJ_ARRAY:
+            return jml_strdup("<array>");
+
+        case OBJ_MAP:
+            return jml_strdup("<map>");
+
+        case OBJ_CLASS: {
+            char cls[11];
+            sprintf(cls, "<class %s>", AS_CLASS(value)->name->chars);
+            return jml_strdup(cls);
+        }
+
+        case OBJ_INSTANCE: {
+            char ins[17];
+            sprintf(ins, "<instance of %s>",
+                AS_INSTANCE(value)->klass->name->chars);
+            return jml_strdup(ins);
+        }
+
+        case OBJ_METHOD:
+            return jml_obj_function_stringify(
+                AS_METHOD(value)->method->function);
+
+        case OBJ_FUNCTION:
+            return jml_obj_function_stringify(
+                AS_FUNCTION(value));
+
+        case OBJ_CLOSURE:
+            return jml_obj_function_stringify(
+                AS_CLOSURE(value)->function);
+
+        case OBJ_UPVALUE:
+            return jml_strdup("upvalue");
+
+        case OBJ_CFUNCTION:
+            return jml_strdup("<builtin fn>");
+
+        case OBJ_EXCEPTION: {
+            char exc[15];
+            sprintf(exc, "<exception %s>",
+                AS_EXCEPTION(value)->name->chars);
+            return jml_strdup(exc);
+        }
+    }
+    return NULL;
 }

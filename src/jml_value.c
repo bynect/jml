@@ -6,9 +6,7 @@
 #include <jml_type.h>
 #include <jml_value.h>
 #include <jml_gc.h>
-
-
-#define MAP_LOAD_MAX 0.75
+#include <jml_util.h>
 
 
 void
@@ -43,6 +41,46 @@ jml_value_print(jml_value_t value)
             break;
     }
 #endif
+}
+
+
+char *
+jml_value_stringify(jml_value_t value)
+{
+#ifdef JML_NAN_TAGGING
+    if (IS_BOOL(value)) {
+        return jml_strdup(AS_BOOL(value) ? "true" : "false");
+
+    } else if (IS_NONE(value)) {
+        return jml_strdup("none");
+
+    } else if (IS_NUMBER(value)) {
+        char str[13];
+        sprintf(str, "%g", AS_NUMBER(value));
+        return jml_strdup(str);
+
+    } else if (IS_OBJ(value)) {
+        return jml_obj_stringify(value);
+    }
+#else
+    switch (value.type) {
+        case VAL_BOOL:
+            return jml_strdup(AS_BOOL(value) ? "true" : "false");
+
+        case VAL_NONE:
+            return jml_strdup("none");
+
+        case VAL_NUM: {
+            char str[13];
+            sprintf(str, "%g", AS_NUMBER(value));
+            return jml_strdup(str);
+        }
+
+        case VAL_OBJ:
+            return jml_obj_stringify(value);
+    }
+#endif
+    return NULL;
 }
 
 

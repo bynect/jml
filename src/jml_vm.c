@@ -193,7 +193,6 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 vm->stack_top -= arg_count + 1;
 
                 if (IS_EXCEPTION(result)) {
-
                     jml_vm_exception(AS_EXCEPTION(result));
                     return false;
                 } else {

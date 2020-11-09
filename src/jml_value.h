@@ -103,6 +103,8 @@ typedef struct {
 
 void jml_value_print(jml_value_t value);
 
+char *jml_value_stringify(jml_value_t value);
+
 bool jml_value_equal(jml_value_t a, jml_value_t b);
 
 

@@ -110,7 +110,16 @@ void jml_token_type_print(jml_token_type type);
 static inline bool
 jml_is_digit(char c)
 {
-    return c >= '0' && c <= '9';
+    return (c >= '0' && c <= '9');
+}
+
+
+static inline bool
+jml_is_hex(char c)
+{
+    return (c >= 'a' && c <= 'f')
+        || (c >= 'A' && c <= 'F')
+        || (c >= '0' && c <= '9');
 }
 
 
