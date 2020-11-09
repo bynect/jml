@@ -158,6 +158,74 @@ jml_core_size(int arg_count, jml_value_t *args)
 }
 
 
+static jml_value_t
+jml_core_instance(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 2
+    );
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    jml_value_t instance                = args[0];
+    jml_value_t klass                   = args[1];
+
+    if (!IS_INSTANCE(instance) || !IS_CLASS(klass)) {
+
+        jml_obj_exception_t *exc = jml_obj_exception_new(
+            "DiffTypes", "Expected arguments of type 'instance' and 'class'."
+        );
+        return OBJ_VAL(exc);
+    }
+
+    jml_obj_instance_t *instance_obj    = AS_INSTANCE(instance);
+    jml_obj_class_t    *klass_obj       = AS_CLASS(klass);
+
+    return BOOL_VAL(instance_obj->klass == klass_obj);
+}
+
+
+static jml_value_t
+jml_core_subclass(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 2
+    );
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    jml_value_t sub                     = args[0];
+    jml_value_t super                   = args[1];
+
+    if (!IS_CLASS(sub) || !IS_CLASS(super)) {
+
+        jml_obj_exception_t *exc = jml_obj_exception_new(
+            "DiffTypes", "Expected arguments of type 'class'."
+        );
+        return OBJ_VAL(exc);
+    }
+
+    jml_obj_class_t    *sub_obj         = AS_CLASS(sub);
+    jml_obj_class_t    *super_obj       = AS_CLASS(super);
+
+    if (sub_obj == super_obj)
+        return TRUE_VAL;
+
+    jml_obj_class_t    *next            = sub_obj->super;
+    while (next != NULL) {
+
+        if (next == super_obj)
+            return TRUE_VAL;
+
+        next = next->super;
+    }
+
+    return FALSE_VAL;
+}
+
+
 /*core function registration*/
 jml_module_function core_functions[] = {
     {"clock",                       &jml_core_clock},
@@ -165,6 +233,8 @@ jml_module_function core_functions[] = {
     {"printfmt",                    &jml_core_print_fmt},
     {"reverse",                     &jml_core_reverse},
     {"size",                        &jml_core_size},
+    {"instance",                    &jml_core_instance},
+    {"subclass",                    &jml_core_subclass}
 };
 
 

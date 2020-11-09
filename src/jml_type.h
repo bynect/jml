@@ -84,10 +84,11 @@ typedef struct {
 } jml_obj_map_t;
 
 
-typedef struct {
+typedef struct jml_obj_class_s {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
     jml_hashmap_t                   methods;
+    struct jml_obj_class_s         *super;
 } jml_obj_class_t;
 
 

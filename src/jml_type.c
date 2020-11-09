@@ -134,7 +134,8 @@ jml_obj_class_new(jml_obj_string_t *name)
     jml_obj_class_t *klass = ALLOCATE_OBJ(
         jml_obj_class_t, OBJ_CLASS);
 
-    klass->name = name;
+    klass->name     = name;
+    klass->super    = NULL;
     jml_hashmap_init(&klass->methods);
     return klass;
 }

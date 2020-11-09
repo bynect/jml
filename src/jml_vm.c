@@ -685,7 +685,7 @@ jml_vm_run(void)
                 );
                 break;
             }
-            
+
             case OP_INHERIT: {
                 jml_value_t superclass = jml_vm_peek(1);
                 if (!IS_CLASS(superclass)) {
@@ -693,7 +693,10 @@ jml_vm_run(void)
                     jml_vm_error("Superclass must be a class.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                jml_obj_class_t *subclass = AS_CLASS(jml_vm_peek(0));
+
+                jml_obj_class_t *subclass   = AS_CLASS(jml_vm_peek(0));
+                subclass->super             = AS_CLASS(superclass);
+
                 jml_hashmap_add(
                     &AS_CLASS(superclass)->methods,
                     &subclass->methods
