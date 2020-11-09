@@ -48,10 +48,11 @@ char *
 jml_strdup(const char *str)
 {
     size_t length = strlen(str);
-    char *dest = malloc(length+1);
+    char *dest = (char*)realloc(NULL, length + 1);
     if (!dest) return NULL;
 
-    return memcpy(dest, str, length+1);
+    return (char*)memcpy(dest, str,
+        length + 1);
 }
 
 

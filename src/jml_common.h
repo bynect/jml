@@ -53,23 +53,4 @@
 #endif
 
 
-#if defined (__linux__) || (defined (__unix__))
-
-#define JML_PLATFORM                1
-
-#elif defined (__APPLE__) && (defined (__MACH__))
-
-#define JML_PLATFORM                2
-
-#elif defined(_WIN32) || (defined (_WIN64))
-
-#define JML_PLATFORM                3
-
-#else
-
-#define JML_PLATFORM                0
-
-#endif
-
-
 #endif /* _JML_COMMON_H_ */

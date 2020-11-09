@@ -92,7 +92,7 @@ jml_gc_mark_obj(jml_obj_t *object)
     object->marked = true;
     if (vm->gray_capacity < vm->gray_count + 1) {
         vm->gray_capacity = GROW_CAPACITY(vm->gray_capacity);
-        vm->gray_stack = realloc(vm->gray_stack,
+        vm->gray_stack = (jml_obj_t**)realloc(vm->gray_stack,
             sizeof(jml_obj_t*) * vm->gray_capacity);
 
         if (vm->gray_stack == NULL) exit(1);

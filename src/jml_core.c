@@ -71,8 +71,6 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
     jml_obj_string_t *fmt_obj = AS_STRING(fmt_value);
     char *fmt_str = jml_strdup(fmt_obj->chars);
 
-    size_t length = fmt_obj->length + 1024;
-
     int fmt_args = 0;
     char dest[1024] = "";
     char *ptr = dest;
