@@ -7,7 +7,7 @@
 
 
 static char *
-jml_file_read(const char *path)
+jml_cli_fread(const char *path)
 {
     FILE* file = fopen(path, "rb");
     if (file == NULL) {
@@ -39,7 +39,7 @@ jml_file_read(const char *path)
 
 
 static void
-jml_repl(void)
+jml_cli_repl(void)
 {
     printf("interactive jml %s (on %s)\n",
         JML_VERSION_STRING, JML_PLATFORM);
@@ -60,9 +60,9 @@ jml_repl(void)
 
 
 static void
-jml_run(const char *path)
+jml_cli_run(const char *path)
 {
-    char *source = jml_file_read(path);
+    char *source = jml_cli_fread(path);
     jml_interpret_result result = jml_vm_interpret(source);
     free(source);
 
@@ -79,15 +79,13 @@ main(int argc, char **argv)
     signal(SIGINT, SIG_IGN);
 
     if (argc == 1)
-        jml_repl();
+        jml_cli_repl();
 
     else if (argc == 2)
-        jml_run(argv[1]);
+        jml_cli_run(argv[1]);
 
     else {
-        printf(
-            "%s\n", "Usage: jml [file]"
-        );
+        printf("%s\n", "Usage: jml [file]");
         return EXIT_FAILURE;
     }
 

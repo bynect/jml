@@ -15,9 +15,10 @@
 #define JML_NAN_TAGGING
 #define JML_DISASSEMBLE
 #undef JML_STRESS_GC
-#undef JML_TRACE_GC
+#define JML_TRACE_GC
 #undef JML_PRINT_TOKEN
 #define JML_DEBUG
+#define JML_TRACE_MEM
 
 
 #ifdef JML_DEBUG
@@ -37,7 +38,7 @@
                 stderr,                                 \
                 format, __VA_ARGS__                     \
             );                                          \
-            abort();                                    \
+            exit(1);                                    \
         }                                               \
     } while (false)
 
@@ -47,7 +48,7 @@
             stderr,"[%s:%d] Hit unreachable code %s\n", \
             __FILE__, __LINE__, __func__                \
         );                                              \
-        abort();                                        \
+        exit(1);                                        \
     } while (false)
 
 #else

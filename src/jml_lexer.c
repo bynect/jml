@@ -564,7 +564,7 @@ jml_token_type_print(jml_token_type type)
             break;
 
         default:
-            printf("%s\n", "|unknown token type|");
+            printf("%s\n", "unknown token type");
             break;
     }
 }

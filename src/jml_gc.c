@@ -9,9 +9,6 @@
 #endif
 
 
-#define GC_HEAP_GROW_FACTOR 1.5
-
-
 void *
 jml_reallocate(void *ptr,
     size_t old_size, size_t new_size)
@@ -26,6 +23,13 @@ jml_reallocate(void *ptr,
             jml_gc_collect();
 #endif
     }
+
+#ifdef JML_TRACE_MEM
+    printf(
+        "[MEM] |%p reallocated from %zd to %zd|\n",
+        ptr, old_size, new_size
+    );
+#endif
 
     if (new_size == 0) {
         free(ptr);
@@ -43,6 +47,14 @@ void *
 jml_realloc(void *ptr,
     size_t new_size)
 {
+
+#ifdef JML_TRACE_MEM
+    printf(
+        "[MEM] |%p reallocated to %zd|\n",
+        ptr, new_size
+    );
+#endif
+
     if (new_size == 0) {
         free(ptr);
         return NULL;
@@ -84,9 +96,9 @@ jml_gc_mark_obj(jml_obj_t *object)
     if (object->marked) return;
 
 #ifdef JML_TRACE_GC
-    printf("%p mark ", (void*)object);
+    printf("[GC]  |%p marked ", (void*)object);
     jml_obj_print(OBJ_VAL(object));
-    printf("\n");
+    printf("|\n");
 #endif
 
     object->marked = true;
@@ -121,8 +133,12 @@ jml_gc_mark_array(jml_value_array_t *array)
 static void
 jml_free_object(jml_obj_t *object)
 {
-#ifdef JML_TRACE_GC
-    printf("%p free type %d\n", (void*)object, object->type);
+#ifdef JML_TRACE_MEM
+    printf(
+        "[MEM] |%p freed (type %s)|\n",
+        (void*)object,
+        jml_obj_type_stringify(object->type)
+    );
 #endif
 
     switch (object->type) {
@@ -245,9 +261,9 @@ static void
 jml_gc_blacken_obj(jml_obj_t *object)
 {
 #ifdef JML_TRACE_GC
-    printf("%p blacken ", (void*)object);
+    printf("[GC]  |%p blackened ", (void*)object);
     jml_value_print(OBJ_VAL(object));
-    printf("\n");
+    printf("|\n");
 #endif
 
     switch (object->type) {
@@ -321,8 +337,10 @@ jml_gc_collect(void)
 {
 #ifdef JML_TRACE_GC
     size_t before = vm->allocated;
-    time_t start  = (double)clock();
-    printf("|gc started {current: %lu}|\n", before);
+    time_t start  = clock();
+    printf(
+        "[GC]  |gc started {current: %zd bytes}|\n", before
+    );
 #endif
 
     jml_gc_mark_roots();
@@ -333,12 +351,11 @@ jml_gc_collect(void)
     vm->next_gc = vm->allocated * GC_HEAP_GROW_FACTOR;
 
 #ifdef JML_TRACE_GC
-    time_t elapsed = (double)clock() - start;
+    time_t elapsed = clock() - start;
     size_t after = vm->allocated;
-    printf("|gc ended {current: %lu, collected: %lu, next: %lu, elapsed:%.3ld}|\n",
-        (unsigned long)after,
-        (unsigned long)(before - after),
-        (unsigned long)vm->next_gc,
-        elapsed);
+    printf(
+        "[GC]  |gc ended {current: %zd bytes, collected: %zd bytes, next: %zd bytes, elapsed:%.3lds}|\n",
+        after, before - after, vm->next_gc, (long)elapsed
+    );
 #endif
 }

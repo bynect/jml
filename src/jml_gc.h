@@ -6,6 +6,8 @@
 #include <jml_compiler.h>
 
 
+#define GC_HEAP_GROW_FACTOR 1.5
+
 #define ALLOCATE(type, count)                           \
     (type*)jml_reallocate(NULL, 0UL, sizeof(type) * (count))
 

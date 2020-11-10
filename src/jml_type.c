@@ -23,8 +23,13 @@ jml_obj_allocate(size_t size, jml_obj_type type)
     object->next                = vm->objects;
     vm->objects                 = object;
 
-#ifdef JML_TRACE_GC
-    printf("|%p allocate %zd for %d|\n", (void*)object, size, type);
+#ifdef JML_TRACE_MEM
+    printf(
+        "[MEM] |%p allocate %zd (type %s)|\n",
+        (void*)object,
+        size,
+        jml_obj_type_stringify(type)
+        );
 #endif
   return object;
 }
@@ -52,7 +57,7 @@ jml_obj_string_allocate(char *chars,
 static uint32_t
 jml_obj_string_hash(const char *key, size_t length)
 {
-    uint32_t hash = 2166136261u;
+    uint32_t hash = 2166136261U;
 
     for (int i = 0; i < (int)length; i++) {
         hash ^= key[i];
@@ -83,16 +88,18 @@ jml_obj_string_take(char *chars, size_t length)
 jml_obj_string_t *
 jml_obj_string_copy(const char *chars, size_t length)
 {
-    uint32_t hash = jml_obj_string_hash(chars, length);
-    jml_obj_string_t *interned = jml_hashmap_find(
+    uint32_t hash               = jml_obj_string_hash(
+        chars, length);
+
+    jml_obj_string_t *interned  = jml_hashmap_find(
         &vm->strings,chars, length, hash
     );
 
     if (interned != NULL) return interned;
 
-    char *heap_chars = ALLOCATE(char, length + 1);
+    char *heap_chars    = ALLOCATE(char, length + 1);
     memcpy(heap_chars, chars, length);
-    heap_chars[length] = '\0';
+    heap_chars[length]  = '\0';
 
     return jml_obj_string_allocate(heap_chars, length, hash);
 }
@@ -101,13 +108,14 @@ jml_obj_string_copy(const char *chars, size_t length)
 jml_obj_array_t *
 jml_obj_array_new(void)
 {
-    jml_obj_array_t *array = ALLOCATE_OBJ(
+    jml_obj_array_t *array  = ALLOCATE_OBJ(
         jml_obj_array_t, OBJ_ARRAY
     );
 
     jml_value_array_t values;
     jml_value_array_init(&values);
-    array->values = &values;
+
+    array->values           = &values;
 
     return array;
 }
@@ -116,13 +124,14 @@ jml_obj_array_new(void)
 jml_obj_map_t *
 jml_obj_map_new(void)
 {
-    jml_obj_map_t *map = ALLOCATE_OBJ(
+    jml_obj_map_t *map  = ALLOCATE_OBJ(
         jml_obj_map_t, OBJ_MAP
     );
 
     jml_hashmap_t hashmap;
     jml_hashmap_init(&hashmap);
-    map->hashmap = &hashmap;
+
+    map->hashmap        = &hashmap;
 
     return map;
 }
@@ -131,12 +140,13 @@ jml_obj_map_new(void)
 jml_obj_class_t *
 jml_obj_class_new(jml_obj_string_t *name)
 {
-    jml_obj_class_t *klass = ALLOCATE_OBJ(
+    jml_obj_class_t *klass  = ALLOCATE_OBJ(
         jml_obj_class_t, OBJ_CLASS);
 
-    klass->name     = name;
-    klass->super    = NULL;
+    klass->name             = name;
+    klass->super            = NULL;
     jml_hashmap_init(&klass->methods);
+
     return klass;
 }
 
@@ -144,11 +154,12 @@ jml_obj_class_new(jml_obj_string_t *name)
 jml_obj_instance_t *
 jml_obj_instance_new(jml_obj_class_t *klass)
 {
-    jml_obj_instance_t *instance = ALLOCATE_OBJ(
+    jml_obj_instance_t *instance    = ALLOCATE_OBJ(
         jml_obj_instance_t, OBJ_INSTANCE);
 
-    instance->klass = klass;
+    instance->klass                 = klass;
     jml_hashmap_init(&instance->fields);
+
     return instance;
 }
 
@@ -160,8 +171,8 @@ jml_obj_method_new(jml_value_t receiver,
     jml_obj_method_t *bound = ALLOCATE_OBJ(
         jml_obj_method_t, OBJ_METHOD);
 
-    bound->receiver = receiver;
-    bound->method = method;
+    bound->receiver         = receiver;
+    bound->method           = method;
     return bound;
 }
 
@@ -171,6 +182,7 @@ jml_obj_closure_new(jml_obj_function_t *function)
 {
     jml_obj_upvalue_t **upvalues = ALLOCATE(
         jml_obj_upvalue_t*, function->upvalue_count);
+
     for (int i = 0; i < function->upvalue_count; i++) {
         upvalues[i] = NULL;
     }
@@ -188,12 +200,13 @@ jml_obj_closure_new(jml_obj_function_t *function)
 jml_obj_upvalue_t *
 jml_obj_upvalue_new(jml_value_t *slot)
 {
-    jml_obj_upvalue_t *upvalue = ALLOCATE_OBJ(
+    jml_obj_upvalue_t *upvalue  = ALLOCATE_OBJ(
         jml_obj_upvalue_t, OBJ_UPVALUE);
 
-    upvalue->location = slot;
-    upvalue->closed = NONE_VAL;
-    upvalue->next = NULL;
+    upvalue->location           = slot;
+    upvalue->closed             = NONE_VAL;
+    upvalue->next               = NULL;
+
     return upvalue;
 }
 
@@ -204,10 +217,12 @@ jml_obj_function_new(void)
     jml_obj_function_t *function = ALLOCATE_OBJ(
         jml_obj_function_t, OBJ_FUNCTION);
 
-    function->arity = 0;
-    function->upvalue_count = 0;
-    function->name = NULL;
+    function->arity              = 0;
+    function->upvalue_count      = 0;
+    function->name               = NULL;
+
     jml_bytecode_init(&function->bytecode);
+
     return function;
 }
 
@@ -234,8 +249,9 @@ jml_obj_exception_new(const char *name,
     jml_obj_exception_t *exc = ALLOCATE_OBJ(
         jml_obj_exception_t, OBJ_EXCEPTION);
 
-    exc->name = jml_obj_string_copy(name, strlen(name));
-    exc->message = jml_obj_string_copy(message,
+    exc->name       = jml_obj_string_copy(name,
+        strlen(name));
+    exc->message    = jml_obj_string_copy(message,
         strlen(message));
     return exc;
 }

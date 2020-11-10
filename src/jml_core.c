@@ -54,25 +54,32 @@ jml_core_exception_types(int arg_count, ...)
     va_list types;
     va_start(types, arg_count);
 
-    char buffer[512];
-    char *message = buffer;
+    size_t size = (arg_count + 1) * 32;
+    char *message = ALLOCATE(char, size + 1);
 
     char *next = va_arg(types, char*);
-    sprintf(buffer, "Expected arguments of type '%s'", next);
+    sprintf(message, "Expected arguments of type '%s'", next);
 
     for (int i = 1; i < arg_count; ++i) {
         char *next = va_arg(types, char*);
         char temp[32];
         sprintf(temp, " and '%s'", next);
 
-        message = jml_strcat(message, temp);
-    }
-    message = jml_strcat(message, ".");
+        if (size <= (strlen(message) + strlen(temp))) {
+            int temp_size = size;
+            size *= GC_HEAP_GROW_FACTOR;
+            GROW_ARRAY(char, message, temp_size, size);
+        }
 
+        strcat(message, temp);
+    }
+
+    strcat(message, ".");
     jml_obj_exception_t *exc = jml_obj_exception_new(
-        "DiffTypes", buffer
+        "DiffTypes", message
     );
 
+    FREE_ARRAY(char, message, size + 1);
     va_end(types);
 
     return exc;
@@ -142,7 +149,7 @@ jml_core_print(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_print_fmt(int arg_count, jml_value_t *args)
 {
-    jml_value_t fmt_value = args[0];
+    jml_value_t fmt_value       = args[0];
 
     if (!IS_STRING(fmt_value)) {
         return OBJ_VAL(
@@ -154,16 +161,23 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
     char             *fmt_str   = jml_strdup(fmt_obj->chars);
     int               fmt_args  = 0;
 
-    char dest[2048] = "";
-    char *ptr = dest;
+    size_t size = fmt_obj->length + 32 * arg_count;
+    char *string = ALLOCATE(char, size);
+    memset(string, 0, size);
 
     char *token = jml_strtok(fmt_str, "{}");
     while (token != NULL) {
-        ptr = jml_strcat(ptr, token);
+        strcat(string, token);
 
         char *value_str = jml_value_stringify(args[fmt_args + 1]);
-        ptr = jml_strcat(ptr, value_str);
 
+        if (size <= strlen(string) + strlen(value_str)) {
+            int temp_size = size;
+            size *= GC_HEAP_GROW_FACTOR;
+            GROW_ARRAY(char, string, temp_size, size);
+        }
+
+        strcat(string, value_str);
         jml_realloc(value_str, 0UL);
 
         token = jml_strtok(NULL, "{}");
@@ -176,10 +190,13 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count, fmt_args);
 
-    if (exc != NULL)
+    if (exc != NULL) {
+        FREE_ARRAY(char, string, 0UL);
         return OBJ_VAL(exc);
-    else
-        fprintf(stdout, "%.*s\n", (int)strlen(dest) - 1, dest);
+    } else
+        fprintf(stdout, "%.*s\n", (int)strlen(string) - 1, string);
+
+    FREE_ARRAY(char, string, 0UL);
 
     return NONE_VAL;
 }
@@ -295,15 +312,14 @@ jml_core_instance(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_subclass(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
-        arg_count, 2
-    );
+    jml_obj_exception_t *exc        = jml_core_exception_args(
+        arg_count, 2);
 
     if (exc != NULL)
         return OBJ_VAL(exc);
 
-    jml_value_t sub                     = args[0];
-    jml_value_t super                   = args[1];
+    jml_value_t sub                 = args[0];
+    jml_value_t super               = args[1];
 
     if (!IS_CLASS(sub) || !IS_CLASS(super)) {
         return OBJ_VAL(
@@ -311,15 +327,14 @@ jml_core_subclass(int arg_count, jml_value_t *args)
         );
     }
 
-    jml_obj_class_t    *sub_obj         = AS_CLASS(sub);
-    jml_obj_class_t    *super_obj       = AS_CLASS(super);
+    jml_obj_class_t *sub_obj        = AS_CLASS(sub);
+    jml_obj_class_t *super_obj      = AS_CLASS(super);
 
     if (sub_obj == super_obj)
         return TRUE_VAL;
 
-    jml_obj_class_t    *next            = sub_obj->super;
+    jml_obj_class_t *next           = sub_obj->super;
     while (next != NULL) {
-
         if (next == super_obj)
             return TRUE_VAL;
 

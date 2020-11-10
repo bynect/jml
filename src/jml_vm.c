@@ -50,11 +50,11 @@ jml_vm_error(const char *format, ...)
 
         if (function->name == NULL) {
             if (vm->external != NULL)
-                fprintf(stderr, "%s()\n", vm->external->chars);
+                fprintf(stderr, "function %s()\n", vm->external->chars);
             else
                 fprintf(stderr, "__main\n");
         } else {
-            fprintf(stderr, "%s()\n", function->name->chars);
+            fprintf(stderr, "function %s()\n", function->name->chars);
         }
     }
 
@@ -83,7 +83,7 @@ jml_vm_new(void)
 
     vm = vm_ptr;
 
-    jml_vm_init(vm);
+    jml_vm_init(vm_ptr);
 
     return vm_ptr;
 }
@@ -120,8 +120,10 @@ jml_vm_free(jml_vm_t *vm_ptr)
 {
     jml_hashmap_free(&vm_ptr->strings);
     jml_hashmap_free(&vm_ptr->globals);
+
     vm_ptr->init_string = NULL;
     vm_ptr->call_string = NULL;
+    vm_ptr->external    = NULL;
 
     jml_gc_free_objs();
 
@@ -130,6 +132,8 @@ jml_vm_free(jml_vm_t *vm_ptr)
         "%zd bytes not freed\n",
         vm->allocated
     );
+
+    jml_realloc(vm_ptr, 0UL);
 }
 
 
@@ -206,9 +210,9 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 jml_obj_cfunction_t *cfunction_obj  = AS_CFUNCTION(callee);
                 jml_cfunction        cfunction      = cfunction_obj->function;
 
-                jml_value_t result  = cfunction(arg_count,
-                    vm->stack_top   - arg_count);
-                vm->stack_top       -= arg_count + 1;
+                jml_value_t result          = cfunction(arg_count,
+                    vm->stack_top           - arg_count);
+                vm->stack_top               -= arg_count + 1;
 
                 if (IS_EXCEPTION(result)) {
                     vm->external = cfunction_obj->name;
@@ -241,8 +245,8 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
             }
 
             case OBJ_METHOD: {
-                jml_obj_method_t *bound = AS_METHOD(callee);
-                vm->stack_top[-arg_count - 1] = bound->receiver;
+                jml_obj_method_t *bound         = AS_METHOD(callee);
+                vm->stack_top[-arg_count - 1]   = bound->receiver;
                 return jml_vm_call(bound->method, arg_count);
             }
 
@@ -411,31 +415,53 @@ jml_vm_run(void)
 
 #define BINARY_OP(type, op, num_type)                   \
     do {                                                \
-        if (!IS_NUM(jml_vm_peek(0))                  \
-            || !IS_NUM(jml_vm_peek(1))) {            \
+        if (!IS_NUM(jml_vm_peek(0))                     \
+            || !IS_NUM(jml_vm_peek(1))) {               \
             frame->pc = pc;                             \
             jml_vm_error(                               \
                 "Operands must be numbers."             \
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
         }                                               \
-        num_type b = AS_NUM(jml_vm_pop());           \
-        num_type a = AS_NUM(jml_vm_pop());           \
+        num_type b = AS_NUM(jml_vm_pop());              \
+        num_type a = AS_NUM(jml_vm_pop());              \
+        jml_vm_push(type(a op b));                      \
+    } while (false)
+
+#define BINARY_DIV(type, op, num_type)                  \
+    do {                                                \
+        if (!IS_NUM(jml_vm_peek(0))                     \
+            || !IS_NUM(jml_vm_peek(1))) {               \
+            frame->pc = pc;                             \
+            jml_vm_error(                               \
+                "Operands must be numbers."             \
+            );                                          \
+            return INTERPRET_RUNTIME_ERROR;             \
+        }                                               \
+        num_type b = AS_NUM(jml_vm_pop());              \
+        num_type a = AS_NUM(jml_vm_pop());              \
+        if (b == 0) {                                   \
+            frame->pc = pc;                             \
+            jml_vm_error(                               \
+                "Cannot divide by zero."                \
+            );                                          \
+            return INTERPRET_RUNTIME_ERROR;             \
+        }                                               \
         jml_vm_push(type(a op b));                      \
     } while (false)
 
 #define BINARY_FN(type, fn, num_type)                   \
     do {                                                \
-        if (!IS_NUM(jml_vm_peek(0))                  \
-            || !IS_NUM(jml_vm_peek(1))) {            \
+        if (!IS_NUM(jml_vm_peek(0))                     \
+            || !IS_NUM(jml_vm_peek(1))) {               \
             frame->pc = pc;                             \
             jml_vm_error(                               \
                 "Operands must be numbers."             \
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
         }                                               \
-        num_type b = AS_NUM(jml_vm_pop());           \
-        num_type a = AS_NUM(jml_vm_pop());           \
+        num_type b = AS_NUM(jml_vm_pop());              \
+        num_type a = AS_NUM(jml_vm_pop());              \
         jml_vm_push(type(fn(a, b)));                    \
     } while (false)
 
@@ -512,12 +538,12 @@ jml_vm_run(void)
             }
 
             case OP_DIV: {
-                BINARY_OP(NUM_VAL, /, double);
+                BINARY_DIV(NUM_VAL, /, double);
                 break;
             }
 
             case OP_MOD: {
-                BINARY_OP(NUM_VAL, %, int);
+                BINARY_DIV(NUM_VAL, %, int);
                 break;
             }
 
@@ -826,6 +852,7 @@ jml_vm_run(void)
 #undef READ_CONST
 
 #undef BINARY_OP
+#undef BINARY_DIV
 #undef BINARY_FN
 }
 
@@ -841,6 +868,7 @@ jml_cfunction_register(const char *name,
         &vm->globals, AS_CFUNCTION(vm->stack[0])->name,
             vm->stack[0]
     );
+
     jml_vm_pop();
 }
 
