@@ -170,9 +170,12 @@ jml_obj_cfunction_t *jml_obj_cfunction_new(
 jml_obj_exception_t *jml_obj_exception_new(const char *name,
     const char *message);
 
+
 void jml_obj_print(jml_value_t value);
 
 char *jml_obj_stringify(jml_value_t value);
+
+char *jml_obj_type_stringify(jml_obj_type type);
 
 
 static inline bool

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <jml.h>
 
@@ -30,6 +31,51 @@ jml_core_exception_args(int arg_count, int expected_arg)
             "TooFewArgs", message);
 
     return NULL;
+}
+
+
+static jml_obj_exception_t *
+jml_core_exception_implemented(jml_value_t value)
+{
+    char message[26];
+
+    sprintf(message,  "Not implemented for '%s'.",
+        jml_obj_type_stringify(AS_OBJ(value)->type));
+
+    return jml_obj_exception_new(
+        "NotImplemented", message
+    );
+}
+
+
+static jml_obj_exception_t *
+jml_core_exception_types(int arg_count, ...)
+{
+    va_list types;
+    va_start(types, arg_count);
+
+    char buffer[512];
+    char *message = buffer;
+
+    char *next = va_arg(types, char*);
+    sprintf(buffer, "Expected arguments of type '%s'", next);
+
+    for (int i = 1; i < arg_count; ++i) {
+        char *next = va_arg(types, char*);
+        char temp[32];
+        sprintf(temp, " and '%s'", next);
+
+        message = jml_strcat(message, temp);
+    }
+    message = jml_strcat(message, ".");
+
+    jml_obj_exception_t *exc = jml_obj_exception_new(
+        "DiffTypes", buffer
+    );
+
+    va_end(types);
+
+    return exc;
 }
 
 
@@ -97,26 +143,26 @@ static jml_value_t
 jml_core_print_fmt(int arg_count, jml_value_t *args)
 {
     jml_value_t fmt_value = args[0];
+
     if (!IS_STRING(fmt_value)) {
-        jml_obj_exception_t *exc = jml_obj_exception_new(
-            "DiffTypes", "Expected argument of type 'string'."
+        return OBJ_VAL(
+            jml_core_exception_types(1, "string")
         );
-        return OBJ_VAL(exc);
     }
 
     jml_obj_string_t *fmt_obj   = AS_STRING(fmt_value);
     char             *fmt_str   = jml_strdup(fmt_obj->chars);
     int               fmt_args  = 0;
 
-    char dest[1024] = "";
+    char dest[2048] = "";
     char *ptr = dest;
 
     char *token = jml_strtok(fmt_str, "{}");
     while (token != NULL) {
-        ptr = strcat(ptr, token);
+        ptr = jml_strcat(ptr, token);
 
         char *value_str = jml_value_stringify(args[fmt_args + 1]);
-        ptr = strcat(ptr, value_str);
+        ptr = jml_strcat(ptr, value_str);
 
         jml_realloc(value_str, 0UL);
 
@@ -168,7 +214,9 @@ jml_core_reverse(int arg_count, jml_value_t *args)
         return OBJ_VAL(string_res);
     }
 
-    return NONE_VAL;
+    return OBJ_VAL(
+        jml_core_exception_implemented(value)
+    );
 }
 
 
@@ -186,7 +234,36 @@ jml_core_size(int arg_count, jml_value_t *args)
     if (IS_STRING(value))
         return NUM_VAL(AS_STRING(value)->length);
 
-    return NONE_VAL;
+    return OBJ_VAL(
+        jml_core_exception_implemented(value)
+    );
+}
+
+
+static jml_value_t
+jml_core_char(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    jml_value_t value = args[0];
+
+    if(IS_NUM(value)) {
+        char chr[2];
+        chr[0] = (char)AS_NUM(value);
+        chr[1] = '\0';
+
+        return OBJ_VAL(
+            jml_obj_string_copy(chr, 2)
+        );
+    }
+
+    return OBJ_VAL(
+        jml_core_exception_types(1, "number")
+    );
 }
 
 
@@ -203,11 +280,9 @@ jml_core_instance(int arg_count, jml_value_t *args)
     jml_value_t klass                   = args[1];
 
     if (!IS_INSTANCE(instance) || !IS_CLASS(klass)) {
-
-        jml_obj_exception_t *exc = jml_obj_exception_new(
-            "DiffTypes", "Expected arguments of type 'instance' and 'class'."
+        return OBJ_VAL(
+            jml_core_exception_types(2, "instance", "class")
         );
-        return OBJ_VAL(exc);
     }
 
     jml_obj_instance_t *instance_obj    = AS_INSTANCE(instance);
@@ -231,11 +306,9 @@ jml_core_subclass(int arg_count, jml_value_t *args)
     jml_value_t super                   = args[1];
 
     if (!IS_CLASS(sub) || !IS_CLASS(super)) {
-
-        jml_obj_exception_t *exc = jml_obj_exception_new(
-            "DiffTypes", "Expected arguments of type 'class'."
+        return OBJ_VAL(
+            jml_core_exception_types(2, "class", "class")
         );
-        return OBJ_VAL(exc);
     }
 
     jml_obj_class_t    *sub_obj         = AS_CLASS(sub);
@@ -264,6 +337,7 @@ jml_module_function core_functions[] = {
     {"localtime",                   &jml_core_localtime},
     {"print",                       &jml_core_print},
     {"printfmt",                    &jml_core_print_fmt},
+    {"char",                        &jml_core_char},
     {"reverse",                     &jml_core_reverse},
     {"size",                        &jml_core_size},
     {"instance",                    &jml_core_instance},

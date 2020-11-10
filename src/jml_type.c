@@ -376,3 +376,44 @@ jml_obj_stringify(jml_value_t value)
     }
     return NULL;
 }
+
+
+char *
+jml_obj_type_stringify(jml_obj_type type)
+{
+    switch (type) {
+        case OBJ_STRING:
+            return "string";
+
+        case OBJ_ARRAY:
+            return "array";
+
+        case OBJ_MAP:
+            return "map";
+
+        case OBJ_CLASS:
+            return "class";
+
+        case OBJ_INSTANCE:
+            return "instance";
+
+        case OBJ_METHOD:
+            return "method";
+
+        case OBJ_FUNCTION:
+            return "function";
+
+        case OBJ_CLOSURE:
+            return "function";
+
+        case OBJ_UPVALUE:
+            return "upvalue";
+
+        case OBJ_CFUNCTION:
+            return "function";
+
+        case OBJ_EXCEPTION:
+            return "exception";
+    }
+    return NULL;
+}
