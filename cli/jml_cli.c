@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #include <jml.h>
 
@@ -43,7 +44,8 @@ jml_repl(void)
     printf("interactive jml %s (on %s)\n",
         JML_VERSION_STRING, JML_PLATFORM);
 
-    char line[1024];
+    char line[2048];
+
     for ( ;; ) {
         printf("> ");
 
@@ -69,9 +71,12 @@ jml_run(const char *path)
 }
 
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
     jml_vm_t *vm = jml_vm_new();
+
+    signal(SIGINT, SIG_IGN);
 
     if (argc == 1)
         jml_repl();

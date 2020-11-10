@@ -546,22 +546,20 @@ jml_binary(bool assignable)
     );
 
     switch (operatorType) {
-        case TOKEN_NOTEQ:           jml_bytecode_emit_byte(OP_NOTEQ);       break;
-        case TOKEN_EQEQUAL:         jml_bytecode_emit_byte(OP_EQUAL);       break;
-        case TOKEN_GREATER:         jml_bytecode_emit_byte(OP_GREATER);     break;
-        case TOKEN_GREATEREQ:       jml_bytecode_emit_byte(OP_LESSEQ);      break;
-        case TOKEN_LESS:            jml_bytecode_emit_byte(OP_LESS);        break;
-        case TOKEN_LESSEQ:          jml_bytecode_emit_byte(OP_GREATEREQ);   break;
-        case TOKEN_PLUS:            jml_bytecode_emit_byte(OP_ADD);         break;
-        case TOKEN_MINUS:           jml_bytecode_emit_byte(OP_SUB);         break;
-        case TOKEN_STAR:            jml_bytecode_emit_byte(OP_MUL);         break;
-        case TOKEN_SLASH:           jml_bytecode_emit_byte(OP_DIV);         break;
-        case TOKEN_STARSTAR:        jml_bytecode_emit_byte(OP_POW);         break;
-        case TOKEN_PERCENT:         jml_bytecode_emit_byte(OP_MOD);         break;
+        case TOKEN_NOTEQ:       jml_bytecode_emit_byte(OP_NOTEQ);       break;
+        case TOKEN_EQEQUAL:     jml_bytecode_emit_byte(OP_EQUAL);       break;
+        case TOKEN_GREATER:     jml_bytecode_emit_byte(OP_GREATER);     break;
+        case TOKEN_GREATEREQ:   jml_bytecode_emit_byte(OP_LESSEQ);      break;
+        case TOKEN_LESS:        jml_bytecode_emit_byte(OP_LESS);        break;
+        case TOKEN_LESSEQ:      jml_bytecode_emit_byte(OP_GREATEREQ);   break;
+        case TOKEN_PLUS:        jml_bytecode_emit_byte(OP_ADD);         break;
+        case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_SUB);         break;
+        case TOKEN_STAR:        jml_bytecode_emit_byte(OP_MUL);         break;
+        case TOKEN_SLASH:       jml_bytecode_emit_byte(OP_DIV);         break;
+        case TOKEN_STARSTAR:    jml_bytecode_emit_byte(OP_POW);         break;
+        case TOKEN_PERCENT:     jml_bytecode_emit_byte(OP_MOD);         break;
 
-        default:
-            UNREACHABLE();
-            return;
+        default:                UNREACHABLE();
     }
 }
 
@@ -597,11 +595,11 @@ static void
 jml_literal(bool assignable)
 {
     switch (parser.previous.type) {
-        case TOKEN_FALSE:   jml_bytecode_emit_byte(OP_FALSE);       break;
-        case TOKEN_NONE:    jml_bytecode_emit_byte(OP_NONE);        break;
-        case TOKEN_TRUE:    jml_bytecode_emit_byte(OP_TRUE);        break;
+        case TOKEN_FALSE:       jml_bytecode_emit_byte(OP_FALSE);       break;
+        case TOKEN_NONE:        jml_bytecode_emit_byte(OP_NONE);        break;
+        case TOKEN_TRUE:        jml_bytecode_emit_byte(OP_TRUE);        break;
 
-        default:            UNREACHABLE();  return;
+        default:                UNREACHABLE();  return;
     }
 }
 

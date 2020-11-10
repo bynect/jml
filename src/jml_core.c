@@ -37,7 +37,6 @@ jml_core_exception_args(int arg_count, int expected_arg)
 static jml_value_t
 jml_core_clock(int arg_count, jml_value_t *args)
 {
-
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count, 0);
 
@@ -49,12 +48,47 @@ jml_core_clock(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
+jml_core_timestamp(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 0);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    return NUM_VAL((double)time(NULL));
+}
+
+
+static jml_value_t
+jml_core_localtime(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 0);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    time_t rawtime;
+    time(&rawtime);
+
+    struct tm *timeinfo;
+    timeinfo = localtime(&rawtime);
+
+    char *local = asctime(timeinfo);
+    return OBJ_VAL(jml_obj_string_take(
+        local, strlen(local)));
+}
+
+
+static jml_value_t
 jml_core_print(int arg_count, jml_value_t *args)
 {
     for (int i = 0; i < arg_count; ++i) {
         jml_value_print(args[i]);
         printf("\n");
     }
+
     return NONE_VAL;
 }
 
@@ -109,8 +143,7 @@ static jml_value_t
 jml_core_reverse(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
-        arg_count, 1
-    );
+        arg_count, 1);
 
     if (exc != NULL)
         return OBJ_VAL(exc);
@@ -143,8 +176,7 @@ static jml_value_t
 jml_core_size(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
-        arg_count, 1
-    );
+        arg_count, 1);
 
     if (exc != NULL)
         return OBJ_VAL(exc);
@@ -162,8 +194,7 @@ static jml_value_t
 jml_core_instance(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
-        arg_count, 2
-    );
+        arg_count, 2);
 
     if (exc != NULL)
         return OBJ_VAL(exc);
@@ -229,6 +260,8 @@ jml_core_subclass(int arg_count, jml_value_t *args)
 /*core function registration*/
 jml_module_function core_functions[] = {
     {"clock",                       &jml_core_clock},
+    {"time",                        &jml_core_timestamp},
+    {"localtime",                   &jml_core_localtime},
     {"print",                       &jml_core_print},
     {"printfmt",                    &jml_core_print_fmt},
     {"reverse",                     &jml_core_reverse},
