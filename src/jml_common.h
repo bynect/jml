@@ -38,7 +38,7 @@
                 stderr,                                 \
                 format, __VA_ARGS__                     \
             );                                          \
-            exit(1);                                    \
+            exit(EXIT_FAILURE);                         \
         }                                               \
     } while (false)
 
@@ -48,7 +48,7 @@
             stderr,"[%s:%d] Hit unreachable code %s\n", \
             __FILE__, __LINE__, __func__                \
         );                                              \
-        exit(1);                                        \
+        exit(EXIT_FAILURE);                             \
     } while (false)
 
 #else

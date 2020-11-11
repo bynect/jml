@@ -128,12 +128,12 @@ jml_vm_free(jml_vm_t *vm_ptr)
     jml_gc_free_objs();
 
     ASSERT(
-        (vm->allocated == 0),
+        vm_ptr->allocated == 0,
         "%zd bytes not freed\n",
-        vm->allocated
+        vm_ptr->allocated
     );
 
-    jml_realloc(vm_ptr, 0UL);
+    free(vm_ptr);
 }
 
 

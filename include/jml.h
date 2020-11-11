@@ -14,43 +14,43 @@ extern "C" {
 
 #if defined (_WIN64)
 
-#define JML_PLATFORM                "win64"
-#define JML_PLATFORM_NUM            7
+#define JML_PLATFORM_STRING         "win64"
+#define JML_PLATFORM                7
 
 #elif defined (_WIN32)
 
-#define JML_PLATFORM                "win32"
-#define JML_PLATFORM_NUM            6
+#define JML_PLATFORM_STRING         "win32"
+#define JML_PLATFORM                6
 
 #elif defined (__APPLE__) && (defined (TARGET_OS_MAC) || defined (__MACH__))
 
-#define JML_PLATFORM                "macos"
-#define JML_PLATFORM_NUM            5
+#define JML_PLATFORM_STRING         "macos"
+#define JML_PLATFORM                5
 
 #elif defined (__linux__) || (defined (__linux))
 
-#define JML_PLATFORM                "linux"
-#define JML_PLATFORM_NUM            4
+#define JML_PLATFORM_STRING         "linux"
+#define JML_PLATFORM                4
 
 #elif defined (BSD)
 
-#define JML_PLATFORM                "bsd"
-#define JML_PLATFORM_NUM            3
+#define JML_PLATFORM_STRING         "bsd"
+#define JML_PLATFORM                3
 
 #elif defined (_POSIX_VERSION)
 
-#define JML_PLATFORM                "posix"
-#define JML_PLATFORM_NUM            2
+#define JML_PLATFORM_STRING         "posix"
+#define JML_PLATFORM                2
 
 #elif defined (__unix__)
 
-#define JML_PLATFORM                "unix"
-#define JML_PLATFORM_NUM            1
+#define JML_PLATFORM_STRING         "unix"
+#define JML_PLATFORM                1
 
 #else
 
-#define JML_PLATFORM                "other"
-#define JML_PLATFORM_NUM            0
+#define JML_PLATFORM_STRING         "other"
+#define JML_PLATFORM                0
 
 #endif
 

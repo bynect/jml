@@ -1,7 +1,7 @@
 #include <string.h>
-#include <stdlib.h>
 
 #include <jml_util.h>
+#include <jml_gc.h>
 
 
 char *
@@ -49,7 +49,7 @@ char *
 jml_strdup(const char *str)
 {
     size_t length = strlen(str) + 1;
-    char *dest = (char*)realloc(NULL, length);
+    char *dest = (char*)jml_realloc(NULL, length);
     if (!dest) return NULL;
 
     return (char*)memcpy(dest, str,

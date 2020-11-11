@@ -39,13 +39,29 @@ jml_cli_fread(const char *path)
 
 
 static void
+jml_cli_run(const char *path)
+{
+    char *source = jml_cli_fread(path);
+    jml_interpret_result result = jml_vm_interpret(source);
+    free(source);
+
+    if (result != INTERPRET_OK)
+        exit(EXIT_FAILURE);
+}
+
+
+static void
 jml_cli_repl(void)
 {
-    printf("interactive jml %s (on %s)\n",
-        JML_VERSION_STRING, JML_PLATFORM);
+    signal(SIGINT, SIG_IGN);
+
+    printf(
+        "interactive jml %s (on %s)\n",
+        JML_VERSION_STRING,
+        JML_PLATFORM_STRING
+    );
 
     char line[2048];
-
     for ( ;; ) {
         printf("> ");
 
@@ -59,24 +75,10 @@ jml_cli_repl(void)
 }
 
 
-static void
-jml_cli_run(const char *path)
-{
-    char *source = jml_cli_fread(path);
-    jml_interpret_result result = jml_vm_interpret(source);
-    free(source);
-
-    if (result != INTERPRET_OK)
-        exit(EXIT_FAILURE);
-}
-
-
 int
 main(int argc, char **argv)
 {
     jml_vm_t *vm = jml_vm_new();
-
-    signal(SIGINT, SIG_IGN);
 
     if (argc == 1)
         jml_cli_repl();

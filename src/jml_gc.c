@@ -37,7 +37,7 @@ jml_reallocate(void *ptr,
     }
 
     void *result = realloc(ptr, new_size);
-    if (result == NULL) exit(1);
+    if (result == NULL) exit(EXIT_FAILURE);
 
     return result;
 }
@@ -60,7 +60,10 @@ jml_realloc(void *ptr,
         return NULL;
     }
 
-    return realloc(ptr, new_size);
+    void *result = realloc(ptr, new_size);
+    if (result == NULL) exit(EXIT_FAILURE);
+
+    return result;
 }
 
 
@@ -107,7 +110,7 @@ jml_gc_mark_obj(jml_obj_t *object)
         vm->gray_stack = (jml_obj_t**)realloc(vm->gray_stack,
             sizeof(jml_obj_t*) * vm->gray_capacity);
 
-        if (vm->gray_stack == NULL) exit(1);
+        if (vm->gray_stack == NULL) exit(EXIT_FAILURE);
     }
     vm->gray_stack[vm->gray_count++] = object;
 }
@@ -205,7 +208,6 @@ jml_free_object(jml_obj_t *object)
             FREE(jml_obj_cfunction_t, object);
             break;
         }
-
 
         case OBJ_EXCEPTION: {
             FREE(jml_obj_exception_t, object);
