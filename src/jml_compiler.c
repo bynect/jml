@@ -105,20 +105,25 @@ jml_parser_consume(jml_token_type type,
 
 
 static void
-jml_parser_consume_double(jml_token_type type1,
-    jml_token_type type2, const char *message)
+jml_parser_consume_line(void)
 {
-    if (parser.current.type == type1
-    || parser.current.type == type2) {
-        jml_parser_advance();
+    if (parser.current.type == TOKEN_LINE
+        || parser.current.type == TOKEN_SEMI) {
+
+        do {
+            jml_parser_advance();
+        } while (parser.current.type == TOKEN_LINE);
+
         return;
     }
 
-    jml_parser_error_current(message);
+    jml_parser_error_current(
+        "Expect newline or ';' after expression."
+    );
 }
 
 
-static bool
+static inline bool
 jml_parser_check(jml_token_type type)
 {
     return parser.current.type == type;
@@ -327,8 +332,9 @@ jml_parser_synchronize(void)
     parser.panicked = false;
 
     while (parser.current.type != TOKEN_EOF) {
+
         if (parser.previous.type == TOKEN_SEMI
-        || (parser.previous.type == TOKEN_LINE))
+            || (parser.previous.type == TOKEN_LINE))
             return;
 
         switch (parser.current.type) {
@@ -470,7 +476,7 @@ jml_variable_parse(const char *message)
 {
     jml_parser_consume(TOKEN_NAME, message);
 
-    jml_variable_declaration(); /*global declaration*/
+    jml_variable_declaration();
     if (current->scope_depth > 0) return 0;
 
     return jml_identifier_const(&parser.previous);
@@ -538,14 +544,14 @@ static void
 jml_binary(bool assignable)
 {
 
-    jml_token_type operatorType = parser.previous.type;
+    jml_token_type operator = parser.previous.type;
 
-    jml_parser_rule *rule = jml_parser_rule_get(operatorType);
+    jml_parser_rule *rule = jml_parser_rule_get(operator);
     jml_parser_precedence_parse(
         (jml_parser_precedence)(rule->precedence + 1)
     );
 
-    switch (operatorType) {
+    switch (operator) {
         case TOKEN_NOTEQ:       jml_bytecode_emit_byte(OP_NOTEQ);       break;
         case TOKEN_EQEQUAL:     jml_bytecode_emit_byte(OP_EQUAL);       break;
         case TOKEN_GREATER:     jml_bytecode_emit_byte(OP_GREATER);     break;
@@ -599,7 +605,7 @@ jml_literal(bool assignable)
         case TOKEN_NONE:        jml_bytecode_emit_byte(OP_NONE);        break;
         case TOKEN_TRUE:        jml_bytecode_emit_byte(OP_TRUE);        break;
 
-        default:                UNREACHABLE();  return;
+        default:                UNREACHABLE();
     }
 }
 
@@ -711,7 +717,7 @@ jml_unary(bool assignable)
         case TOKEN_NOT:         jml_bytecode_emit_byte(OP_NOT);       break;
         case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_NEGATE);    break;
 
-        default:                UNREACHABLE(); return;
+        default:                UNREACHABLE();
     }
 }
 
@@ -801,6 +807,7 @@ jml_parser_precedence_parse(
     jml_parser_precedence precedence)
 {
     jml_parser_advance();
+
     jml_parser_fn prefix_rule = jml_parser_rule_get(parser.previous.type)->prefix;
 
     if (prefix_rule == NULL) {
@@ -835,11 +842,9 @@ jml_expression(void)
 static void
 jml_block(void)
 {
-    while (!jml_parser_check(TOKEN_LBRACE)
-        && !jml_parser_check(TOKEN_EOF)) {
-
+    while (!jml_parser_check(TOKEN_RBRACE)
+        && !jml_parser_check(TOKEN_EOF))
         jml_declaration();
-    }
 
     jml_parser_consume(TOKEN_RBRACE, "Expect '}' after block.");
 }
@@ -855,13 +860,15 @@ jml_function(jml_function_type type)
     jml_parser_consume(TOKEN_LPAREN, "Expect '(' after function name.");
     if (!jml_parser_check(TOKEN_RPAREN)) {
         do {
-        current->function->arity++;
-        if (current->function->arity > 255) {
-            jml_parser_error_current("Can't have more than 255 parameters.");
-        }
+            current->function->arity++;
+            if (current->function->arity > 255) {
+                jml_parser_error_current(
+                    "Can't have more than 255 parameters."
+                );
+            }
 
-        uint8_t param_const = jml_variable_parse("Expect parameter name.");
-        jml_variable_definition(param_const);
+            uint8_t param_const = jml_variable_parse("Expect parameter name.");
+            jml_variable_definition(param_const);
         } while (jml_parser_match(TOKEN_COMMA));
     }
 
@@ -903,7 +910,7 @@ jml_class_declaration(void)
     jml_parser_consume(TOKEN_NAME, "Expect class name.");
     jml_token_t class_name = parser.previous;
     uint8_t name_const = jml_identifier_const(&parser.previous);
-    jml_variable_declaration(); /*global declaration*/
+    jml_variable_declaration();
 
     jml_bytecode_emit_bytes(OP_CLASS, name_const);
     jml_variable_definition(name_const);
@@ -970,9 +977,7 @@ jml_let_declaration(void)
     } else {
         jml_bytecode_emit_byte(OP_NONE);
     }
-    jml_parser_consume(
-        TOKEN_SEMI, "Expect ';' after variable declaration."
-    );
+    jml_parser_consume_line();
 
     jml_variable_definition(global);
 }
@@ -982,9 +987,7 @@ static void
 jml_expression_statement(void)
 {
     jml_expression();
-    jml_parser_consume_double(
-        TOKEN_SEMI, TOKEN_LINE, "Expect newline or ';' after expression."
-    );
+    jml_parser_consume_line();
     jml_bytecode_emit_byte(OP_POP);
 }
 
@@ -992,9 +995,7 @@ jml_expression_statement(void)
 static void
 jml_if_statement(void)
 {
-    jml_parser_consume(TOKEN_LPAREN, "Expect '(' after 'if'.");
     jml_expression();
-    jml_parser_consume(TOKEN_RPAREN, "Expect ')' after condition.");
 
     int then_jump = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
     jml_bytecode_emit_byte(OP_POP);
@@ -1023,9 +1024,7 @@ jml_return_statement(void)
             jml_parser_error("Can't return a value from an initializer.");
 
         jml_expression();
-        jml_parser_consume_double(
-            TOKEN_SEMI, TOKEN_LINE, "Expect newline or ';' after return value."
-        );
+        jml_parser_consume_line();
         jml_bytecode_emit_byte(OP_RETURN);
     }
 }

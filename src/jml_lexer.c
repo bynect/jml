@@ -94,12 +94,13 @@ jml_skip_char(void)
 {
     static bool commented = false;
 
-    while (true) {
+    for ( ;; ) {
         char c = jml_lexer_peek();
 
         if (commented
-            && c != '!'
+            && c != '?'
             && c != '\n') {
+
             jml_lexer_advance();
             continue;
         }
@@ -111,10 +112,6 @@ jml_skip_char(void)
                 jml_lexer_advance();
                 break;
 
-            case  '?':
-                while (jml_lexer_peek() != '\n' && !jml_is_eol()) jml_lexer_advance();
-                break;
-
             case '\n':
                 lexer.line++;
                 jml_lexer_advance();
@@ -124,7 +121,11 @@ jml_skip_char(void)
                 jml_lexer_advance();
                 break;
 
-            case '!':
+            case  '!':
+                while (jml_lexer_peek() != '\n' && !jml_is_eol()) jml_lexer_advance();
+                break;
+
+            case '?':
                 commented = !commented;
                 jml_lexer_advance();
                 break;
@@ -152,14 +153,7 @@ static jml_token_type
 jml_identifier_check(void)
 {
     switch (lexer.start[0]) {
-        case 'a': 
-            if (lexer.current - lexer.start > 1) {
-                switch (lexer.start[1]) {
-                    case 'n': return jml_keyword_match(2, 1, "d", TOKEN_AND);
-                    case 't': return jml_keyword_match(2, 2, "om", TOKEN_ATOM);
-                }
-            }
-            break;
+        case 'a': return jml_keyword_match(1, 2, "nd", TOKEN_AND);
         case 'b': return jml_keyword_match(1, 4, "reak", TOKEN_BREAK);
         case 'c': return jml_keyword_match(1, 4, "lass", TOKEN_CLASS);
         case 'e': return jml_keyword_match(1, 3, "lse", TOKEN_ELSE);
@@ -313,7 +307,6 @@ jml_lexer_tokenize(void)
         case  '?':  return jml_token_emit(TOKEN_QUEST);
         case  '#':  return jml_token_emit(TOKEN_HASH);
         case  '!':  return jml_token_emit(TOKEN_BANG);
-
     }
     return jml_token_emit_error("Unexpected character.");
 }

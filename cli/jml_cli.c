@@ -70,6 +70,9 @@ jml_cli_repl(void)
             break;
         }
 
+        if (strcmp(line, "\n") == 0)
+            continue;
+
         jml_vm_interpret(line);
     }
 }

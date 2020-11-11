@@ -62,8 +62,8 @@ jml_bytecode_disassemble(jml_bytecode_t *bytecode,
     const char *name)
 {
     printf(
-        "========   %s   ========\n"
-        "OFFSET    LINE    OPCODE       CONST\n",
+        "======   %s   ======\n"
+        "OFFSET   LINE   OPCODE               DATA\n",
         name
     );
 
@@ -103,7 +103,7 @@ jml_bytecode_instruction_jump(const char *name,
     uint16_t jump = (uint16_t)(bytecode->code[offset + 1] << 8);
     jump |= bytecode->code[offset + 2];
 
-    printf("%-16s   %4d   ->   %d\n",
+    printf("%-16s   %4d -> %d\n",
         name, offset, offset + 3 + sign * jump
     );
 
