@@ -188,7 +188,7 @@ jml_vm_call(jml_obj_closure_t *closure,
     }
 
     if (vm->frame_count == FRAMES_MAX) {
-        jml_vm_error("Recursion depth overflow.");
+        jml_vm_error("Scope depth overflow.");
         return false;
     }
 
@@ -856,9 +856,18 @@ jml_vm_run(void)
                 break;
             }
 
+            case OP_ARRAY: {
+                int item_count = READ_BYTE();
+
+                jml_vm_push(
+                    OBJ_VAL(jml_obj_array_new(vm->stack_top - item_count,
+                        item_count))
+                );
+                break;
+            }
+
             default:
                 UNREACHABLE();
-                break;
         }
     }
 #undef READ_BYTE

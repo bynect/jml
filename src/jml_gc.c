@@ -155,8 +155,7 @@ jml_free_object(jml_obj_t *object)
         }
 
         case OBJ_ARRAY: {
-            jml_obj_array_t *array = (jml_obj_array_t*)object;
-            FREE_ARRAY(jml_value_array_t*, array->values->values, array->values->count);
+            jml_value_array_free(&((jml_obj_array_t*)object)->values);
             FREE(jml_obj_array_t, object);
             break;
         }
@@ -278,7 +277,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
     switch (object->type) {
         case OBJ_ARRAY: {
             jml_gc_mark_array(
-                ((jml_obj_array_t*)object)->values);
+                &((jml_obj_array_t*)object)->values);
             break;
         }
 

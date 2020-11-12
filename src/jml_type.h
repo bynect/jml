@@ -70,7 +70,7 @@ struct jml_string_s {
 
 typedef struct {
     jml_obj_t                       obj;
-    jml_value_array_t              *values;
+    jml_value_array_t               values;
 } jml_obj_array_t;
 
 
@@ -156,7 +156,8 @@ jml_obj_string_t *jml_obj_string_take(char *chars,
 jml_obj_string_t *jml_obj_string_copy(const char *chars,
     size_t length);
 
-jml_obj_array_t *jml_obj_array_new(void);
+jml_obj_array_t *jml_obj_array_new(jml_value_t *values,
+    int item_count);
 
 jml_obj_map_t *jml_obj_map_new(void);
 

@@ -49,6 +49,7 @@ typedef enum {
     OP_SET_PROPERTY,
     OP_GET_PROPERTY,
     OP_SUPER,
+    OP_ARRAY
 } jml_bytecode_op;
 
 

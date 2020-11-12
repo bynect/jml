@@ -294,6 +294,9 @@ jml_bytecode_instruction_disassemble(
         case OP_SUPER:
             return jml_bytecode_instruction_const("OP_SUPER", bytecode, offset);
 
+        case OP_ARRAY:
+            return jml_bytecode_instruction_simple("OP_ARRAY", offset);
+
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;

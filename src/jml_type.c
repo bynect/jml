@@ -106,16 +106,21 @@ jml_obj_string_copy(const char *chars, size_t length)
 
 
 jml_obj_array_t *
-jml_obj_array_new(void)
+jml_obj_array_new(jml_value_t *values,
+    int item_count)
 {
     jml_obj_array_t *array  = ALLOCATE_OBJ(
         jml_obj_array_t, OBJ_ARRAY
     );
 
-    jml_value_array_t values;
-    jml_value_array_init(&values);
+    jml_value_array_t value_array;
+    jml_value_array_init(&value_array);
+    array->values           = value_array;
 
-    array->values           = &values;
+    for (int i = 0; i < item_count; ++i) {
+        jml_value_array_write(&array->values,
+        values[i]);
+    }
 
     return array;
 }
@@ -288,9 +293,20 @@ jml_obj_print(jml_value_t value)
             printf("%s", AS_CSTRING(value));
             break;
 
-        case OBJ_ARRAY:
-            printf("<array>");
+        case OBJ_ARRAY: {
+            printf("[");
+            jml_value_array_t array = AS_ARRAY(value)->values;
+            int item_count          = array.count - 1;
+
+            for (int i = 0; i < item_count; ++i) {
+                jml_value_print(array.values[i]);
+                printf(", ");
+            }
+
+            jml_value_print(array.values[item_count]);
+            printf("]");
             break;
+        }
 
         case OBJ_MAP:
             printf("<map>");

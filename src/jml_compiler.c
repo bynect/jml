@@ -622,6 +622,27 @@ jml_grouping(bool assignable)
 
 
 static void
+jml_array(bool assignable)
+{
+    uint8_t item_count = 0;
+    if (!jml_parser_check(TOKEN_RSQARE)) {
+        do {
+            jml_expression();
+            if (item_count == 255) {
+                jml_parser_error("Can't have more than 255 items in an array.");
+            }
+
+            ++item_count;
+        } while (jml_parser_match(TOKEN_COMMA));
+    }
+
+    jml_parser_consume(TOKEN_RSQARE, "Expect ']' after array.");
+
+    jml_bytecode_emit_bytes(OP_ARRAY, item_count);
+}
+
+
+static void
 jml_number(bool assignable)
 {
     double value = strtod(parser.previous.start, NULL);
@@ -729,7 +750,7 @@ jml_parser_rule rules[] = {
     [TOKEN_RPAREN]      = {NULL,        NULL,       PREC_NONE},
     [TOKEN_LPAREN]      = {jml_grouping, jml_call,  PREC_CALL},
     [TOKEN_RSQARE]      = {NULL,        NULL,       PREC_NONE},
-    [TOKEN_LSQARE]      = {NULL,        NULL,       PREC_NONE},
+    [TOKEN_LSQARE]      = {jml_array,   NULL,       PREC_NONE},
     [TOKEN_RBRACE]      = {NULL,        NULL,       PREC_NONE},
     [TOKEN_LBRACE]      = {NULL,        NULL,       PREC_NONE},
 
@@ -894,6 +915,7 @@ jml_function(jml_function_type type)
 static void
 jml_method(void)
 {
+    jml_parser_consume(TOKEN_FN, "Expect 'fn' in method declaration.");
     jml_parser_consume(TOKEN_NAME, "Expect method name.");
     uint8_t constant = jml_identifier_const(&parser.previous);
 
@@ -1086,13 +1108,13 @@ jml_for_statement(void)
     if (!jml_parser_match(TOKEN_RPAREN)) {
         int body = jml_bytecode_emit_jump(OP_JMP);
 
-        int incrementStart = jml_bytecode_current()->count;
+        int increment = jml_bytecode_current()->count;
         jml_expression();
         jml_bytecode_emit_byte(OP_POP);
         jml_parser_consume(TOKEN_RPAREN, "Expect ')' after for clauses.");
 
         jml_bytecode_emit_loop(start);
-        start = incrementStart;
+        start = increment;
         jml_bytecode_patch_jump(body);
     }
 
@@ -1106,6 +1128,34 @@ jml_for_statement(void)
 
     jml_scope_end();
 }
+
+
+// static void
+// jml_for_statement(void)
+// {
+//     jml_scope_begin();
+
+//     int start = jml_bytecode_current()->count;
+
+//     jml_parser_consume(TOKEN_LET, "Expect 'let' after 'for'.");
+//     uint8_t local = jml_variable_parse("Expect variable name.");
+//     jml_variable_definition(local);
+
+//     jml_parser_consume(TOKEN_IN, "Expect 'in' after 'for let'.");
+//     //array
+
+//     int exit = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
+
+//     jml_bytecode_emit_byte(OP_POP);
+//     jml_statement();
+
+//     jml_bytecode_emit_loop(start);
+
+//     jml_bytecode_patch_jump(exit);
+//     jml_bytecode_emit_byte(OP_POP);
+
+//     jml_scope_end();
+// }
 
 
 static void
