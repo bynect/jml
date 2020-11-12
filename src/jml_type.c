@@ -332,7 +332,7 @@ jml_obj_print(jml_value_t value)
             break;
 
         case OBJ_MODULE:
-            printf("%s", AS_MODULE(value)->name);
+            printf("%s", AS_MODULE(value)->name->chars);
             break;
     }
 }
@@ -407,7 +407,7 @@ jml_obj_stringify(jml_value_t value)
         case OBJ_MODULE: {
             char module[12];
             sprintf(module, "<module %s>",
-                AS_MODULE(value)->name);
+                AS_MODULE(value)->name->chars);
             return jml_strdup(module);
         }
     }

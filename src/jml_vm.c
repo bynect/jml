@@ -206,13 +206,58 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
+            case OBJ_METHOD: {
+                jml_obj_method_t *bound         = AS_METHOD(callee);
+                vm->stack_top[-arg_count - 1]   = bound->receiver;
+                return jml_vm_call(bound->method, arg_count);
+            }
+
+            case OBJ_CLOSURE: {
+                return jml_vm_call(AS_CLOSURE(callee), arg_count);
+            }
+
+            case OBJ_CLASS: {
+                jml_obj_class_t *klass          = AS_CLASS(callee);
+                vm->stack_top[-arg_count - 1]   = OBJ_VAL(
+                    jml_obj_instance_new(klass));
+                jml_value_t initializer;
+
+                if (jml_hashmap_get(&klass->methods,
+                    vm->init_string, &initializer)) {
+
+                    return jml_vm_call(AS_CLOSURE(initializer), arg_count);
+                } else if (arg_count != 0) {
+                    jml_vm_error(
+                        "Expected 0 arguments but got %d.", arg_count
+                    );
+                    return false;
+                }
+                return true;
+            }
+
+            case OBJ_INSTANCE: {
+                jml_obj_instance_t *instance    = AS_INSTANCE(callee);
+                jml_value_t caller;
+
+                if (jml_hashmap_get(&instance->klass->methods,
+                    vm->call_string, &caller)) {
+
+                    return jml_vm_call(AS_CLOSURE(caller), arg_count);
+                } else {
+                    jml_vm_error(
+                        "Instance of class '%s' is not callable.",
+                        instance->klass->name->chars
+                    );
+                    return false;
+                }
+            }
+
             case OBJ_CFUNCTION: {
                 jml_obj_cfunction_t *cfunction_obj  = AS_CFUNCTION(callee);
                 jml_cfunction        cfunction      = cfunction_obj->function;
 
-                jml_value_t result          = cfunction(arg_count,
-                    vm->stack_top           - arg_count);
-                vm->stack_top               -= arg_count + 1;
+                jml_value_t result  = cfunction(arg_count, vm->stack_top - arg_count);
+                vm->stack_top       -= arg_count + 1;
 
                 if (IS_EXCEPTION(result)) {
                     vm->external = cfunction_obj->name;
@@ -224,42 +269,12 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 }
             }
 
-            case OBJ_CLASS: {
-                jml_obj_class_t *klass        = AS_CLASS(callee);
-                vm->stack_top[-arg_count - 1] = OBJ_VAL(
-                    jml_obj_instance_new(klass));
-                jml_value_t initializer;
-
-                if (jml_hashmap_get(&klass->methods,
-                    vm->init_string, &initializer)) {
-
-                    return jml_vm_call(AS_CLOSURE(initializer), arg_count);
-                } else if (arg_count != 0) {
-
-                    jml_vm_error(
-                        "Expected 0 arguments but got %d.", arg_count
-                    );
-                    return false;
-                }
-                return true;
-            }
-
-            case OBJ_METHOD: {
-                jml_obj_method_t *bound         = AS_METHOD(callee);
-                vm->stack_top[-arg_count - 1]   = bound->receiver;
-                return jml_vm_call(bound->method, arg_count);
-            }
-
-            case OBJ_CLOSURE: {
-                return jml_vm_call(AS_CLOSURE(callee), arg_count);
-            }
-
             default: break;
         }
     }
 
     jml_vm_error(
-        "Can only call functions and classes."
+        "Can only call functions, classes and instances."
     );
     return false;
 }
@@ -739,7 +754,7 @@ jml_vm_run(void)
 
             case OP_GET_LOCAL: {
                 uint8_t slot = READ_BYTE();
-                jml_vm_push(*frame->closure->upvalues[slot]->location);
+                jml_vm_push(frame->slots[slot]);
                 break;
             }
 

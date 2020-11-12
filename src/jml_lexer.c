@@ -9,9 +9,9 @@ jml_lexer_t lexer;
 
 void
 jml_lexer_init(const char *source) {
-    lexer.start   = source;
-    lexer.current = source;
-    lexer.line    = 1;
+    lexer.start     = source;
+    lexer.current   = source;
+    lexer.line      = 1;
 }
 
 
@@ -40,7 +40,7 @@ jml_lexer_peek_next(void)
 static inline char
 jml_previous_char(void)
 {
-    return lexer.current[- 1];
+    return lexer.current[-1];
 }
 
 
@@ -49,6 +49,13 @@ jml_lexer_advance(void)
 {
     lexer.current++;
     return lexer.current[-1];
+}
+
+
+static inline void
+jml_lexer_newline(void)
+{
+    lexer.line++;
 }
 
 
@@ -113,7 +120,7 @@ jml_skip_char(void)
                 break;
 
             case '\n':
-                lexer.line++;
+                jml_lexer_newline();
                 jml_lexer_advance();
                 break;
 
@@ -225,8 +232,7 @@ jml_string_literal(const char delimiter)
 {
     while (jml_lexer_peek() != delimiter) {
         char c =        jml_lexer_peek();
-
-        if  (c == '\n') lexer.line++;
+        if  (c == '\n') jml_lexer_newline();
         if  (jml_is_eol())
             return jml_token_emit_error("Unterminated string.");
 

@@ -8,7 +8,7 @@
 
 jml_parser_t parser;
 
-jml_compiler_t *current = NULL;
+jml_compiler_t *current             = NULL;
 
 jml_class_compiler_t *class_current = NULL;
 
@@ -33,8 +33,8 @@ static jml_token_t
 jml_token_emit_synthetic(const char *text)
 {
     jml_token_t token;
-    token.start = text;
-    token.length = (int)strlen(text);
+    token.start     = text;
+    token.length    = (int)strlen(text);
     return token;
 }
 
@@ -49,22 +49,25 @@ jml_parser_error_at(jml_token_t *token,
     fprintf(stderr, "[line %d] Error", token->line);
 
     if (token->type == TOKEN_EOF) {
-        fprintf(stderr, " at end");
+        fprintf(stderr, " at eof");
     } else if (token->type == TOKEN_ERROR) {
         /*pass*/
     } else {
-        fprintf(stderr, " at '%.*s'", token->length, token->start);
+        fprintf(stderr, " at '%.*s'",
+            token->length, token->start);
     }
 
     fprintf(stderr, ": %s\n", message);
     parser.w_error = true;
 }
 
+
 static void
 jml_parser_error(const char *message)
 {
     jml_parser_error_at(&parser.previous, message);
 }
+
 
 static void
 jml_parser_error_current(const char *message)
@@ -895,10 +898,14 @@ jml_method(void)
     uint8_t constant = jml_identifier_const(&parser.previous);
 
     jml_function_type type = FUNCTION_METHOD;
-    if (parser.previous.length == 4 &&
-        memcmp(parser.previous.start, "init", 4) == 0) {
+    if (parser.previous.length == 6 &&
+        memcmp(parser.previous.start, "__init", 6) == 0) {
         type = FUNCTION_INITIALIZER;
+    } else if (parser.previous.length == 6 &&
+        memcmp(parser.previous.start, "__call", 6) == 0) {
+        type = FUNCTION_DUNDER;
     }
+
     jml_function(type);
     jml_bytecode_emit_bytes(OP_METHOD, constant);
 }

@@ -89,6 +89,8 @@ jml_gc_mark_roots(void)
     jml_hashmap_mark(&vm->globals);
     jml_compiler_mark_roots();
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->call_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->external);
 }
 
 
@@ -274,6 +276,18 @@ jml_gc_blacken_obj(jml_obj_t *object)
 #endif
 
     switch (object->type) {
+        case OBJ_ARRAY: {
+            jml_gc_mark_array(
+                ((jml_obj_array_t*)object)->values);
+            break;
+        }
+
+        case OBJ_MAP: {
+            jml_hashmap_mark(
+                ((jml_obj_map_t*)object)->hashmap);
+            break;
+        }
+
         case OBJ_INSTANCE: {
             jml_obj_instance_t *instance = (jml_obj_instance_t*)object;
             jml_gc_mark_obj((jml_obj_t*)instance->klass);
@@ -312,7 +326,8 @@ jml_gc_blacken_obj(jml_obj_t *object)
         }
 
         case OBJ_UPVALUE: {
-            jml_gc_mark_value(((jml_obj_upvalue_t*)object)->closed);
+            jml_gc_mark_value(
+                ((jml_obj_upvalue_t*)object)->closed);
             break;
         }
 
@@ -320,11 +335,6 @@ jml_gc_blacken_obj(jml_obj_t *object)
         case OBJ_EXCEPTION:
         case OBJ_MODULE:
         case OBJ_STRING:
-            break;
-
-        case OBJ_ARRAY:
-        case OBJ_MAP:
-            /*TODO*/
             break;
     }
 }
