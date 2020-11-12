@@ -20,6 +20,7 @@
 #define IS_CLOSURE(value)           jml_is_obj(value, OBJ_CLOSURE)
 #define IS_CFUNCTION(value)         jml_is_obj(value, OBJ_CFUNCTION)
 #define IS_EXCEPTION(value)         jml_is_obj(value, OBJ_EXCEPTION)
+#define IS_MODULE(value)            jml_is_obj(value, OBJ_MODULE)
 
 
 #define AS_STRING(value)            ((jml_obj_string_t*)AS_OBJ(value))
@@ -33,6 +34,7 @@
 #define AS_CLOSURE(value)           ((jml_obj_closure_t*)AS_OBJ(value))
 #define AS_CFUNCTION(value)         (((jml_obj_cfunction_t*)AS_OBJ(value)))
 #define AS_EXCEPTION(value)         ((jml_obj_exception_t*)AS_OBJ(value))
+#define AS_MODULE(value)            ((jml_obj_module_t*)AS_OBJ(value))
 
 
 typedef enum {
@@ -46,7 +48,8 @@ typedef enum {
     OBJ_CLOSURE,
     OBJ_UPVALUE,
     OBJ_CFUNCTION,
-    OBJ_EXCEPTION
+    OBJ_EXCEPTION,
+    OBJ_MODULE
 } jml_obj_type;
 
 
@@ -63,13 +66,6 @@ struct jml_string_s {
     size_t                          length;
     uint32_t                        hash;
 };
-
-
-typedef struct {
-    jml_obj_t                       obj;
-    jml_obj_string_t               *name;
-    jml_obj_string_t               *message;
-} jml_obj_exception_t;
 
 
 typedef struct {
@@ -141,6 +137,19 @@ typedef struct {
 } jml_obj_cfunction_t;
 
 
+typedef struct {
+    jml_obj_t                       obj;
+    jml_obj_string_t               *name;
+    jml_obj_string_t               *message;
+} jml_obj_exception_t;
+
+
+typedef struct {
+    jml_obj_t                       obj;
+    jml_obj_string_t               *name;
+} jml_obj_module_t;
+
+
 jml_obj_string_t *jml_obj_string_take(char *chars,
     size_t length);
 
@@ -169,6 +178,8 @@ jml_obj_cfunction_t *jml_obj_cfunction_new(
 
 jml_obj_exception_t *jml_obj_exception_new(const char *name,
     const char *message);
+
+jml_obj_module_t *jml_obj_module_new(const char *name);
 
 
 void jml_obj_print(jml_value_t value);

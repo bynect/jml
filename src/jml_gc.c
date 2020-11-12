@@ -213,6 +213,11 @@ jml_free_object(jml_obj_t *object)
             FREE(jml_obj_exception_t, object);
             break;
         }
+
+        case OBJ_MODULE: {
+            FREE(jml_obj_module_t, object);
+            break;
+        }
     }
 }
 
@@ -313,6 +318,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
 
         case OBJ_CFUNCTION:
         case OBJ_EXCEPTION:
+        case OBJ_MODULE:
         case OBJ_STRING:
             break;
 

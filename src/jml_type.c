@@ -257,6 +257,16 @@ jml_obj_exception_new(const char *name,
 }
 
 
+jml_obj_module_t *
+jml_obj_module_new(const char *name)
+{
+    jml_obj_module_t *module = ALLOCATE_OBJ(
+        jml_obj_module_t, OBJ_MODULE);
+
+    return module;
+}
+
+
 static void
 jml_obj_function_print(jml_obj_function_t *function)
 {
@@ -319,6 +329,10 @@ jml_obj_print(jml_value_t value)
 
         case OBJ_EXCEPTION:
             printf("<exception>");
+            break;
+
+        case OBJ_MODULE:
+            printf("%s", AS_MODULE(value)->name);
             break;
     }
 }
@@ -389,6 +403,13 @@ jml_obj_stringify(jml_value_t value)
                 AS_EXCEPTION(value)->name->chars);
             return jml_strdup(exc);
         }
+
+        case OBJ_MODULE: {
+            char module[12];
+            sprintf(module, "<module %s>",
+                AS_MODULE(value)->name);
+            return jml_strdup(module);
+        }
     }
     return NULL;
 }
@@ -430,6 +451,9 @@ jml_obj_type_stringify(jml_obj_type type)
 
         case OBJ_EXCEPTION:
             return "exception";
+
+        case OBJ_MODULE:
+            return "module";
     }
     return NULL;
 }

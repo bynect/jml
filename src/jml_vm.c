@@ -480,10 +480,10 @@ jml_vm_run(void)
             }
 
             case OP_ROT: {
-                jml_value_t first = jml_vm_pop();
-                jml_value_t second = jml_vm_pop();
-                jml_vm_push(first);
-                jml_vm_push(second);
+                jml_value_t a       = jml_vm_pop();
+                jml_value_t b       = jml_vm_pop();
+                jml_vm_push(a);
+                jml_vm_push(b);
                 break;
             }
 
