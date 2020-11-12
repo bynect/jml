@@ -8,7 +8,7 @@
 
 char *jml_strsep(char **str, const char *sep);
 
-char *jml_strtok(char *input, char *delimiter);
+char *jml_strtok(char *input, const char *delimiter);
 
 char *jml_strdup(const char *str);
 

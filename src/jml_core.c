@@ -55,31 +55,29 @@ jml_core_exception_types(int arg_count, ...)
     va_start(types, arg_count);
 
     size_t size = (arg_count + 1) * 32;
-    char *message = ALLOCATE(char, size + 1);
+    char *message = (char*)jml_realloc(NULL, size);
 
     char *next = va_arg(types, char*);
     sprintf(message, "Expected arguments of type '%s'", next);
 
     for (int i = 1; i < arg_count; ++i) {
+
         char *next = va_arg(types, char*);
         char temp[32];
         sprintf(temp, " and '%s'", next);
 
-        if (size <= (strlen(message) + strlen(temp))) {
-            int temp_size = size;
-            size *= GC_HEAP_GROW_FACTOR;
-            GROW_ARRAY(char, message, temp_size, size);
-        }
-
+        size_t dest_size = strlen(message) + strlen(temp);
+        REALLOC(char, message, size, dest_size);
         strcat(message, temp);
     }
 
     strcat(message, ".");
+
     jml_obj_exception_t *exc = jml_obj_exception_new(
         "DiffTypes", message
     );
 
-    FREE_ARRAY(char, message, size + 1);
+    jml_realloc(message, 0UL);
     va_end(types);
 
     return exc;
@@ -161,25 +159,22 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
     char             *fmt_str   = jml_strdup(fmt_obj->chars);
     int               fmt_args  = 0;
 
-    size_t size = fmt_obj->length + 32 * arg_count;
-    char *string = ALLOCATE(char, size);
+    size_t size                 = fmt_obj->length + 16 * arg_count;
+    char *string                = (char*)jml_realloc(NULL, size);
     memset(string, 0, size);
 
-    char *token = jml_strtok(fmt_str, "{}");
+    char *token                 = jml_strtok(fmt_str, "{}");
     while (token != NULL) {
+
+        char *value_str         = jml_value_stringify(args[fmt_args + 1]);
+
+        size_t dest_size        = strlen(string) + strlen(value_str) + strlen(token);
+        REALLOC(char, string, size, dest_size);
+
         strcat(string, token);
-
-        char *value_str = jml_value_stringify(args[fmt_args + 1]);
-
-        if (size <= strlen(string) + strlen(value_str)) {
-            int temp_size = size;
-            size *= GC_HEAP_GROW_FACTOR;
-            GROW_ARRAY(char, string, temp_size, size);
-        }
-
         strcat(string, value_str);
-        jml_realloc(value_str, 0UL);
 
+        jml_realloc(value_str, 0UL);
         token = jml_strtok(NULL, "{}");
         ++fmt_args;
     }
@@ -191,12 +186,13 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
         arg_count, fmt_args);
 
     if (exc != NULL) {
-        FREE_ARRAY(char, string, 0UL);
+        jml_realloc(string, 0UL);
         return OBJ_VAL(exc);
-    } else
-        fprintf(stdout, "%.*s\n", (int)strlen(string) - 1, string);
-
-    FREE_ARRAY(char, string, 0UL);
+    } else {
+        int length = strlen(string) - 1;
+        printf("%.*s\n", length, string);
+        jml_realloc(string, 0UL);
+    }
 
     return NONE_VAL;
 }
@@ -220,8 +216,8 @@ jml_core_reverse(int arg_count, jml_value_t *args)
         int length      = string_obj->length;
 
         for (int i = 0; i < length / 2; ++i) {
-            char temp = str[i];
-            str[i] = str[length-1-i];
+            char temp       = str[i];
+            str[i]          = str[length-1-i];
             str[length-1-i] = temp;
         }
 

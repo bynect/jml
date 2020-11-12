@@ -20,13 +20,12 @@ jml_strsep(char **str, const char *sep)
 
 
 char *
-jml_strtok(char *input, char *delimiter)
+jml_strtok(char *input,
+    const char *delimiter)
 {
     static char *string;
-
     if (input != NULL)
         string = input;
-
     if (string == NULL)
         return string;
 
@@ -38,7 +37,6 @@ jml_strtok(char *input, char *delimiter)
     }
 
     char *temp = string;
-
     *end = '\0';
     string = end + strlen(delimiter);
     return temp;
@@ -49,7 +47,9 @@ char *
 jml_strdup(const char *str)
 {
     size_t length = strlen(str) + 1;
-    char *dest = (char*)jml_realloc(NULL, length);
+    char *dest = (char*)jml_realloc(NULL,
+        length);
+
     if (!dest) return NULL;
 
     return (char*)memcpy(dest, str,
@@ -62,5 +62,6 @@ jml_strcat(char *dest, char *src)
 {
     while (*dest) dest++;
     while ((*dest++ = *src++));
+
     return --dest;
 }
