@@ -415,6 +415,34 @@ jml_string_concatenate(void)
 }
 
 
+static void
+jml_array_concatenate(void)
+{
+    jml_obj_array_t        *array = AS_ARRAY(jml_vm_peek(1));
+    jml_value_t             value = jml_vm_peek(0);
+
+    if (IS_ARRAY(value)) {
+        jml_obj_array_t    *array2 = AS_ARRAY(value);
+
+        if (array == array2) goto end;
+
+        for (int i = 0; i < array2->values.count; ++i)
+            jml_value_array_write(&array->values,
+                array2->values.values[i]);
+
+    } else {
+        jml_value_array_write(&array->values, value);
+    }
+
+    goto end;
+
+    end: {
+        jml_vm_pop_two();
+        jml_vm_push(OBJ_VAL(array));
+    }
+}
+
+
 static jml_interpret_result
 jml_vm_run(void)
 {
@@ -586,18 +614,33 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_ADD): {
-                if (IS_STRING(jml_vm_peek(0))
-                    && IS_STRING(jml_vm_peek(1))) {
-                    
-                    jml_string_concatenate();
-                } else if(IS_NUM(jml_vm_peek(0))
+                if (IS_STRING(jml_vm_peek(1))) {
+
+                    if (IS_STRING(jml_vm_peek(0))) {
+                        jml_string_concatenate();
+
+                    } else {
+                        frame->pc = pc;
+                        jml_vm_error(
+                            "Cannot concatenate string to %s.",
+                            jml_value_stringify_type(jml_vm_peek(0))
+                        );
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                } else if (IS_NUM(jml_vm_peek(0))
                         && IS_NUM(jml_vm_peek(1))) {
 
                     BINARY_OP(NUM_VAL, +, double);
+
+                } else if (IS_ARRAY(jml_vm_peek(1))) {
+
+                    jml_array_concatenate();
+
                 } else {
                     frame->pc = pc;
                     jml_vm_error(
-                        "Operands must be two numbers or two strings."
+                        "Operands must be numbers, strings or array."
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
