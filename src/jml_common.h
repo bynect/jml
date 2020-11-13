@@ -12,13 +12,27 @@
 #define MAP_LOAD_MAX                0.75
 
 
+#ifdef JML_NDEBUG
+
+#define JML_NAN_TAGGING
+#undef  JML_DISASSEMBLE
+#undef  JML_STRESS_GC
+#undef  JML_TRACE_GC
+#undef  JML_TRACE_MEM
+#undef  JML_PRINT_TOKEN
+#undef  JML_DEBUG
+
+#else
+
 #define JML_NAN_TAGGING
 #define JML_DISASSEMBLE
-#undef JML_STRESS_GC
+#undef  JML_STRESS_GC
 #define JML_TRACE_GC
-#undef JML_TRACE_MEM
-#undef JML_PRINT_TOKEN
-#define JML_DEBUG
+#undef  JML_TRACE_MEM
+#undef  JML_PRINT_TOKEN
+#undef  JML_DEBUG
+
+#endif
 
 
 #ifdef JML_DEBUG
