@@ -84,6 +84,41 @@ jml_value_stringify(jml_value_t value)
 }
 
 
+char *
+jml_value_stringify_type(jml_value_t value)
+{
+#ifdef JML_NAN_TAGGING
+    if (IS_BOOL(value)) {
+        return "<type bool>";
+
+    } else if (IS_NONE(value)) {
+        return "<type none>";
+
+    } else if (IS_NUM(value)) {
+        return "<type number>";
+
+    } else if (IS_OBJ(value)) {
+        return jml_obj_stringify_type(value);
+    }
+#else
+    switch (value.type) {
+        case VAL_BOOL:
+            return "<type bool>";
+
+        case VAL_NONE:
+            return "<type none>";
+
+        case VAL_NUM:
+            return "<type number>";
+
+        case VAL_OBJ:
+            return jml_obj_stringify_type(value);
+    }
+#endif
+    return NULL;
+}
+
+
 bool
 jml_value_equal(jml_value_t a, jml_value_t b)
 {

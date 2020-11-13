@@ -40,7 +40,7 @@ jml_core_exception_implemented(jml_value_t value)
     char message[26];
 
     sprintf(message,  "Not implemented for '%s'.",
-        jml_obj_type_stringify(AS_OBJ(value)->type));
+        jml_obj_stringify_type(value));
 
     return jml_obj_exception_new(
         "NotImplemented", message
@@ -341,6 +341,23 @@ jml_core_subclass(int arg_count, jml_value_t *args)
 }
 
 
+static jml_value_t
+jml_core_type(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc        = jml_core_exception_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    char *string = jml_value_stringify_type(args[0]);
+
+    return OBJ_VAL(jml_obj_string_take(
+        string, strlen(string)
+    ));
+}
+
+
 /*core function registration*/
 jml_module_function core_functions[] = {
     {"clock",                       &jml_core_clock},
@@ -352,16 +369,17 @@ jml_module_function core_functions[] = {
     {"reverse",                     &jml_core_reverse},
     {"size",                        &jml_core_size},
     {"instance",                    &jml_core_instance},
-    {"subclass",                    &jml_core_subclass}
+    {"subclass",                    &jml_core_subclass},
+    {"type",                        &jml_core_type}
 };
 
 
 void
 jml_core_register(void)
 {
-    int length = (sizeof(core_functions) / sizeof(core_functions[0]));
+    const int functions = 11;
 
-    for (int i = 0; i < length; ++i) {
+    for (int i = 0; i < functions; ++i) {
         jml_module_function current = core_functions[i];
         jml_cfunction_register(current.name, current.function);
     }

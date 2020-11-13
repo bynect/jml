@@ -28,7 +28,7 @@ jml_obj_allocate(size_t size, jml_obj_type type)
         "[MEM] |%p allocate %zd (type %s)|\n",
         (void*)object,
         size,
-        jml_obj_type_stringify(type)
+        jml_obj_stringify_type(object)
         );
 #endif
   return object;
@@ -97,9 +97,9 @@ jml_obj_string_copy(const char *chars, size_t length)
 
     if (interned != NULL) return interned;
 
-    char *heap_chars    = ALLOCATE(char, length + 1);
+    char *heap_chars            = ALLOCATE(char, length + 1);
     memcpy(heap_chars, chars, length);
-    heap_chars[length]  = '\0';
+    heap_chars[length]          = '\0';
 
     return jml_obj_string_allocate(heap_chars, length, hash);
 }
@@ -408,10 +408,11 @@ jml_obj_stringify(jml_value_t value)
                 AS_CLOSURE(value)->function);
 
         case OBJ_UPVALUE:
-            return jml_strdup("upvalue");
+            return jml_strdup("<upvalue>");
 
-        case OBJ_CFUNCTION:
+        case OBJ_CFUNCTION: {
             return jml_strdup("<builtin fn>");
+        }
 
         case OBJ_EXCEPTION: {
             char exc[15];
@@ -432,44 +433,44 @@ jml_obj_stringify(jml_value_t value)
 
 
 char *
-jml_obj_type_stringify(jml_obj_type type)
+jml_obj_stringify_type(jml_value_t value)
 {
-    switch (type) {
+    switch (OBJ_TYPE(value)) {
         case OBJ_STRING:
-            return "string";
+            return "<type string>";
 
         case OBJ_ARRAY:
-            return "array";
+            return "<type array>";
 
         case OBJ_MAP:
-            return "map";
+            return "<type map>";
 
         case OBJ_CLASS:
-            return "class";
+            return "<type class>";
 
         case OBJ_INSTANCE:
-            return "instance";
+            return "<type instance>";
 
         case OBJ_METHOD:
-            return "method";
+            return "<type method>";
 
         case OBJ_FUNCTION:
-            return "function";
+            return "<type fn>";
 
         case OBJ_CLOSURE:
-            return "function";
+            return "<type fn>";
 
         case OBJ_UPVALUE:
-            return "upvalue";
+            return "<type upvalue>";
 
         case OBJ_CFUNCTION:
-            return "function";
+            return "<type builtin fn>";
 
         case OBJ_EXCEPTION:
-            return "exception";
+            return "<type exception>";
 
         case OBJ_MODULE:
-            return "module";
+            return "<type module>";
     }
     return NULL;
 }

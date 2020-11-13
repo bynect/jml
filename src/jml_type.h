@@ -187,7 +187,7 @@ void jml_obj_print(jml_value_t value);
 
 char *jml_obj_stringify(jml_value_t value);
 
-char *jml_obj_type_stringify(jml_obj_type type);
+char *jml_obj_stringify_type(jml_value_t value);
 
 
 static inline bool

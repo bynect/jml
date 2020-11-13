@@ -52,6 +52,9 @@ jml_parser_error_at(jml_token_t *token,
         fprintf(stderr, " at eof");
     } else if (token->type == TOKEN_ERROR) {
         /*pass*/
+    } else if (strncmp(token->start, "\n",
+        token->length)) {
+        fprintf(stderr, " at newline");
     } else {
         fprintf(stderr, " at '%.*s'",
             token->length, token->start);

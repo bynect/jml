@@ -142,7 +142,7 @@ jml_free_object(jml_obj_t *object)
     printf(
         "[MEM] |%p freed (type %s)|\n",
         (void*)object,
-        jml_obj_type_stringify(object->type)
+        jml_obj_stringify_type(object)
     );
 #endif
 
