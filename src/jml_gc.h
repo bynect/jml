@@ -1,5 +1,5 @@
-#ifndef _JML_GC_H_
-#define _JML_GC_H_
+#ifndef JML_GC_H_
+#define JML_GC_H_
 
 #include <jml_common.h>
 #include <jml_type.h>
@@ -48,4 +48,4 @@ void jml_gc_mark_value(jml_value_t value);
 void jml_gc_mark_obj(jml_obj_t *object);
 
 
-#endif /* _JML_GC_H_ */
+#endif /* JML_GC_H_ */

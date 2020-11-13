@@ -1,5 +1,5 @@
-#ifndef _JML_COMMON_H_
-#define _JML_COMMON_H_
+#ifndef JML_COMMON_H_
+#define JML_COMMON_H_
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -10,6 +10,19 @@
 #define FRAMES_MAX                  64
 #define STACK_MAX                   (FRAMES_MAX * LOCAL_MAX)
 #define MAP_LOAD_MAX                0.75
+
+
+#ifdef __GNUC__
+
+#define JML_COMPUTED_GOTO
+#define JML_UNUSED(arg)             __attribute__((unused)) arg
+
+#else
+
+#undef  JML_COMPUTED_GOTO
+#define JML_UNUSED(arg)             arg
+
+#endif
 
 
 #ifdef JML_NDEBUG
@@ -73,4 +86,4 @@
 #endif
 
 
-#endif /* _JML_COMMON_H_ */
+#endif /* JML_COMMON_H_ */

@@ -1,5 +1,5 @@
-#ifndef _JML_H_
-#define _JML_H_
+#ifndef JML_H_
+#define JML_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,4 +76,4 @@ jml_interpret_result jml_vm_interpret(const char *source);
 }
 #endif
 
-#endif /* _JML_H_ */
+#endif /* JML_H_ */

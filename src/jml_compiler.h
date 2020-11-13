@@ -1,5 +1,5 @@
-#ifndef _JML_COMPILER_H_
-#define _JML_COMPILER_H_
+#ifndef JML_COMPILER_H_
+#define JML_COMPILER_H_
 
 #include <jml.h>
 
@@ -86,4 +86,4 @@ void jml_compiler_mark_roots(void);
 jml_obj_function_t *jml_compiler_compile(const char *source);
 
 
-#endif /* _JML_COMPILER_H_ */
+#endif /* JML_COMPILER_H_ */

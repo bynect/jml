@@ -1,5 +1,5 @@
-#ifndef _JML_TYPE_H_
-#define _JML_TYPE_H_
+#ifndef JML_TYPE_H_
+#define JML_TYPE_H_
 
 #include <jml.h>
 
@@ -198,4 +198,4 @@ jml_is_obj(jml_value_t value, jml_obj_type type)
 }
 
 
-#endif /* _JML_TYPE_H_ */
+#endif /* JML_TYPE_H_ */

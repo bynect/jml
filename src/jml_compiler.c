@@ -521,7 +521,7 @@ jml_arguments_list(void)
 
 
 static void
-jml_and(bool assignable)
+jml_and(JML_UNUSED(bool assignable))
 {
   int jump_end = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
 
@@ -533,7 +533,7 @@ jml_and(bool assignable)
 
 
 static void
-jml_or(bool assignable)
+jml_or(JML_UNUSED(bool assignable))
 {
     int jump_else = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
     int jump_end = jml_bytecode_emit_jump(OP_JMP);
@@ -547,9 +547,8 @@ jml_or(bool assignable)
 
 
 static void
-jml_binary(bool assignable)
+jml_binary(JML_UNUSED(bool assignable))
 {
-
     jml_token_type operator = parser.previous.type;
 
     jml_parser_rule *rule = jml_parser_rule_get(operator);
@@ -577,7 +576,7 @@ jml_binary(bool assignable)
 
 
 static void
-jml_call(bool assignable)
+jml_call(JML_UNUSED(bool assignable))
 {
     uint8_t arg_count = jml_arguments_list();
     jml_bytecode_emit_bytes(OP_CALL, arg_count);
@@ -604,7 +603,7 @@ jml_dot(bool assignable)
 
 
 static void
-jml_literal(bool assignable)
+jml_literal(JML_UNUSED(bool assignable))
 {
     switch (parser.previous.type) {
         case TOKEN_FALSE:       jml_bytecode_emit_byte(OP_FALSE);       break;
@@ -617,7 +616,7 @@ jml_literal(bool assignable)
 
 
 static void
-jml_grouping(bool assignable)
+jml_grouping(JML_UNUSED(bool assignable))
 {
     jml_expression();
     jml_parser_consume(TOKEN_RPAREN, "Expect ')' after expression.");
@@ -625,7 +624,7 @@ jml_grouping(bool assignable)
 
 
 static void
-jml_array(bool assignable)
+jml_array(JML_UNUSED(bool assignable))
 {
     uint8_t item_count = 0;
     if (!jml_parser_check(TOKEN_RSQARE)) {
@@ -646,7 +645,7 @@ jml_array(bool assignable)
 
 
 static void
-jml_number(bool assignable)
+jml_number(JML_UNUSED(bool assignable))
 {
     double value = strtod(parser.previous.start, NULL);
     jml_bytecode_emit_const(NUM_VAL(value));
@@ -654,7 +653,7 @@ jml_number(bool assignable)
 
 
 static void
-jml_string(bool assignable)
+jml_string(JML_UNUSED(bool assignable))
 {
     jml_bytecode_emit_const(
         OBJ_VAL(jml_obj_string_copy(parser.previous.start + 1,
@@ -696,7 +695,7 @@ static void jml_variable(bool assignable) {
 
 
 static void
-jml_super(bool assignable)
+jml_super(JML_UNUSED(bool assignable))
 {
     if (class_current == NULL) {
         jml_parser_error("Can't use 'super' outside of a class.");
@@ -724,7 +723,7 @@ jml_super(bool assignable)
 
 
 static void
-jml_self(bool assignable)
+jml_self(JML_UNUSED(bool assignable))
 {
     if (class_current == NULL) {
         jml_parser_error("Can't use 'self' outside of a class.");
@@ -735,7 +734,7 @@ jml_self(bool assignable)
 
 
 static void
-jml_unary(bool assignable)
+jml_unary(JML_UNUSED(bool assignable))
 {
     jml_token_type type = parser.previous.type;
     jml_parser_precedence_parse(PREC_UNARY);

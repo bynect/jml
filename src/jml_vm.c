@@ -63,8 +63,7 @@ jml_vm_error(const char *format, ...)
 
 
 static void
-jml_vm_exception(jml_obj_cfunction_t *cfunction,
-    jml_obj_exception_t *exc)
+jml_vm_exception(jml_obj_exception_t *exc)
 {
     jml_vm_error(
         "%.*s: %.*s",
@@ -261,7 +260,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
                 if (IS_EXCEPTION(result)) {
                     vm->external = cfunction_obj->name;
-                    jml_vm_exception(cfunction_obj, AS_EXCEPTION(result));
+                    jml_vm_exception(AS_EXCEPTION(result));
                     return false;
                 } else {
                     jml_vm_push(result);
@@ -480,50 +479,113 @@ jml_vm_run(void)
         jml_vm_push(type(fn(a, b)));                    \
     } while (false)
 
+#ifdef JML_COMPUTED_GOTO
+
+#define DISPATCH()                  goto *dispatcher[READ_BYTE()]
+#define EXEC_OP(op)                 exec_##op
+#define END_OP()                    DISPATCH()
+
+    static void *dispatcher[] = {
+        &&exec_OP_POP,
+        &&exec_OP_POP_TWO,
+        &&exec_OP_ROT,
+        &&exec_OP_CONST,
+        &&exec_OP_NONE,
+        &&exec_OP_TRUE,
+        &&exec_OP_FALSE,
+        &&exec_OP_ADD,
+        &&exec_OP_SUB,
+        &&exec_OP_MUL,
+        &&exec_OP_DIV,
+        &&exec_OP_POW,
+        &&exec_OP_MOD,
+        &&exec_OP_NOT,
+        &&exec_OP_NEGATE,
+        &&exec_OP_EQUAL,
+        &&exec_OP_GREATER,
+        &&exec_OP_GREATEREQ,
+        &&exec_OP_LESS,
+        &&exec_OP_LESSEQ,
+        &&exec_OP_NOTEQ,
+        &&exec_OP_JMP,
+        &&exec_OP_JMP_IF_FALSE,
+        &&exec_OP_LOOP,
+        &&exec_OP_CALL,
+        &&exec_OP_METHOD,
+        &&exec_OP_INVOKE,
+        &&exec_OP_SUPER_INVOKE,
+        &&exec_OP_CLOSURE,
+        &&exec_OP_RETURN,
+        &&exec_OP_CLASS,
+        &&exec_OP_INHERIT,
+        &&exec_OP_SET_LOCAL,
+        &&exec_OP_GET_LOCAL,
+        &&exec_OP_SET_UPVALUE,
+        &&exec_OP_GET_UPVALUE,
+        &&exec_OP_CLOSE_UPVALUE,
+        &&exec_OP_SET_GLOBAL,
+        &&exec_OP_GET_GLOBAL,
+        &&exec_OP_DEF_GLOBAL,
+        &&exec_OP_SET_PROPERTY,
+        &&exec_OP_GET_PROPERTY,
+        &&exec_OP_SUPER,
+        &&exec_OP_ARRAY
+    };
+
+    DISPATCH();
+
+#else
+
+#define EXEC_OP(op)                 case op
+#define END_OP()                    break
+
+#endif
+
     for ( ;; ) {
         uint8_t instruction;
 
         switch (instruction = READ_BYTE()) {
-            case OP_POP: {
+
+            EXEC_OP(OP_POP): {
                 jml_vm_pop();
-                break;
+                END_OP();
             }
 
-            case OP_POP_TWO: {
+            EXEC_OP(OP_POP_TWO): {
                 jml_vm_pop_two();
-                break;
+                END_OP();
             }
 
-            case OP_ROT: {
+            EXEC_OP(OP_ROT): {
                 jml_value_t a       = jml_vm_pop();
                 jml_value_t b       = jml_vm_pop();
                 jml_vm_push(a);
                 jml_vm_push(b);
-                break;
+                END_OP();
             }
 
-            case OP_CONST: {
+            EXEC_OP(OP_CONST): {
                 jml_value_t constant = READ_CONST();
                 jml_vm_push(constant);
-                break;
+                END_OP();
             }
 
-            case OP_NONE: {
+            EXEC_OP(OP_NONE): {
                 jml_vm_push(NONE_VAL);
-                break;
+                END_OP();
             }
 
-            case OP_TRUE: {
+            EXEC_OP(OP_TRUE): {
                 jml_vm_push(BOOL_VAL(true));
-                break;
+                END_OP();
             }
 
-            case OP_FALSE: {
+            EXEC_OP(OP_FALSE): {
                 jml_vm_push(BOOL_VAL(false));
-                break;
+                END_OP();
             }
 
-            case OP_ADD: {
+            EXEC_OP(OP_ADD): {
                 if (IS_STRING(jml_vm_peek(0))
                     && IS_STRING(jml_vm_peek(1))) {
                     
@@ -539,42 +601,42 @@ jml_vm_run(void)
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                break;
+                END_OP();
             }
 
-            case OP_SUB: {
+            EXEC_OP(OP_SUB): {
                 BINARY_OP(NUM_VAL, -, double);
-                break;
+                END_OP();
             }
 
-            case OP_MUL: {
+            EXEC_OP(OP_MUL): {
                 BINARY_OP(NUM_VAL, *, double);
-                break;
+                END_OP();
             }
 
-            case OP_DIV: {
+            EXEC_OP(OP_DIV): {
                 BINARY_DIV(NUM_VAL, /, double);
-                break;
+                END_OP();
             }
 
-            case OP_MOD: {
+            EXEC_OP(OP_MOD): {
                 BINARY_DIV(NUM_VAL, %, int);
-                break;
+                END_OP();
             }
 
-            case OP_POW: {
+            EXEC_OP(OP_POW): {
                 BINARY_FN(NUM_VAL, pow, double);
-                break;
+                END_OP();
             }
 
-            case OP_NOT: {
+            EXEC_OP(OP_NOT): {
                 jml_vm_push(
                     BOOL_VAL(jml_is_falsey(jml_vm_pop()))
                 );
-                break;
+                END_OP();
             }
 
-            case OP_NEGATE: {
+            EXEC_OP(OP_NEGATE): {
                 if (!IS_NUM(jml_vm_peek(0))) {
                     frame->pc = pc;
                     jml_vm_error(
@@ -585,66 +647,66 @@ jml_vm_run(void)
                 jml_vm_push(
                     NUM_VAL(-AS_NUM(jml_vm_pop()))
                 );
-                break;
+                END_OP();
             }
 
-            case OP_EQUAL: {
+            EXEC_OP(OP_EQUAL): {
                 jml_value_t b = jml_vm_pop();
                 jml_value_t a = jml_vm_pop();
                 jml_vm_push(
                     BOOL_VAL(jml_value_equal(a, b))
                 );
-                break;
+                END_OP();
             }
 
-            case OP_GREATER: {
+            EXEC_OP(OP_GREATER): {
                 BINARY_OP(BOOL_VAL, >, double);
-                break;
+                END_OP();
             }
 
-            case OP_GREATEREQ: {
+            EXEC_OP(OP_GREATEREQ): {
                 BINARY_OP(BOOL_VAL, >=, double);
-                break;
+                END_OP();
             }
 
-            case OP_LESS: {
+            EXEC_OP(OP_LESS): {
                 BINARY_OP(BOOL_VAL, <, double);
-                break;
+                END_OP();
             }
 
-            case OP_LESSEQ: {
+            EXEC_OP(OP_LESSEQ): {
                 BINARY_OP(BOOL_VAL, <=, double);
-                break;
+                END_OP();
             }
 
-            case OP_NOTEQ: {
+            EXEC_OP(OP_NOTEQ): {
                 jml_value_t b = jml_vm_pop();
                 jml_value_t a = jml_vm_pop();
                 jml_vm_push(
                     BOOL_VAL(!jml_value_equal(a, b))
                 );
-                break;
+                END_OP();
             }
 
-            case OP_JMP: {
+            EXEC_OP(OP_JMP): {
                 uint16_t offset = READ_SHORT();
                 pc += offset;
-                break;
+                END_OP();
             }
 
-            case OP_JMP_IF_FALSE: {
+            EXEC_OP(OP_JMP_IF_FALSE): {
                 uint16_t offset = READ_SHORT();
                 if (jml_is_falsey(jml_vm_peek(0))) pc += offset;
-                break;
+                END_OP();
             }
 
-            case OP_LOOP: {
+            EXEC_OP(OP_LOOP): {
                 uint16_t offset = READ_SHORT();
                 pc -= offset;
-                break;
+                END_OP();
             }
 
-            case OP_CALL: {
+            EXEC_OP(OP_CALL): {
                 int arg_count = READ_BYTE();
                 frame->pc = pc;
                 if (!jml_vm_call_value(jml_vm_peek(arg_count), arg_count))
@@ -652,16 +714,16 @@ jml_vm_run(void)
 
                 frame = &vm->frames[vm->frame_count - 1];
                 pc = frame->pc;
-                break;
+                END_OP();
             }
 
-            case OP_METHOD: {
+            EXEC_OP(OP_METHOD): {
                 frame->pc = pc;
                 jml_vm_method_define(READ_STRING());
-                break;
+                END_OP();
             }
             
-            case OP_INVOKE: {
+            EXEC_OP(OP_INVOKE): {
                 jml_obj_string_t *method = READ_STRING();
                 int arg_count = READ_BYTE();
                 frame->pc = pc;
@@ -670,10 +732,10 @@ jml_vm_run(void)
                 
                 frame = &vm->frames[vm->frame_count - 1];
                 pc = frame->pc;
-                break;
+                END_OP();
             }
 
-            case OP_SUPER_INVOKE: {
+            EXEC_OP(OP_SUPER_INVOKE): {
                 jml_obj_string_t *method = READ_STRING();
                 int arg_count = READ_BYTE();
                 frame->pc = pc;
@@ -684,10 +746,10 @@ jml_vm_run(void)
 
                 frame = &vm->frames[vm->frame_count - 1];
                 pc = frame->pc;
-                break;
+                END_OP();
             }
 
-            case OP_CLOSURE: {
+            EXEC_OP(OP_CLOSURE): {
                 jml_obj_function_t *function = AS_FUNCTION(READ_CONST());
                 jml_obj_closure_t *closure = jml_obj_closure_new(function);
                 jml_vm_push(OBJ_VAL(closure));
@@ -700,10 +762,10 @@ jml_vm_run(void)
                     else
                         closure->upvalues[i] = frame->closure->upvalues[index];
                 }
-                break;
+                END_OP();
             }
 
-            case OP_RETURN: {
+            EXEC_OP(OP_RETURN): {
                 jml_value_t result = jml_vm_pop();
                 jml_vm_upvalue_close(frame->slots);
                 vm->frame_count--;
@@ -717,17 +779,17 @@ jml_vm_run(void)
                 jml_vm_push(result);
                 frame = &vm->frames[vm->frame_count - 1];
                 pc = frame->pc;
-                break;
+                END_OP();
             }
 
-            case OP_CLASS: {
+            EXEC_OP(OP_CLASS): {
                 jml_vm_push(
                     OBJ_VAL(jml_obj_class_new(READ_STRING()))
                 );
-                break;
+                END_OP();
             }
 
-            case OP_INHERIT: {
+            EXEC_OP(OP_INHERIT): {
                 jml_value_t superclass = jml_vm_peek(1);
                 if (!IS_CLASS(superclass)) {
                     frame->pc = pc;
@@ -743,40 +805,40 @@ jml_vm_run(void)
                     &subclass->methods
                 );
                 jml_vm_pop();
-                break;
+                END_OP();
             }
 
-            case OP_SET_LOCAL: {
+            EXEC_OP(OP_SET_LOCAL): {
                 uint8_t slot = READ_BYTE();
                 frame->slots[slot] = jml_vm_peek(0);
-                break;
+                END_OP();
             }
 
-            case OP_GET_LOCAL: {
+            EXEC_OP(OP_GET_LOCAL): {
                 uint8_t slot = READ_BYTE();
                 jml_vm_push(frame->slots[slot]);
-                break;
+                END_OP();
             }
 
-            case OP_SET_UPVALUE: {
+            EXEC_OP(OP_SET_UPVALUE): {
                 uint8_t slot = READ_BYTE();
                 *frame->closure->upvalues[slot]->location = jml_vm_peek(0);
-                break;
+                END_OP();
             }
 
-            case OP_GET_UPVALUE: {
+            EXEC_OP(OP_GET_UPVALUE): {
                 uint8_t slot = READ_BYTE();
                 jml_vm_push(*frame->closure->upvalues[slot]->location);
-                break;
+                END_OP();
             }
 
-            case OP_CLOSE_UPVALUE: {
+            EXEC_OP(OP_CLOSE_UPVALUE): {
                 jml_vm_upvalue_close(vm->stack_top - 1);
                 jml_vm_pop();
-                break;
+                END_OP();
             }
 
-            case OP_SET_GLOBAL: {
+            EXEC_OP(OP_SET_GLOBAL): {
                 jml_obj_string_t *name = READ_STRING();
                 if (jml_hashmap_set(&vm->globals, name, jml_vm_peek(0))) {
                     jml_hashmap_del(&vm->globals, name);
@@ -784,10 +846,10 @@ jml_vm_run(void)
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                break;
+                END_OP();
             }
 
-            case OP_GET_GLOBAL: {
+            EXEC_OP(OP_GET_GLOBAL): {
                 jml_obj_string_t *name = READ_STRING();
                 jml_value_t value;
                 if (!jml_hashmap_get(&vm->globals, name, &value)) {
@@ -796,17 +858,17 @@ jml_vm_run(void)
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 jml_vm_push(value);
-                break;
+                END_OP();
             }
 
-            case OP_DEF_GLOBAL: {
+            EXEC_OP(OP_DEF_GLOBAL): {
                 jml_obj_string_t *name = READ_STRING();
                 jml_hashmap_set(&vm->globals, name, jml_vm_peek(0));
                 jml_vm_pop();
-                break;
+                END_OP();
             }
 
-            case OP_SET_PROPERTY: {
+            EXEC_OP(OP_SET_PROPERTY): {
                 if (!IS_INSTANCE(jml_vm_peek(1))) {
                     frame->pc = pc;
                     jml_vm_error("Only instances have fields.");
@@ -821,10 +883,10 @@ jml_vm_run(void)
                 jml_value_t value = jml_vm_pop();
                 jml_vm_pop();
                 jml_vm_push(value);
-                break;
+                END_OP();
             }
 
-            case OP_GET_PROPERTY: {
+            EXEC_OP(OP_GET_PROPERTY): {
                 if (!IS_INSTANCE(jml_vm_peek(0))) {
                     frame->pc = pc;
                     jml_vm_error("Only instances have properties.");
@@ -837,39 +899,42 @@ jml_vm_run(void)
                 if (jml_hashmap_get(&instance->fields, name, &value)) {
                     jml_vm_pop();
                     jml_vm_push(value);
-                    break;
+                    END_OP();
                 }
 
                 if (!jml_vm_method_bind(instance->klass, name))
                     return INTERPRET_RUNTIME_ERROR;
 
-                break;
+                END_OP();
             }
 
-            case OP_SUPER: {
+            EXEC_OP(OP_SUPER): {
                 jml_obj_string_t *name = READ_STRING();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
                 if (!jml_vm_method_bind(superclass, name)) {
                     frame->pc = pc;
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                break;
+                END_OP();
             }
 
-            case OP_ARRAY: {
+            EXEC_OP(OP_ARRAY): {
                 int item_count = READ_BYTE();
 
                 jml_vm_push(
                     OBJ_VAL(jml_obj_array_new(vm->stack_top - item_count,
                         item_count))
                 );
-                break;
+                END_OP();
             }
 
+#ifndef JML_COMPUTED_GOTO
             default:
                 UNREACHABLE();
+#endif
         }
     }
+
 #undef READ_BYTE
 #undef READ_SHORT
 #undef READ_STRING
@@ -878,6 +943,9 @@ jml_vm_run(void)
 #undef BINARY_OP
 #undef BINARY_DIV
 #undef BINARY_FN
+
+#undef EXEC_OP
+#undef END_OP
 }
 
 

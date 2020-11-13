@@ -1,5 +1,5 @@
-#ifndef _JML_BYTECODE_H_
-#define _JML_BYTECODE_H_
+#ifndef JML_BYTECODE_H_
+#define JML_BYTECODE_H_
 
 #include <jml_common.h>
 #include <jml_value.h>
@@ -80,4 +80,4 @@ int jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode,
     int offset);
 
 
-#endif /* _JML_BYTECODE_H_ */
+#endif /* JML_BYTECODE_H_ */

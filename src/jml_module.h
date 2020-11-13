@@ -1,5 +1,5 @@
-#ifndef _JML_MODULE_H_
-#define _JML_MODULE_H_
+#ifndef JML_MODULE_H_
+#define JML_MODULE_H_
 
 #include <jml_common.h>
 #include <jml_type.h>
@@ -18,4 +18,4 @@ void jml_module_register(jml_module_function *functions);
 void jml_core_register(void);
 
 
-#endif /* _JML_MODULE_H_ */
+#endif /* JML_MODULE_H_ */

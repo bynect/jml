@@ -1,5 +1,5 @@
-#ifndef _JML_LEXER_H_
-#define _JML_LEXER_H_
+#ifndef JML_LEXER_H_
+#define JML_LEXER_H_
 
 #include <jml_common.h>
 
@@ -141,4 +141,4 @@ jml_is_bracket(char c)
 }
 
 
-#endif /* _JML_LEXER_H_ */
+#endif /* JML_LEXER_H_ */

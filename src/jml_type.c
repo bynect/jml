@@ -268,6 +268,9 @@ jml_obj_module_new(const char *name)
     jml_obj_module_t *module = ALLOCATE_OBJ(
         jml_obj_module_t, OBJ_MODULE);
 
+    module->name = jml_obj_string_copy(name,
+        strlen(name));
+
     return module;
 }
 

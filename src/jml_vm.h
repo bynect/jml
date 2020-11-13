@@ -1,5 +1,5 @@
-#ifndef _JML_VM_H_
-#define _JML_VM_H_
+#ifndef JML_VM_H_
+#define JML_VM_H_
 
 #include <jml_value.h>
 #include <jml_type.h>
@@ -47,4 +47,4 @@ void jml_cfunction_register(const char *name, jml_cfunction function);
 extern jml_vm_t *vm;
 
 
-#endif /* _JML_VM_H_ */
+#endif /* JML_VM_H_ */

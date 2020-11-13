@@ -1,5 +1,5 @@
-#ifndef _JML_UTIL_H_
-#define _JML_UTIL_H_
+#ifndef JML_UTIL_H_
+#define JML_UTIL_H_
 
 #include <jml.h>
 
@@ -15,4 +15,4 @@ char *jml_strdup(const char *str);
 char *jml_strcat(char *dest, char *src);
 
 
-#endif /* _JML_UTIL_H_ */
+#endif /* JML_UTIL_H_ */

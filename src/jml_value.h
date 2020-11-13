@@ -1,5 +1,5 @@
-#ifndef _JML_VALUE_H_
-#define _JML_VALUE_H_
+#ifndef JML_VALUE_H_
+#define JML_VALUE_H_
 
 #include <string.h>
 
@@ -169,4 +169,4 @@ jml_is_falsey(jml_value_t value)
 }
 
 
-#endif /* _JML_VALUE_H_ */
+#endif /* JML_VALUE_H_ */
