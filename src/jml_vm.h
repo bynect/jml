@@ -17,6 +17,7 @@ typedef struct jml_vm_s {
     jml_call_frame_t                frames[FRAMES_MAX];
     uint8_t                         frame_count;
     jml_obj_string_t               *external;
+    jml_hashmap_t                   modules;
 
     jml_value_t                     stack[STACK_MAX];
     jml_value_t                    *stack_top;
@@ -41,7 +42,10 @@ void jml_vm_push(jml_value_t value);
 
 jml_value_t jml_vm_pop();
 
-void jml_cfunction_register(const char *name, jml_cfunction function);
+void jml_cfunction_register(const char *name,
+    jml_cfunction function, jml_obj_module_t *module);
+
+void jml_vm_error(const char *format, ...);
 
 
 extern jml_vm_t *vm;

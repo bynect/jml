@@ -13,6 +13,13 @@ typedef struct {
 
 void jml_module_register(jml_module_function *functions);
 
+jml_obj_module_t *jml_module_open(jml_obj_string_t *module_name);
+
+bool jml_module_close(jml_obj_module_t *module);
+
+jml_obj_cfunction_t *jml_module_get_raw(jml_obj_module_t *module,
+    const char *function_name);
+
 
 /*core module*/
 void jml_core_register(void);

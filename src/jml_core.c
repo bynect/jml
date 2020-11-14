@@ -86,7 +86,7 @@ jml_core_exception_types(int arg_count, ...)
 
 /*core functions*/
 static jml_value_t
-jml_core_clock(int arg_count, jml_value_t *args)
+jml_core_clock(int arg_count, JML_UNUSED(jml_value_t *args))
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count, 0);
@@ -99,7 +99,7 @@ jml_core_clock(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
-jml_core_timestamp(int arg_count, jml_value_t *args)
+jml_core_timestamp(int arg_count, JML_UNUSED(jml_value_t *args))
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count, 0);
@@ -112,7 +112,7 @@ jml_core_timestamp(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
-jml_core_localtime(int arg_count, jml_value_t *args)
+jml_core_localtime(int arg_count, JML_UNUSED(jml_value_t *args))
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count, 0);
@@ -370,17 +370,20 @@ jml_module_function core_functions[] = {
     {"size",                        &jml_core_size},
     {"instance",                    &jml_core_instance},
     {"subclass",                    &jml_core_subclass},
-    {"type",                        &jml_core_type}
+    {"type",                        &jml_core_type},
+    {NULL,                          NULL}
 };
 
 
 void
 jml_core_register(void)
 {
-    const int functions = 11;
+    jml_module_function *current = core_functions;
 
-    for (int i = 0; i < functions; ++i) {
-        jml_module_function current = core_functions[i];
-        jml_cfunction_register(current.name, current.function);
+    while (current->function != NULL) {
+        jml_cfunction_register(current->name,
+            current->function, NULL); /*TODO*/
+
+        ++current;
     }
 }

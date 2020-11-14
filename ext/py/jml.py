@@ -15,7 +15,7 @@ def jml_setup():
                 include_dirs = [
                     "src", "include"
                 ],
-                libraries = ["m"],
+                libraries = ["m", "dl"],
                 extra_compile_args = [
                     "-Wall",
                     "-Wextra",

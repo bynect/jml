@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <jml_type.h>
 #include <jml_gc.h>
@@ -136,7 +137,9 @@ jml_obj_map_new(void)
     jml_hashmap_t hashmap;
     jml_hashmap_init(&hashmap);
 
-    map->hashmap        = &hashmap;
+    map->hashmap        = hashmap;
+
+    /*TODO*/
 
     return map;
 }
@@ -150,6 +153,8 @@ jml_obj_class_new(jml_obj_string_t *name)
 
     klass->name             = name;
     klass->super            = NULL;
+    klass->module           = NULL; /*TODO*/
+
     jml_hashmap_init(&klass->methods);
 
     return klass;
@@ -225,6 +230,8 @@ jml_obj_function_new(void)
     function->arity              = 0;
     function->upvalue_count      = 0;
     function->name               = NULL;
+    
+    function->module             = NULL; /*TODO*/
 
     jml_bytecode_init(&function->bytecode);
 
@@ -234,14 +241,17 @@ jml_obj_function_new(void)
 
 jml_obj_cfunction_t *
 jml_obj_cfunction_new(const char *name, 
-jml_cfunction function)
+    jml_cfunction function, jml_obj_module_t *module)
 {
     jml_obj_cfunction_t *cfunction = ALLOCATE_OBJ(
         jml_obj_cfunction_t, OBJ_CFUNCTION);
 
      cfunction->name = jml_obj_string_copy(
         name, strlen(name));
+
     cfunction->function = function;
+
+    cfunction->module   = module;
 
     return cfunction;
 }
@@ -256,20 +266,51 @@ jml_obj_exception_new(const char *name,
 
     exc->name       = jml_obj_string_copy(name,
         strlen(name));
+
     exc->message    = jml_obj_string_copy(message,
         strlen(message));
+
+    exc->module     = NULL; /*TODO*/
+
+    return exc;
+}
+
+
+jml_obj_exception_t *
+jml_obj_exception_format(const char *name,
+    char *message_format, ...)
+{
+    va_list args;
+    va_start(args, message_format);
+
+    /*FIXME*/
+    size_t size = strlen(message_format) * sizeof(char) * 16;
+    char *message = (char*)jml_realloc(NULL, size);
+    vsprintf(message, message_format, args);
+
+    va_end(args);
+
+    jml_obj_exception_t *exc = jml_obj_exception_new(
+        name, message);
+    
+    jml_realloc(message, 0UL);
+
     return exc;
 }
 
 
 jml_obj_module_t *
-jml_obj_module_new(const char *name)
+jml_obj_module_new(const char *name, void *handle)
 {
     jml_obj_module_t *module = ALLOCATE_OBJ(
         jml_obj_module_t, OBJ_MODULE);
 
-    module->name = jml_obj_string_copy(name,
-        strlen(name));
+    module->name    = jml_obj_string_copy(
+        name, strlen(name));
+
+    module->handle  = handle;
+
+    jml_hashmap_init(&module->globals);
 
     return module;
 }
@@ -319,6 +360,10 @@ jml_obj_print(jml_value_t value)
             printf("<class %s>", AS_CLASS(value)->name->chars);
             break;
 
+        case OBJ_MODULE:
+            printf("<module %s>", AS_MODULE(value)->name->chars);
+            break;
+
         case OBJ_INSTANCE:
             printf("<instance of %s>", 
                 AS_INSTANCE(value)->klass->name->chars);
@@ -348,10 +393,6 @@ jml_obj_print(jml_value_t value)
 
         case OBJ_EXCEPTION:
             printf("<exception>");
-            break;
-
-        case OBJ_MODULE:
-            printf("%s", AS_MODULE(value)->name->chars);
             break;
     }
 }
@@ -391,6 +432,13 @@ jml_obj_stringify(jml_value_t value)
             return jml_strdup(cls);
         }
 
+        case OBJ_MODULE: {
+            char module[12];
+            sprintf(module, "<module %s>",
+                AS_MODULE(value)->name->chars);
+            return jml_strdup(module);
+        }
+
         case OBJ_INSTANCE: {
             char ins[17];
             sprintf(ins, "<instance of %s>",
@@ -423,13 +471,6 @@ jml_obj_stringify(jml_value_t value)
                 AS_EXCEPTION(value)->name->chars);
             return jml_strdup(exc);
         }
-
-        case OBJ_MODULE: {
-            char module[12];
-            sprintf(module, "<module %s>",
-                AS_MODULE(value)->name->chars);
-            return jml_strdup(module);
-        }
     }
     return NULL;
 }
@@ -447,6 +488,9 @@ jml_obj_stringify_type(jml_value_t value)
 
         case OBJ_MAP:
             return "<type map>";
+
+        case OBJ_MODULE:
+            return "<type module>";
 
         case OBJ_CLASS:
             return "<type class>";
@@ -471,9 +515,6 @@ jml_obj_stringify_type(jml_value_t value)
 
         case OBJ_EXCEPTION:
             return "<type exception>";
-
-        case OBJ_MODULE:
-            return "<type module>";
     }
     return NULL;
 }

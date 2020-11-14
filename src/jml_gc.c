@@ -2,6 +2,7 @@
 
 #include <jml_gc.h>
 #include <jml_vm.h>
+#include <jml_module.h>
 
 #ifdef JML_TRACE_GC
 #include <stdio.h>
@@ -162,8 +163,16 @@ jml_free_object(jml_obj_t *object)
 
         case OBJ_MAP: {
             jml_obj_map_t *map = (jml_obj_map_t*)object;
-            jml_hashmap_free(map->hashmap);
+            jml_hashmap_free(&map->hashmap);
             FREE(jml_obj_map_t, object);
+            break;
+        }
+
+        case OBJ_MODULE: {
+            jml_obj_module_t *module = (jml_obj_module_t*)object;
+            jml_hashmap_free(&module->globals);
+            jml_module_close(module->handle);
+            FREE(jml_obj_module_t, object);
             break;
         }
 
@@ -212,11 +221,6 @@ jml_free_object(jml_obj_t *object)
 
         case OBJ_EXCEPTION: {
             FREE(jml_obj_exception_t, object);
-            break;
-        }
-
-        case OBJ_MODULE: {
-            FREE(jml_obj_module_t, object);
             break;
         }
     }
@@ -282,8 +286,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
         }
 
         case OBJ_MAP: {
-            jml_hashmap_mark(
-                ((jml_obj_map_t*)object)->hashmap);
+            jml_hashmap_mark(&((jml_obj_map_t*)object)->hashmap);
             break;
         }
 

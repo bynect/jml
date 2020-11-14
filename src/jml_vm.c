@@ -25,13 +25,14 @@ jml_vm_stack_reset(void)
 }
 
 
-static void
+void
 jml_vm_error(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
     va_end(args);
+
     fputs("\n", stderr);
 
 #ifdef JML_TRACE_BACK
@@ -101,6 +102,7 @@ jml_vm_init(jml_vm_t *vm_ptr)
     vm_ptr->gray_capacity   = 0;
     vm_ptr->gray_stack      = NULL;
 
+    jml_hashmap_init(&vm_ptr->modules);
     jml_hashmap_init(&vm_ptr->strings);
     jml_hashmap_init(&vm_ptr->globals);
 
@@ -117,6 +119,7 @@ jml_vm_init(jml_vm_t *vm_ptr)
 void
 jml_vm_free(jml_vm_t *vm_ptr)
 {
+    jml_hashmap_free(&vm_ptr->modules);
     jml_hashmap_free(&vm_ptr->strings);
     jml_hashmap_free(&vm_ptr->globals);
 
@@ -443,6 +446,33 @@ jml_array_concatenate(void)
 }
 
 
+static bool
+jml_module_import(jml_obj_string_t *module_name)
+{
+    jml_value_t value;
+
+    if (!jml_hashmap_get(&vm->modules, module_name, &value)) {
+
+        jml_obj_module_t *module = jml_module_open(module_name);
+
+        if (module == NULL)
+            return false;
+
+        value = OBJ_VAL(module);
+        jml_hashmap_set(&vm->modules, module_name, value);
+
+        jml_obj_cfunction_t *init = jml_module_get_raw(module, "__module");
+        if (init == NULL) {
+            return false;
+        }
+        init->function(1, &value);
+    }
+
+    jml_vm_push(value);
+    return true;
+}
+
+
 static jml_interpret_result
 jml_vm_run(void)
 {
@@ -452,6 +482,7 @@ jml_vm_run(void)
 #define READ_BYTE()                 (*pc++)
 #define READ_SHORT()                (pc += 2, (uint16_t)((pc[-2] << 8) | pc[-1]))
 #define READ_STRING()               AS_STRING(READ_CONST())
+#define READ_CSTRING()              AS_CSTRING(READ_CONST())
 #define READ_CONST()                                    \
     (frame->closure->function->bytecode.constants.values[READ_BYTE()])
 
@@ -554,10 +585,12 @@ jml_vm_run(void)
         &&exec_OP_SET_GLOBAL,
         &&exec_OP_GET_GLOBAL,
         &&exec_OP_DEF_GLOBAL,
-        &&exec_OP_SET_PROPERTY,
-        &&exec_OP_GET_PROPERTY,
+        &&exec_OP_SET_MEMBER,
+        &&exec_OP_GET_MEMBER,
         &&exec_OP_SUPER,
-        &&exec_OP_ARRAY
+        &&exec_OP_ARRAY,
+        &&exec_OP_MAP,
+        &&exec_OP_IMPORT
     };
 
     DISPATCH();
@@ -617,6 +650,14 @@ jml_vm_run(void)
                 if (IS_STRING(jml_vm_peek(1))) {
 
                     if (IS_STRING(jml_vm_peek(0))) {
+                        jml_string_concatenate();
+
+                    } else if (IS_NUM(jml_vm_peek(0))) {
+                        char *temp = jml_value_stringify(jml_vm_pop());
+                        jml_vm_push(OBJ_VAL(
+                            jml_obj_string_take(temp, strlen(temp))
+                        ));
+
                         jml_string_concatenate();
 
                     } else {
@@ -911,7 +952,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_SET_PROPERTY): {
+            EXEC_OP(OP_SET_MEMBER): {
                 if (!IS_INSTANCE(jml_vm_peek(1))) {
                     frame->pc = pc;
                     jml_vm_error("Only instances have fields.");
@@ -929,7 +970,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_GET_PROPERTY): {
+            EXEC_OP(OP_GET_MEMBER): {
                 if (!IS_INSTANCE(jml_vm_peek(0))) {
                     frame->pc = pc;
                     jml_vm_error("Only instances have properties.");
@@ -971,16 +1012,29 @@ jml_vm_run(void)
                 END_OP();
             }
 
+            EXEC_OP(OP_MAP): {
+                /*TODO*/
+                END_OP();
+            }
+
+            EXEC_OP(OP_IMPORT): {
+                frame->pc = pc;
+                if (!jml_module_import(READ_STRING())) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                END_OP();
+            }
+
 #ifndef JML_COMPUTED_GOTO
             default:
                 UNREACHABLE();
 #endif
         }
     }
-
 #undef READ_BYTE
 #undef READ_SHORT
 #undef READ_STRING
+#undef READ_CSTRING
 #undef READ_CONST
 
 #undef BINARY_OP
@@ -994,10 +1048,10 @@ jml_vm_run(void)
 
 void
 jml_cfunction_register(const char *name,
-    jml_cfunction function)
+    jml_cfunction function, jml_obj_module_t *module)
 {
     jml_vm_push(OBJ_VAL(jml_obj_cfunction_new(name,
-        function)));
+        function, module)));
 
     jml_hashmap_set(
         &vm->globals, AS_CFUNCTION(vm->stack[0])->name,

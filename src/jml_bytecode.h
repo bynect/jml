@@ -46,10 +46,12 @@ typedef enum {
     OP_SET_GLOBAL,
     OP_GET_GLOBAL,
     OP_DEF_GLOBAL,
-    OP_SET_PROPERTY,
-    OP_GET_PROPERTY,
+    OP_SET_MEMBER,
+    OP_GET_MEMBER,
     OP_SUPER,
-    OP_ARRAY
+    OP_ARRAY,
+    OP_MAP,
+    OP_IMPORT
 } jml_bytecode_op;
 
 

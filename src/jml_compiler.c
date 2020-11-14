@@ -586,18 +586,18 @@ jml_call(JML_UNUSED(bool assignable))
 static void
 jml_dot(bool assignable)
 {
-    jml_parser_consume(TOKEN_NAME, "Expect property name after '.'.");
+    jml_parser_consume(TOKEN_NAME, "Expect identifier after '.'.");
     uint8_t name = jml_identifier_const(&parser.previous);
 
     if (assignable && jml_parser_match(TOKEN_EQUAL)) {
         jml_expression();
-        jml_bytecode_emit_bytes(OP_SET_PROPERTY, name);
+        jml_bytecode_emit_bytes(OP_SET_MEMBER, name);
     } else if (jml_parser_match(TOKEN_LPAREN)) {
         uint8_t arg_count = jml_arguments_list();
         jml_bytecode_emit_bytes(OP_INVOKE, name);
         jml_bytecode_emit_byte(arg_count);
     } else {
-        jml_bytecode_emit_bytes(OP_GET_PROPERTY, name);
+        jml_bytecode_emit_bytes(OP_GET_MEMBER, name);
     }
 }
 
@@ -1024,24 +1024,6 @@ jml_expression_statement(void)
 
 
 static void
-jml_if_statement(void)
-{
-    jml_expression();
-
-    int then_jump = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
-    jml_bytecode_emit_byte(OP_POP);
-    jml_statement();
-
-    int else_jump = jml_bytecode_emit_jump(OP_JMP);
-    jml_bytecode_patch_jump(then_jump);
-    jml_bytecode_emit_byte(OP_POP);
-
-    if (jml_parser_match(TOKEN_ELSE)) jml_statement();
-    jml_bytecode_patch_jump(else_jump);
-}
-
-
-static void
 jml_return_statement(void)
 {
     if (current->type == FUNCTION_MAIN) {
@@ -1058,6 +1040,18 @@ jml_return_statement(void)
         jml_parser_consume_line();
         jml_bytecode_emit_byte(OP_RETURN);
     }
+}
+
+
+static void
+jml_import_statement(void)
+{
+    jml_parser_consume(TOKEN_NAME, "Expect identifier after 'import'.");
+    uint8_t name = jml_identifier_const(&parser.previous);
+
+    /*TODO*/
+
+    jml_bytecode_emit_bytes(OP_IMPORT, name);
 }
 
 
@@ -1161,6 +1155,24 @@ jml_for_statement(void)
 
 
 static void
+jml_if_statement(void)
+{
+    jml_expression();
+
+    int then_jump = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
+    jml_bytecode_emit_byte(OP_POP);
+    jml_statement();
+
+    int else_jump = jml_bytecode_emit_jump(OP_JMP);
+    jml_bytecode_patch_jump(then_jump);
+    jml_bytecode_emit_byte(OP_POP);
+
+    if (jml_parser_match(TOKEN_ELSE)) jml_statement();
+    jml_bytecode_patch_jump(else_jump);
+}
+
+
+static void
 jml_declaration(void)
 {
     if (jml_parser_match(TOKEN_CLASS)) {
@@ -1181,21 +1193,27 @@ jml_declaration(void)
 static void
 jml_statement(void)
 {
-    if (jml_parser_match(TOKEN_RETURN)) {
+    if (jml_parser_match(TOKEN_RETURN))
         jml_return_statement();
-    } else if (jml_parser_match(TOKEN_FOR)) {
-        jml_for_statement();
-    } else if (jml_parser_match(TOKEN_IF)) {
-        jml_if_statement();
-    } else if (jml_parser_match(TOKEN_WHILE)) {
+
+    else if (jml_parser_match(TOKEN_IMPORT))
+        jml_import_statement();
+
+    else if (jml_parser_match(TOKEN_WHILE))
         jml_while_statement();
-    } else if (jml_parser_match(TOKEN_LBRACE)) {
+
+    else if (jml_parser_match(TOKEN_FOR))
+        jml_for_statement();
+
+    else if (jml_parser_match(TOKEN_IF))
+        jml_if_statement();
+
+    else if (jml_parser_match(TOKEN_LBRACE)) {
         jml_scope_begin();
         jml_block();
         jml_scope_end();
-    } else {
+    } else
         jml_expression();
-    }
 }
 
 
