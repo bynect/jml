@@ -974,6 +974,7 @@ jml_class_declaration(void)
 
     while (!jml_parser_check(TOKEN_RBRACE)
         && !jml_parser_check(TOKEN_EOF)) {
+
         jml_method();
     }
 
@@ -1048,8 +1049,6 @@ jml_import_statement(void)
 {
     jml_parser_consume(TOKEN_NAME, "Expect identifier after 'import'.");
     uint8_t name = jml_identifier_const(&parser.previous);
-
-    /*TODO*/
 
     jml_bytecode_emit_bytes(OP_IMPORT, name);
 }

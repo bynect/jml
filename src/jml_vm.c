@@ -302,21 +302,40 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 {
     jml_value_t receiver = jml_vm_peek(arg_count);
 
-    if (!IS_INSTANCE(receiver)) {
-        jml_vm_error("Only instances have methods.");
-        return false;
+    if (IS_INSTANCE(receiver)) {
+        jml_obj_instance_t *instance = AS_INSTANCE(receiver);
+        jml_value_t         value;
+
+        if (jml_hashmap_get(&instance->fields, name, &value)) {
+            vm->stack_top[-arg_count - 1] = value;
+            return jml_vm_call_value(value, arg_count);
+        }
+
+        return jml_vm_invoke_class(instance->klass,
+            name, arg_count);
+
+    } else if (IS_MODULE(receiver)) {
+        jml_obj_module_t *module = AS_MODULE(receiver);
+
+        jml_value_t value;
+        if (jml_hashmap_get(&module->globals, name, &value))
+            return jml_vm_call_value(value, arg_count);
+
+        else if (module->handle != NULL) {
+            jml_obj_cfunction_t *cfunction = jml_module_get_raw(
+                module, name->chars);
+
+            if (cfunction == NULL)
+                return false;
+            
+            value = OBJ_VAL(cfunction);
+            jml_hashmap_set(&module->globals, name, value);
+            return jml_vm_call_value(value, arg_count);
+        }
     }
 
-    jml_obj_instance_t *instance = AS_INSTANCE(receiver);
-
-    jml_value_t value;
-    if (jml_hashmap_get(&instance->fields, name, &value)) {
-        vm->stack_top[-arg_count - 1] = value;
-        return jml_vm_call_value(value, arg_count);
-    }
-
-    return jml_vm_invoke_class(instance->klass,
-        name, arg_count);
+    jml_vm_error("Cannot call %s", name->chars);
+    return false;
 }
 
 
@@ -447,7 +466,7 @@ jml_array_concatenate(void)
 
 
 static bool
-jml_module_import(jml_obj_string_t *module_name)
+jml_vm_module_import(jml_obj_string_t *module_name)
 {
     jml_value_t value;
 
@@ -460,6 +479,7 @@ jml_module_import(jml_obj_string_t *module_name)
 
         value = OBJ_VAL(module);
         jml_hashmap_set(&vm->modules, module_name, value);
+        jml_hashmap_set(&vm->globals, module_name, value);
 
         jml_obj_cfunction_t *init = jml_module_get_raw(module, "__module");
         if (init == NULL) {
@@ -469,6 +489,33 @@ jml_module_import(jml_obj_string_t *module_name)
     }
 
     jml_vm_push(value);
+    return true;
+}
+
+
+static bool
+jml_vm_module_bind(jml_obj_module_t *module,
+    jml_obj_string_t *name)
+{
+    jml_value_t function;
+    if (!jml_hashmap_get(&module->globals,
+        name, &function)) {
+
+        jml_vm_error(
+            "Undefined member '%s'.", name->chars
+        );
+        return false;
+    }
+
+    /*TODO*/
+    jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
+        AS_CSTRING(jml_vm_peek(0)),
+        AS_CFUNCTION(function)->function,
+        module
+    );
+
+    jml_vm_pop();
+    jml_vm_push(OBJ_VAL(cfunction));
     return true;
 }
 
@@ -802,18 +849,18 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_METHOD): {
-                frame->pc = pc;
                 jml_vm_method_define(READ_STRING());
                 END_OP();
             }
-            
+
             EXEC_OP(OP_INVOKE): {
-                jml_obj_string_t *method = READ_STRING();
+                jml_obj_string_t *name = READ_STRING();
                 int arg_count = READ_BYTE();
+
                 frame->pc = pc;
-                if (!jml_vm_invoke(method, arg_count))
+                if (!jml_vm_invoke(name, arg_count))
                     return INTERPRET_RUNTIME_ERROR;
-                
+
                 frame = &vm->frames[vm->frame_count - 1];
                 pc = frame->pc;
                 END_OP();
@@ -953,42 +1000,76 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_SET_MEMBER): {
-                if (!IS_INSTANCE(jml_vm_peek(1))) {
+                jml_value_t             peeked      = jml_vm_peek(1);
+
+                if (IS_INSTANCE(peeked)) {
+                    jml_obj_instance_t *instance    = AS_INSTANCE(peeked);
+                    jml_hashmap_set(
+                        &instance->fields, READ_STRING(), jml_vm_peek(0)
+                    );
+
+                    jml_value_t value = jml_vm_pop();
+                    jml_vm_pop();
+                    jml_vm_push(value);
+                    END_OP();
+
+                } else if (IS_MODULE(peeked)) {
+                    jml_obj_module_t   *module      = AS_MODULE(peeked);
+                    jml_hashmap_set(
+                        &module->globals, READ_STRING(), jml_vm_peek(0)
+                    );
+
+                    jml_value_t value = jml_vm_pop();
+                    jml_vm_pop();
+                    jml_vm_push(value);
+                    END_OP();
+
+                } else {
                     frame->pc = pc;
                     jml_vm_error("Only instances have fields.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-
-                jml_obj_instance_t *instance = AS_INSTANCE(jml_vm_peek(1));
-                jml_hashmap_set(
-                    &instance->fields, READ_STRING(), jml_vm_peek(0)
-                );
-
-                jml_value_t value = jml_vm_pop();
-                jml_vm_pop();
-                jml_vm_push(value);
                 END_OP();
             }
 
             EXEC_OP(OP_GET_MEMBER): {
-                if (!IS_INSTANCE(jml_vm_peek(0))) {
+                jml_value_t             peeked      = jml_vm_peek(0);
+
+                if (IS_INSTANCE(peeked)) {
+                    jml_obj_instance_t *instance    = AS_INSTANCE(peeked);
+                    jml_obj_string_t   *name        = READ_STRING();
+
+                    jml_value_t value;
+                    if (jml_hashmap_get(&instance->fields, name, &value)) {
+                        jml_vm_pop();
+                        jml_vm_push(value);
+                        END_OP();
+                    }
+
+                    frame->pc = pc;
+                    if (!jml_vm_method_bind(instance->klass, name))
+                        return INTERPRET_RUNTIME_ERROR;
+
+                } else if (IS_MODULE(peeked)) {
+                    jml_obj_module_t   *module      = AS_MODULE(peeked);
+                    jml_obj_string_t   *name        = READ_STRING();
+
+                    jml_value_t value;
+                    if (jml_hashmap_get(&module->globals, name, &value)) {
+                        jml_vm_pop();
+                        jml_vm_push(value);
+                        END_OP();
+                    }
+
+                    frame->pc = pc;
+                    if (!jml_vm_module_bind(module, name))
+                        return INTERPRET_RUNTIME_ERROR;
+
+                } else {
                     frame->pc = pc;
                     jml_vm_error("Only instances have properties.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                jml_obj_instance_t *instance = AS_INSTANCE(jml_vm_peek(0));
-                jml_obj_string_t *name = READ_STRING();
-
-                jml_value_t value;
-                if (jml_hashmap_get(&instance->fields, name, &value)) {
-                    jml_vm_pop();
-                    jml_vm_push(value);
-                    END_OP();
-                }
-
-                if (!jml_vm_method_bind(instance->klass, name))
-                    return INTERPRET_RUNTIME_ERROR;
-
                 END_OP();
             }
 
@@ -1019,7 +1100,7 @@ jml_vm_run(void)
 
             EXEC_OP(OP_IMPORT): {
                 frame->pc = pc;
-                if (!jml_module_import(READ_STRING())) {
+                if (!jml_vm_module_import(READ_STRING())) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 END_OP();
