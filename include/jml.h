@@ -6,10 +6,43 @@ extern "C" {
 #endif
 
 
+/*INFO*/
 #define JML_VERSION_MAJOR           0
 #define JML_VERSION_MINOR           1
 #define JML_VERSION_MICRO           0
 #define JML_VERSION_STRING          "0.1.0"
+
+
+/*API*/
+typedef enum {
+    INTERPRET_OK,
+    INTERPRET_COMPILE_ERROR,
+    INTERPRET_RUNTIME_ERROR
+} jml_interpret_result;
+
+
+typedef struct jml_vm_s jml_vm_t;
+
+
+jml_vm_t *jml_vm_new(void);
+
+void jml_vm_free(jml_vm_t *vm_ptr);
+
+jml_interpret_result jml_vm_interpret(const char *source);
+
+
+/*MACRO*/
+#ifdef __GNUC__
+
+#define JML_COMPUTED_GOTO
+#define JML_UNUSED(arg)             __attribute__((unused)) arg
+
+#else
+
+#undef  JML_COMPUTED_GOTO
+#define JML_UNUSED(arg)             arg
+
+#endif
 
 
 #if defined (_WIN64)
@@ -53,23 +86,6 @@ extern "C" {
 #define JML_PLATFORM                0
 
 #endif
-
-
-typedef enum {
-    INTERPRET_OK,
-    INTERPRET_COMPILE_ERROR,
-    INTERPRET_RUNTIME_ERROR
-} jml_interpret_result;
-
-
-typedef struct jml_vm_s jml_vm_t;
-
-
-jml_vm_t *jml_vm_new(void);
-
-void jml_vm_free(jml_vm_t *vm_ptr);
-
-jml_interpret_result jml_vm_interpret(const char *source);
 
 
 #ifdef __cplusplus

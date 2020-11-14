@@ -12,19 +12,6 @@
 #define MAP_LOAD_MAX                0.75
 
 
-#ifdef __GNUC__
-
-#define JML_COMPUTED_GOTO
-#define JML_UNUSED(arg)             __attribute__((unused)) arg
-
-#else
-
-#undef  JML_COMPUTED_GOTO
-#define JML_UNUSED(arg)             arg
-
-#endif
-
-
 #ifdef JML_NDEBUG
 
 #define JML_NAN_TAGGING

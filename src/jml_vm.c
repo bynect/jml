@@ -588,7 +588,7 @@ jml_vm_run(void)
 #ifdef JML_COMPUTED_GOTO
 
 #define DISPATCH()                  goto *dispatcher[READ_BYTE()]
-#define EXEC_OP(op)                 exec_##op
+#define EXEC_OP(op)                 exec_##op:
 #define END_OP()                    DISPATCH()
 
     static void *dispatcher[] = {
@@ -644,7 +644,7 @@ jml_vm_run(void)
 
 #else
 
-#define EXEC_OP(op)                 case op
+#define EXEC_OP(op)                 case op:
 #define END_OP()                    break
 
 #endif
@@ -654,17 +654,17 @@ jml_vm_run(void)
 
         switch (instruction = READ_BYTE()) {
 
-            EXEC_OP(OP_POP): {
+            EXEC_OP(OP_POP) {
                 jml_vm_pop();
                 END_OP();
             }
 
-            EXEC_OP(OP_POP_TWO): {
+            EXEC_OP(OP_POP_TWO) {
                 jml_vm_pop_two();
                 END_OP();
             }
 
-            EXEC_OP(OP_ROT): {
+            EXEC_OP(OP_ROT) {
                 jml_value_t a       = jml_vm_pop();
                 jml_value_t b       = jml_vm_pop();
                 jml_vm_push(a);
@@ -672,28 +672,28 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_CONST): {
+            EXEC_OP(OP_CONST) {
                 jml_value_t constant = READ_CONST();
                 jml_vm_push(constant);
                 END_OP();
             }
 
-            EXEC_OP(OP_NONE): {
+            EXEC_OP(OP_NONE) {
                 jml_vm_push(NONE_VAL);
                 END_OP();
             }
 
-            EXEC_OP(OP_TRUE): {
+            EXEC_OP(OP_TRUE) {
                 jml_vm_push(BOOL_VAL(true));
                 END_OP();
             }
 
-            EXEC_OP(OP_FALSE): {
+            EXEC_OP(OP_FALSE) {
                 jml_vm_push(BOOL_VAL(false));
                 END_OP();
             }
 
-            EXEC_OP(OP_ADD): {
+            EXEC_OP(OP_ADD) {
                 if (IS_STRING(jml_vm_peek(1))) {
 
                     if (IS_STRING(jml_vm_peek(0))) {
@@ -735,39 +735,39 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_SUB): {
+            EXEC_OP(OP_SUB) {
                 BINARY_OP(NUM_VAL, -, double);
                 END_OP();
             }
 
-            EXEC_OP(OP_MUL): {
+            EXEC_OP(OP_MUL) {
                 BINARY_OP(NUM_VAL, *, double);
                 END_OP();
             }
 
-            EXEC_OP(OP_DIV): {
+            EXEC_OP(OP_DIV) {
                 BINARY_DIV(NUM_VAL, /, double);
                 END_OP();
             }
 
-            EXEC_OP(OP_MOD): {
+            EXEC_OP(OP_MOD) {
                 BINARY_DIV(NUM_VAL, %, int);
                 END_OP();
             }
 
-            EXEC_OP(OP_POW): {
+            EXEC_OP(OP_POW) {
                 BINARY_FN(NUM_VAL, pow, double);
                 END_OP();
             }
 
-            EXEC_OP(OP_NOT): {
+            EXEC_OP(OP_NOT) {
                 jml_vm_push(
                     BOOL_VAL(jml_is_falsey(jml_vm_pop()))
                 );
                 END_OP();
             }
 
-            EXEC_OP(OP_NEGATE): {
+            EXEC_OP(OP_NEGATE) {
                 if (!IS_NUM(jml_vm_peek(0))) {
                     frame->pc = pc;
                     jml_vm_error(
@@ -781,7 +781,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_EQUAL): {
+            EXEC_OP(OP_EQUAL) {
                 jml_value_t b = jml_vm_pop();
                 jml_value_t a = jml_vm_pop();
                 jml_vm_push(
@@ -790,27 +790,27 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_GREATER): {
+            EXEC_OP(OP_GREATER) {
                 BINARY_OP(BOOL_VAL, >, double);
                 END_OP();
             }
 
-            EXEC_OP(OP_GREATEREQ): {
+            EXEC_OP(OP_GREATEREQ) {
                 BINARY_OP(BOOL_VAL, >=, double);
                 END_OP();
             }
 
-            EXEC_OP(OP_LESS): {
+            EXEC_OP(OP_LESS) {
                 BINARY_OP(BOOL_VAL, <, double);
                 END_OP();
             }
 
-            EXEC_OP(OP_LESSEQ): {
+            EXEC_OP(OP_LESSEQ) {
                 BINARY_OP(BOOL_VAL, <=, double);
                 END_OP();
             }
 
-            EXEC_OP(OP_NOTEQ): {
+            EXEC_OP(OP_NOTEQ) {
                 jml_value_t b = jml_vm_pop();
                 jml_value_t a = jml_vm_pop();
                 jml_vm_push(
@@ -819,25 +819,25 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_JMP): {
+            EXEC_OP(OP_JMP) {
                 uint16_t offset = READ_SHORT();
                 pc += offset;
                 END_OP();
             }
 
-            EXEC_OP(OP_JMP_IF_FALSE): {
+            EXEC_OP(OP_JMP_IF_FALSE) {
                 uint16_t offset = READ_SHORT();
                 if (jml_is_falsey(jml_vm_peek(0))) pc += offset;
                 END_OP();
             }
 
-            EXEC_OP(OP_LOOP): {
+            EXEC_OP(OP_LOOP) {
                 uint16_t offset = READ_SHORT();
                 pc -= offset;
                 END_OP();
             }
 
-            EXEC_OP(OP_CALL): {
+            EXEC_OP(OP_CALL) {
                 int arg_count = READ_BYTE();
                 frame->pc = pc;
                 if (!jml_vm_call_value(jml_vm_peek(arg_count), arg_count))
@@ -848,12 +848,12 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_METHOD): {
+            EXEC_OP(OP_METHOD) {
                 jml_vm_method_define(READ_STRING());
                 END_OP();
             }
 
-            EXEC_OP(OP_INVOKE): {
+            EXEC_OP(OP_INVOKE) {
                 jml_obj_string_t *name = READ_STRING();
                 int arg_count = READ_BYTE();
 
@@ -866,7 +866,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_SUPER_INVOKE): {
+            EXEC_OP(OP_SUPER_INVOKE) {
                 jml_obj_string_t *method = READ_STRING();
                 int arg_count = READ_BYTE();
                 frame->pc = pc;
@@ -880,7 +880,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_CLOSURE): {
+            EXEC_OP(OP_CLOSURE) {
                 jml_obj_function_t *function = AS_FUNCTION(READ_CONST());
                 jml_obj_closure_t *closure = jml_obj_closure_new(function);
                 jml_vm_push(OBJ_VAL(closure));
@@ -896,7 +896,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_RETURN): {
+            EXEC_OP(OP_RETURN) {
                 jml_value_t result = jml_vm_pop();
                 jml_vm_upvalue_close(frame->slots);
                 vm->frame_count--;
@@ -913,14 +913,14 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_CLASS): {
+            EXEC_OP(OP_CLASS) {
                 jml_vm_push(
                     OBJ_VAL(jml_obj_class_new(READ_STRING()))
                 );
                 END_OP();
             }
 
-            EXEC_OP(OP_INHERIT): {
+            EXEC_OP(OP_INHERIT) {
                 jml_value_t superclass = jml_vm_peek(1);
                 if (!IS_CLASS(superclass)) {
                     frame->pc = pc;
@@ -939,37 +939,37 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_SET_LOCAL): {
+            EXEC_OP(OP_SET_LOCAL) {
                 uint8_t slot = READ_BYTE();
                 frame->slots[slot] = jml_vm_peek(0);
                 END_OP();
             }
 
-            EXEC_OP(OP_GET_LOCAL): {
+            EXEC_OP(OP_GET_LOCAL) {
                 uint8_t slot = READ_BYTE();
                 jml_vm_push(frame->slots[slot]);
                 END_OP();
             }
 
-            EXEC_OP(OP_SET_UPVALUE): {
+            EXEC_OP(OP_SET_UPVALUE) {
                 uint8_t slot = READ_BYTE();
                 *frame->closure->upvalues[slot]->location = jml_vm_peek(0);
                 END_OP();
             }
 
-            EXEC_OP(OP_GET_UPVALUE): {
+            EXEC_OP(OP_GET_UPVALUE) {
                 uint8_t slot = READ_BYTE();
                 jml_vm_push(*frame->closure->upvalues[slot]->location);
                 END_OP();
             }
 
-            EXEC_OP(OP_CLOSE_UPVALUE): {
+            EXEC_OP(OP_CLOSE_UPVALUE) {
                 jml_vm_upvalue_close(vm->stack_top - 1);
                 jml_vm_pop();
                 END_OP();
             }
 
-            EXEC_OP(OP_SET_GLOBAL): {
+            EXEC_OP(OP_SET_GLOBAL) {
                 jml_obj_string_t *name = READ_STRING();
                 if (jml_hashmap_set(&vm->globals, name, jml_vm_peek(0))) {
                     jml_hashmap_del(&vm->globals, name);
@@ -980,7 +980,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_GET_GLOBAL): {
+            EXEC_OP(OP_GET_GLOBAL) {
                 jml_obj_string_t *name = READ_STRING();
                 jml_value_t value;
                 if (!jml_hashmap_get(&vm->globals, name, &value)) {
@@ -992,14 +992,14 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_DEF_GLOBAL): {
+            EXEC_OP(OP_DEF_GLOBAL) {
                 jml_obj_string_t *name = READ_STRING();
                 jml_hashmap_set(&vm->globals, name, jml_vm_peek(0));
                 jml_vm_pop();
                 END_OP();
             }
 
-            EXEC_OP(OP_SET_MEMBER): {
+            EXEC_OP(OP_SET_MEMBER) {
                 jml_value_t             peeked      = jml_vm_peek(1);
 
                 if (IS_INSTANCE(peeked)) {
@@ -1032,7 +1032,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_GET_MEMBER): {
+            EXEC_OP(OP_GET_MEMBER) {
                 jml_value_t             peeked      = jml_vm_peek(0);
 
                 if (IS_INSTANCE(peeked)) {
@@ -1073,7 +1073,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_SUPER): {
+            EXEC_OP(OP_SUPER) {
                 jml_obj_string_t *name = READ_STRING();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
                 if (!jml_vm_method_bind(superclass, name)) {
@@ -1083,7 +1083,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_ARRAY): {
+            EXEC_OP(OP_ARRAY) {
                 int item_count = READ_BYTE();
 
                 jml_vm_push(
@@ -1093,12 +1093,12 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_MAP): {
+            EXEC_OP(OP_MAP) {
                 /*TODO*/
                 END_OP();
             }
 
-            EXEC_OP(OP_IMPORT): {
+            EXEC_OP(OP_IMPORT) {
                 frame->pc = pc;
                 if (!jml_vm_module_import(READ_STRING())) {
                     return INTERPRET_RUNTIME_ERROR;
