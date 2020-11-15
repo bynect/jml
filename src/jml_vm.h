@@ -16,16 +16,19 @@ typedef struct {
 typedef struct jml_vm_s {
     jml_call_frame_t                frames[FRAMES_MAX];
     uint8_t                         frame_count;
-    jml_obj_string_t               *external;
-    jml_hashmap_t                   modules;
+    jml_obj_upvalue_t              *open_upvalues;
 
     jml_value_t                     stack[STACK_MAX];
     jml_value_t                    *stack_top;
     jml_hashmap_t                   globals;
     jml_hashmap_t                   strings;
+    jml_hashmap_t                   modules;
+
     jml_obj_string_t               *init_string;
     jml_obj_string_t               *call_string;
-    jml_obj_upvalue_t              *open_upvalues;
+    jml_obj_string_t               *module_string;
+    jml_obj_string_t               *path_string;
+    jml_obj_string_t               *external;
 
     size_t                          allocated;
     size_t                          next_gc;

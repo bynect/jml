@@ -45,12 +45,12 @@ jml_interpret_result jml_vm_interpret(const char *source);
 #endif
 
 
-#if defined (_WIN64)
+#if defined (_WIN64) || (defined (WIN64))
 
 #define JML_PLATFORM_STRING         "win64"
 #define JML_PLATFORM                7
 
-#elif defined (_WIN32)
+#elif defined (_WIN32) || (defined (WIN32))
 
 #define JML_PLATFORM_STRING         "win32"
 #define JML_PLATFORM                6
@@ -84,6 +84,21 @@ jml_interpret_result jml_vm_interpret(const char *source);
 
 #define JML_PLATFORM_STRING         "other"
 #define JML_PLATFORM                0
+
+#endif
+
+
+#if JML_PLATFORM > 0 && JML_PLATFORM < 6
+
+#define JML_PLATFORM_NIX
+
+#elif JML_PLATFORM == 6 || JML_PLATFORM == 7
+
+#define JML_PLATFORM_WIN
+
+#else
+
+#define JML_PLATFORM_UNK
 
 #endif
 

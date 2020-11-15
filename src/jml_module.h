@@ -11,9 +11,10 @@ typedef struct {
 } jml_module_function;
 
 
-void jml_module_register(jml_module_function *functions);
+void jml_module_register(jml_obj_module_t *module,
+    jml_module_function *functions);
 
-jml_obj_module_t *jml_module_open(jml_obj_string_t *module_name);
+jml_obj_module_t *jml_module_open(jml_obj_string_t *module_name, char *path);
 
 bool jml_module_close(jml_obj_module_t *module);
 

@@ -91,6 +91,8 @@ jml_gc_mark_roots(void)
     jml_compiler_mark_roots();
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
     jml_gc_mark_obj((jml_obj_t*)vm->call_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->module_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->path_string);
     jml_gc_mark_obj((jml_obj_t*)vm->external);
 }
 
@@ -171,7 +173,7 @@ jml_free_object(jml_obj_t *object)
         case OBJ_MODULE: {
             jml_obj_module_t *module = (jml_obj_module_t*)object;
             jml_hashmap_free(&module->globals);
-            jml_module_close(module->handle);
+            jml_module_close(module);
             FREE(jml_obj_module_t, object);
             break;
         }
@@ -238,7 +240,7 @@ jml_gc_free_objs(void)
         object              = next;
     }
 
-    free(vm->gray_stack);
+    jml_realloc(vm->gray_stack, 0UL);
 }
 
 

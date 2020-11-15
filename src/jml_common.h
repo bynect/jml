@@ -11,6 +11,8 @@
 #define STACK_MAX                   (FRAMES_MAX * LOCAL_MAX)
 #define MAP_LOAD_MAX                0.75
 
+#define JML_BACKTRACE
+#define JML_RECURSIVE_SEARCH
 
 #ifdef JML_NDEBUG
 
@@ -30,7 +32,6 @@
 #define JML_TRACE_GC
 #undef  JML_TRACE_MEM
 #undef  JML_PRINT_TOKEN
-#undef  JML_DEBUG
 
 #endif
 

@@ -11,6 +11,7 @@
 #include <jml_compiler.h>
 #include <jml_type.h>
 #include <jml_module.h>
+#include <jml_util.h>
 
 
 jml_vm_t *vm;
@@ -30,12 +31,13 @@ jml_vm_error(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
 
+    vfprintf(stderr, format, args);
     fputs("\n", stderr);
 
-#ifdef JML_TRACE_BACK
+    va_end(args);
+
+#ifdef JML_BACKTRACE
     for (int i = 0; i < vm->frame_count; i++) {
 #else
     for (int i = vm->frame_count - 1; i >= 0; i--) {
@@ -102,14 +104,19 @@ jml_vm_init(jml_vm_t *vm_ptr)
     vm_ptr->gray_capacity   = 0;
     vm_ptr->gray_stack      = NULL;
 
-    jml_hashmap_init(&vm_ptr->modules);
-    jml_hashmap_init(&vm_ptr->strings);
     jml_hashmap_init(&vm_ptr->globals);
+    jml_hashmap_init(&vm_ptr->strings);
+    jml_hashmap_init(&vm_ptr->modules);
 
     vm_ptr->init_string     = NULL;
     vm_ptr->call_string     = NULL;
+    vm_ptr->module_string   = NULL;
+    vm_ptr->path_string     = NULL;
+
     vm_ptr->init_string     = jml_obj_string_copy("__init", 6);
     vm_ptr->call_string     = jml_obj_string_copy("__call", 6);
+    vm_ptr->module_string   = jml_obj_string_copy("__module", 8);
+    vm_ptr->path_string     = jml_obj_string_copy("__path", 6);
 
     vm_ptr->external        = NULL;
     jml_core_register();
@@ -119,19 +126,22 @@ jml_vm_init(jml_vm_t *vm_ptr)
 void
 jml_vm_free(jml_vm_t *vm_ptr)
 {
-    jml_hashmap_free(&vm_ptr->modules);
-    jml_hashmap_free(&vm_ptr->strings);
     jml_hashmap_free(&vm_ptr->globals);
+    jml_hashmap_free(&vm_ptr->strings);
+    jml_hashmap_free(&vm_ptr->modules);
 
-    vm_ptr->init_string = NULL;
-    vm_ptr->call_string = NULL;
-    vm_ptr->external    = NULL;
+    vm_ptr->init_string     = NULL;
+    vm_ptr->call_string     = NULL;
+    vm_ptr->module_string   = NULL;
+    vm_ptr->path_string     = NULL;
+
+    vm_ptr->external        = NULL;
 
     jml_gc_free_objs();
 
     ASSERT(
         vm_ptr->allocated == 0,
-        "%zd bytes not freed\n",
+        "[VM]  |%zd bytes not freed|\n",
         vm_ptr->allocated
     );
 
@@ -466,26 +476,34 @@ jml_array_concatenate(void)
 
 
 static bool
-jml_vm_module_import(jml_obj_string_t *module_name)
+jml_vm_module_import(jml_obj_string_t *name)
 {
     jml_value_t value;
 
-    if (!jml_hashmap_get(&vm->modules, module_name, &value)) {
+    if (!jml_hashmap_get(&vm->modules, name, &value)) {
+        char path[JML_PATH_MAX];
 
-        jml_obj_module_t *module = jml_module_open(module_name);
+        jml_obj_module_t *module = jml_module_open(name, path);
 
         if (module == NULL)
             return false;
 
-        value = OBJ_VAL(module);
-        jml_hashmap_set(&vm->modules, module_name, value);
-        jml_hashmap_set(&vm->globals, module_name, value);
+        if (path == NULL)
+            strcpy(path, ".");
+        
+        jml_hashmap_set(&module->globals, vm->path_string,
+                OBJ_VAL(jml_obj_string_copy(path, strlen(path))));
 
-        jml_obj_cfunction_t *init = jml_module_get_raw(module, "__module");
-        if (init == NULL) {
-            return false;
-        }
-        init->function(1, &value);
+        value = OBJ_VAL(module);
+        jml_hashmap_set(&vm->modules, name, value);
+        jml_hashmap_set(&vm->globals, name, value);
+
+        /*FIXME*/
+        // jml_obj_cfunction_t *init = jml_module_get_raw(module, "__module");
+        // if (init == NULL) {
+        //     return false;
+        // }
+        // init->function(1, &value);
     }
 
     jml_vm_push(value);
@@ -501,10 +519,18 @@ jml_vm_module_bind(jml_obj_module_t *module,
     if (!jml_hashmap_get(&module->globals,
         name, &function)) {
 
-        jml_vm_error(
-            "Undefined member '%s'.", name->chars
-        );
-        return false;
+        jml_obj_cfunction_t *cfunction = jml_module_get_raw(
+            module, name->chars);
+        
+        if (cfunction != NULL) {
+            jml_hashmap_set(&module->globals,
+                name, OBJ_VAL(cfunction));
+        } else {
+            jml_vm_error(
+                "Undefined member '%s'.", name->chars
+            );
+            return false;
+        }
     }
 
     /*TODO*/
