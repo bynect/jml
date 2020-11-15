@@ -49,7 +49,7 @@ jml_core_exception_implemented(jml_value_t value)
 
 
 static jml_obj_exception_t *
-jml_core_exception_types(int arg_count, ...)
+jml_core_exception_types(bool mult, int arg_count, ...)
 {
     va_list types;
     va_start(types, arg_count);
@@ -64,7 +64,10 @@ jml_core_exception_types(int arg_count, ...)
 
         char *next = va_arg(types, char*);
         char temp[32];
-        sprintf(temp, " and '%s'", next);
+        if (mult)
+            sprintf(temp, " or '%s'", next);
+        else
+            sprintf(temp, " and '%s'", next);
 
         size_t dest_size = strlen(message) + strlen(temp);
         REALLOC(char, message, size, dest_size);
@@ -151,7 +154,7 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
 
     if (!IS_STRING(fmt_value)) {
         return OBJ_VAL(
-            jml_core_exception_types(1, "string")
+            jml_core_exception_types(false, 1, "string")
         );
     }
 
@@ -212,8 +215,8 @@ jml_core_reverse(int arg_count, jml_value_t *args)
     if (IS_STRING(value)) {
         jml_obj_string_t *string_obj = AS_STRING(value);
 
-        char *str       = jml_strdup(string_obj->chars);
-        int length      = string_obj->length;
+        char *str           = jml_strdup(string_obj->chars);
+        int length          = string_obj->length;
 
         for (int i = 0; i < length / 2; ++i) {
             char temp       = str[i];
@@ -221,14 +224,25 @@ jml_core_reverse(int arg_count, jml_value_t *args)
             str[length-1-i] = temp;
         }
 
-        jml_obj_string_t *string_res = jml_obj_string_take(
-            str, strlen(str));
+        return OBJ_VAL(jml_obj_string_take(
+            str, strlen(str))
+        );
+    
+    } else if (IS_ARRAY(value)) {
+        jml_obj_array_t *array  = AS_ARRAY(value);
 
-        return OBJ_VAL(string_res);
+        for (int i = 0; i < array->values.count / 2; ++i) {
+            jml_value_t temp    = array->values.values[i];
+            int pos = array->values.count - 1 - i;
+            array->values.values[i] = array->values.values[pos];
+            array->values.values[pos] = temp;
+        }
+
+        return OBJ_VAL(array);
     }
 
     return OBJ_VAL(
-        jml_core_exception_implemented(value)
+        jml_core_exception_types(true, 2, "string", "array")
     );
 }
 
@@ -275,7 +289,7 @@ jml_core_char(int arg_count, jml_value_t *args)
     }
 
     return OBJ_VAL(
-        jml_core_exception_types(1, "number")
+        jml_core_exception_types(false, 1, "number")
     );
 }
 
@@ -294,7 +308,7 @@ jml_core_instance(int arg_count, jml_value_t *args)
 
     if (!IS_INSTANCE(instance) || !IS_CLASS(klass)) {
         return OBJ_VAL(
-            jml_core_exception_types(2, "instance", "class")
+            jml_core_exception_types(false, 2, "instance", "class")
         );
     }
 
@@ -319,7 +333,7 @@ jml_core_subclass(int arg_count, jml_value_t *args)
 
     if (!IS_CLASS(sub) || !IS_CLASS(super)) {
         return OBJ_VAL(
-            jml_core_exception_types(2, "class", "class")
+            jml_core_exception_types(false, 2, "class", "class")
         );
     }
 

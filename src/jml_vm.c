@@ -447,30 +447,40 @@ jml_string_concatenate(void)
 }
 
 
+static inline jml_obj_array_t *
+jml_array_copy(jml_obj_array_t *array)
+{
+    return jml_obj_array_new(
+        array->values.values, array->values.count);
+}
+
+
 static void
 jml_array_concatenate(void)
 {
-    jml_obj_array_t        *array = AS_ARRAY(jml_vm_peek(1));
-    jml_value_t             value = jml_vm_peek(0);
+    jml_obj_array_t        *array   = AS_ARRAY(jml_vm_peek(1));
+    jml_value_t             value   = jml_vm_peek(0);
+
+    jml_obj_array_t        *copy    = jml_array_copy(array);
 
     if (IS_ARRAY(value)) {
-        jml_obj_array_t    *array2 = AS_ARRAY(value);
+        jml_obj_array_t    *array2  = AS_ARRAY(value);
 
         if (array == array2) goto end;
 
         for (int i = 0; i < array2->values.count; ++i)
-            jml_value_array_write(&array->values,
+            jml_value_array_write(&copy->values,
                 array2->values.values[i]);
 
     } else {
-        jml_value_array_write(&array->values, value);
+        jml_value_array_write(&copy->values, value);
     }
 
     goto end;
 
     end: {
         jml_vm_pop_two();
-        jml_vm_push(OBJ_VAL(array));
+        jml_vm_push(OBJ_VAL(copy));
     }
 }
 
@@ -488,22 +498,22 @@ jml_vm_module_import(jml_obj_string_t *name)
         if (module == NULL)
             return false;
 
-        if (path == NULL)
-            strcpy(path, ".");
-        
         jml_hashmap_set(&module->globals, vm->path_string,
-                OBJ_VAL(jml_obj_string_copy(path, strlen(path))));
+            path != NULL ? OBJ_VAL(
+                jml_obj_string_copy(path, strlen(path))
+            ) : NONE_VAL);
+
+        jml_obj_cfunction_t *cfunction = jml_module_get_raw(
+            module, "__module");
+
+        jml_hashmap_set(&module->globals, vm->module_string,
+            cfunction != NULL ? OBJ_VAL(cfunction) : NONE_VAL);
 
         value = OBJ_VAL(module);
         jml_hashmap_set(&vm->modules, name, value);
         jml_hashmap_set(&vm->globals, name, value);
 
-        /*FIXME*/
-        // jml_obj_cfunction_t *init = jml_module_get_raw(module, "__module");
-        // if (init == NULL) {
-        //     return false;
-        // }
-        // init->function(1, &value);
+        /*TODO*/
     }
 
     jml_vm_push(value);
