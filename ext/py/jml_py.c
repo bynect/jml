@@ -5,22 +5,22 @@
 
 
 static PyObject *
-jml_py_version(PyObject *self)
+jml_py_version(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return Py_BuildValue("s", JML_VERSION_STRING);
 }
 
 
 static PyObject *
-jml_py_platform(PyObject *self)
+jml_py_platform(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return Py_BuildValue("s", JML_PLATFORM_STRING);
 }
 
 
 static PyMethodDef jml_py_methods[] = {
-    {"version",     jml_py_version,     METH_NOARGS,    "Returns the version of the jml interpreter."},
-    {"platform",    jml_py_platform,    METH_NOARGS,    "Returns the platform detected by jml."},
+    {"version",     (PyCFunction)jml_py_version,    METH_NOARGS,    "Returns the version of the jml interpreter."},
+    {"platform",    (PyCFunction)jml_py_platform,   METH_NOARGS,    "Returns the platform detected by jml."},
     {NULL, NULL, 0, NULL}
 };
 
@@ -45,8 +45,9 @@ static PyObject *
 jml_py_vm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     static jml_vm_t *singleton_vm;
-    if (singleton_vm == NULL)
+    if (singleton_vm == NULL) {
         singleton_vm = jml_vm_new();
+    }
 
     jml_py_vm *self;
     self = (jml_py_vm*)type->tp_alloc(type, 0);
@@ -87,37 +88,37 @@ static PyMethodDef jml_py_vm_methods[] = {
 
 static PyTypeObject jml_py_vm_t = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "jml.VM",
-    .tp_doc = "VM object",
-    .tp_basicsize = sizeof(jml_py_vm),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    .tp_new = jml_py_vm_new,
-    .tp_dealloc = (destructor) jml_py_vm_dealloc,
-    .tp_methods = jml_py_vm_methods,
+    .tp_name        = "jml.VM",
+    .tp_doc         = "VM object",
+    .tp_basicsize   = sizeof(jml_py_vm),
+    .tp_itemsize    = 0,
+    .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_new         = jml_py_vm_new,
+    .tp_dealloc     = (destructor) jml_py_vm_dealloc,
+    .tp_methods     = jml_py_vm_methods
 };
 
 
 static struct PyModuleDef jml_py_module = {
     PyModuleDef_HEAD_INIT,
-    "jml",
-    "Python interface for the jml C interpreter.",
-    -1,
-    jml_py_methods
+    .m_name     = "jml",
+    .m_doc      = "Python interface for the jml C interpreter.",
+    .m_size     = -1,
+    .m_methods  = jml_py_methods
 };
 
 
 PyMODINIT_FUNC
 PyInit_jml(void)
 {
-    PyObject *module;
     if (PyType_Ready(&jml_py_vm_t) < 0)
         return NULL;
 
-    module = PyModule_Create(&jml_py_module);
+    PyObject *module = PyModule_Create(&jml_py_module);
     if (module == NULL) return NULL;
 
     Py_INCREF(&jml_py_vm_t);
+
     if (PyModule_AddObject(module, "VM", (PyObject*)&jml_py_vm_t) < 0) {
         Py_DECREF(&jml_py_vm_t);
         Py_DECREF(module);

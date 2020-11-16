@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from distutils.core import setup, Extension
 
 
@@ -19,6 +21,7 @@ def jml_setup():
                 extra_compile_args = [
                     "-Wall",
                     "-Wextra",
+                    "-Werror",
                     "-Wno-unused-parameter",
                     "-std=c99"
                 ],
