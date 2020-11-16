@@ -47,58 +47,60 @@ jml_interpret_result jml_vm_interpret(const char *source);
 
 #if defined (_WIN64) || (defined (WIN64))
 
+#define JML_PLATFORM_WIN
+
 #define JML_PLATFORM_STRING         "win64"
 #define JML_PLATFORM                7
 
 #elif defined (_WIN32) || (defined (WIN32))
+
+#define JML_PLATFORM_WIN
 
 #define JML_PLATFORM_STRING         "win32"
 #define JML_PLATFORM                6
 
 #elif defined (__APPLE__) && (defined (TARGET_OS_MAC) || defined (__MACH__))
 
+#define JML_PLATFORM_MAC
+#define JML_PLATFORM_NIX
+
 #define JML_PLATFORM_STRING         "macos"
 #define JML_PLATFORM                5
 
 #elif defined (__linux__) || (defined (__linux))
+
+#define JML_PLATFORM_NIX
 
 #define JML_PLATFORM_STRING         "linux"
 #define JML_PLATFORM                4
 
 #elif defined (BSD)
 
+#define JML_PLATFORM_NIX
+
 #define JML_PLATFORM_STRING         "bsd"
 #define JML_PLATFORM                3
 
 #elif defined (_POSIX_VERSION)
+
+#define JML_PLATFORM_NIX
 
 #define JML_PLATFORM_STRING         "posix"
 #define JML_PLATFORM                2
 
 #elif defined (__unix__)
 
+#define JML_PLATFORM_NIX
+
 #define JML_PLATFORM_STRING         "unix"
 #define JML_PLATFORM                1
 
 #else
 
+#define JML_PLATFORM_UNK
+
 #define JML_PLATFORM_STRING         "other"
 #define JML_PLATFORM                0
-
-#endif
-
-
-#if JML_PLATFORM > 0 && JML_PLATFORM < 6
-
-#define JML_PLATFORM_NIX
-
-#elif JML_PLATFORM == 6 || JML_PLATFORM == 7
-
-#define JML_PLATFORM_WIN
-
-#else
-
-#define JML_PLATFORM_UNK
 
 #endif
 

@@ -15,9 +15,17 @@
 #include <sys/types.h>
 #include <limits.h>
 
+#ifdef JML_PLATFORM_MAC
+#define SHARED_LIB_EXT              "dylib"
+#else
+#define SHARED_LIB_EXT              "so"
+#endif
+
 #elif JML_PLATFORM_WIN
 
 #include <windows.h>
+
+#define SHARED_LIB_EXT              "dll"
 
 #endif
 
@@ -42,36 +50,28 @@ jml_module_open(jml_obj_string_t *module_name,
     char *path)
 {
 #ifdef JML_PLATFORM_NIX
-    char *module_str = jml_strdup(module_name->chars);
+    char *module_str = jml_strdup(
+        module_name->chars);
+
     char filename_so[JML_PATH_MAX];
     char filename_jml[JML_PATH_MAX];
 
 #ifdef JML_RECURSIVE_SEARCH
     char temp_so[256];
     char temp_jml[256];
-    sprintf(temp_so, "%s.so", module_str);
-    sprintf(temp_jml, "%s.jml", module_str);
-
     char buffer[JML_PATH_MAX];
+
+    sprintf(temp_so, "%s.%s", module_str, SHARED_LIB_EXT);
+    sprintf(temp_jml, "%s.jml", module_str);
 
     if (jml_file_find(temp_so, buffer))
         sprintf(filename_so, "%s", buffer);
 
-    else {
-        if (filename_so == NULL)
-            sprintf(filename_so, "./%s.so", module_str);
-
-        if (jml_file_find(temp_jml, buffer))
-            sprintf(filename_jml, "%s", buffer);
-
-        else
-            sprintf(filename_jml, "./%s.jml", module_str);
-    }
-
+    else if (jml_file_find(temp_jml, buffer))
+        sprintf(filename_jml, "%s", buffer);
 #else
-    sprintf(filename_so, "./%s.so", module_str);
+    sprintf(filename_so, "./%s.%s", module_str, SHARED_LIB_EXT);
     sprintf(filename_jml, "./%s.jml", module_str);
-
 #endif
 
     if (jml_file_exist(filename_so)) {
@@ -137,7 +137,7 @@ jml_module_get_raw(jml_obj_module_t *module,
 
     char *result = dlerror();
     if (result || cfunction == NULL) {
-        jml_vm_error("ImportExc%s.", result);
+        jml_vm_error("ImportExc %s.", result);
         return NULL;
     }
 
