@@ -115,10 +115,27 @@ static int
 jml_bytecode_instruction_invoke(const char *name,
     jml_bytecode_t *bytecode, int offset)
 {
-    uint8_t constant = bytecode->code[offset + 1];
-    uint8_t arg_count = bytecode->code[offset + 2];
+    uint8_t constant    = bytecode->code[offset + 1];
+    uint8_t arg_count   = bytecode->code[offset + 2];
     printf("%-16s (%d args) %4d '", name, arg_count, constant);
     jml_value_print(bytecode->constants.values[constant]);
+    printf("'\n");
+
+    return offset + 3;
+}
+
+
+static int
+jml_bytecode_instruction_swap(const char *name,
+    jml_bytecode_t *bytecode, int offset)
+{
+    uint8_t old_name    = bytecode->code[offset + 1];
+    uint8_t new_name    = bytecode->code[offset + 2];
+    printf("%-16s %4d '", name, old_name);
+
+    jml_value_print(bytecode->constants.values[old_name]);
+    printf("'   -> %4d '", new_name);
+    jml_value_print(bytecode->constants.values[new_name]);
     printf("'\n");
 
     return offset + 3;
@@ -213,6 +230,12 @@ jml_bytecode_instruction_disassemble(
         case OP_LESSEQ:
             return jml_bytecode_instruction_simple("OP_LESSEQ", offset);
 
+        case OP_NOTEQ:
+            return jml_bytecode_instruction_simple("OP_NOTEQ", offset);
+
+        case OP_SWAP:
+            return jml_bytecode_instruction_swap("OP_SWAP", bytecode, offset);
+
         case OP_JMP:
             return jml_bytecode_instruction_jump("OP_JUMP", 1, bytecode, offset);
 
@@ -246,7 +269,7 @@ jml_bytecode_instruction_disassemble(
             for (int j = 0; j < function->upvalue_count; j++) {
                 int local = bytecode->code[offset++];
                 int index = bytecode->code[offset++];
-                printf("%04d      |                     %s %d\n",
+                printf("%04d    |                   %s %d\n",
                     offset - 2, local ? "local" : "upvalue", index);
             }
             return offset;

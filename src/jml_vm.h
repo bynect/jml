@@ -30,9 +30,10 @@ typedef struct jml_vm_s {
     jml_obj_string_t               *path_string;
     jml_obj_string_t               *external;
 
+    jml_obj_t                      *sentinel;
+    jml_obj_t                      *objects;
     size_t                          allocated;
     size_t                          next_gc;
-    jml_obj_t                      *objects;
     int                             gray_count;
     int                             gray_capacity;
     jml_obj_t                     **gray_stack;

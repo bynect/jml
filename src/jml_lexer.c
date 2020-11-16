@@ -129,6 +129,7 @@ jml_skip_char(void)
                 break;
 
             case  '!':
+                if (jml_lexer_peek_next() == '=') return;
                 while (jml_lexer_peek() != '\n' && !jml_is_eol()) jml_lexer_advance();
                 break;
 
@@ -283,24 +284,26 @@ jml_lexer_tokenize(void)
         case  '.':  return jml_token_emit(TOKEN_DOT);
 
         case  '+':  return jml_token_emit(TOKEN_PLUS);
-        case  '*':
-            return  jml_token_emit(jml_match('*')
+        case  '*':  return  jml_token_emit(jml_match('*')
                     ? TOKEN_STARSTAR : TOKEN_STAR);
+
         case  '/':  return jml_token_emit(TOKEN_SLASH);
         case  '%':  return jml_token_emit(TOKEN_PERCENT);
-        case  '-':
-            return  jml_token_emit(jml_match('>')
+
+        case  '-':  return  jml_token_emit(jml_match('>')
                     ? TOKEN_ARROW : TOKEN_MINUS);
 
-        case  '=':
-            return  jml_token_emit(jml_match('=')
+        case  '=':  return  jml_token_emit(jml_match('=')
                     ? TOKEN_EQEQUAL : TOKEN_EQUAL);
-        case  '<':
-            return  jml_token_emit(jml_match('=')
+
+        case  '<':  return  jml_token_emit(jml_match('=')
                     ? TOKEN_LESSEQ : TOKEN_LESS);
-        case  '>':
-            return  jml_token_emit(jml_match('=')
+
+        case  '>':  return  jml_token_emit(jml_match('=')
                     ? TOKEN_GREATEREQ : TOKEN_GREATER);
+
+        case  '!':  return  jml_token_emit(jml_match('=')
+                    ? TOKEN_NOTEQ : TOKEN_BANG);
 
         case '\'':  return jml_string_literal('\'');
         case  '"':  return jml_string_literal('"');
@@ -312,7 +315,6 @@ jml_lexer_tokenize(void)
         case  '^':  return jml_token_emit(TOKEN_CARET);
         case  '?':  return jml_token_emit(TOKEN_QUEST);
         case  '#':  return jml_token_emit(TOKEN_HASH);
-        case  '!':  return jml_token_emit(TOKEN_BANG);
     }
     return jml_token_emit_error("Unexpected character.");
 }

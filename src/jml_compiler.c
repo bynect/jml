@@ -6,16 +6,16 @@
 #include <jml_gc.h>
 
 
-jml_parser_t parser;
+jml_parser_t            parser;
 
-jml_compiler_t *current             = NULL;
+jml_compiler_t         *current         = NULL;
 
-jml_class_compiler_t *class_current = NULL;
+jml_class_compiler_t   *class_current   = NULL;
 
-jml_bytecode_t *compiled;
+jml_bytecode_t         *compiled;
 
 
-static jml_bytecode_t *
+static inline jml_bytecode_t *
 jml_bytecode_current(void)
 {
     return &current->function->bytecode;
@@ -557,18 +557,19 @@ jml_binary(JML_UNUSED(bool assignable))
     );
 
     switch (operator) {
-        case TOKEN_NOTEQ:       jml_bytecode_emit_byte(OP_NOTEQ);       break;
-        case TOKEN_EQEQUAL:     jml_bytecode_emit_byte(OP_EQUAL);       break;
-        case TOKEN_GREATER:     jml_bytecode_emit_byte(OP_GREATER);     break;
-        case TOKEN_GREATEREQ:   jml_bytecode_emit_byte(OP_LESSEQ);      break;
-        case TOKEN_LESS:        jml_bytecode_emit_byte(OP_LESS);        break;
-        case TOKEN_LESSEQ:      jml_bytecode_emit_byte(OP_GREATEREQ);   break;
         case TOKEN_PLUS:        jml_bytecode_emit_byte(OP_ADD);         break;
         case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_SUB);         break;
         case TOKEN_STAR:        jml_bytecode_emit_byte(OP_MUL);         break;
         case TOKEN_SLASH:       jml_bytecode_emit_byte(OP_DIV);         break;
         case TOKEN_STARSTAR:    jml_bytecode_emit_byte(OP_POW);         break;
         case TOKEN_PERCENT:     jml_bytecode_emit_byte(OP_MOD);         break;
+
+        case TOKEN_EQEQUAL:     jml_bytecode_emit_byte(OP_EQUAL);       break;
+        case TOKEN_GREATER:     jml_bytecode_emit_byte(OP_GREATER);     break;
+        case TOKEN_GREATEREQ:   jml_bytecode_emit_byte(OP_LESSEQ);      break;
+        case TOKEN_LESS:        jml_bytecode_emit_byte(OP_LESS);        break;
+        case TOKEN_LESSEQ:      jml_bytecode_emit_byte(OP_GREATEREQ);   break;
+        case TOKEN_NOTEQ:       jml_bytecode_emit_byte(OP_NOTEQ);       break;
 
         default:                UNREACHABLE();
     }
@@ -671,7 +672,7 @@ jml_variable_named(jml_token_t name,
     if (arg != -1) {
         get_op = OP_GET_LOCAL;
         set_op = OP_SET_LOCAL;
-    } else if ((arg = jml_upvalue_resolve(current,&name)) != -1) {
+    } else if ((arg = jml_upvalue_resolve(current, &name)) != -1) {
         get_op = OP_GET_UPVALUE;
         set_op = OP_SET_UPVALUE;
     } else {
@@ -683,13 +684,22 @@ jml_variable_named(jml_token_t name,
     if (assignable && jml_parser_match(TOKEN_EQUAL)) {
         jml_expression();
         jml_bytecode_emit_bytes(set_op, (uint8_t)arg);
+
+    } else if (assignable && jml_parser_match(TOKEN_ARROW)) {
+        uint8_t old_name = jml_identifier_const(&name);
+        uint8_t new_name = jml_identifier_const(&parser.current);
+
+        jml_bytecode_emit_bytes(OP_SWAP, old_name);
+        jml_bytecode_emit_byte(new_name);
     } else {
         jml_bytecode_emit_bytes(get_op, (uint8_t)arg);
     }
 }
 
 
-static void jml_variable(bool assignable) {
+static void
+jml_variable(bool assignable)
+{
     jml_variable_named(parser.previous, assignable);
 }
 
@@ -1048,9 +1058,17 @@ static void
 jml_import_statement(void)
 {
     jml_parser_consume(TOKEN_NAME, "Expect identifier after 'import'.");
-    uint8_t name = jml_identifier_const(&parser.previous);
+    uint8_t name        = jml_identifier_const(&parser.previous);
 
     jml_bytecode_emit_bytes(OP_IMPORT, name);
+
+    if (jml_parser_match(TOKEN_ARROW)) {
+        jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
+        uint8_t new_name = jml_identifier_const(&parser.previous);
+
+        jml_bytecode_emit_bytes(OP_SWAP, name);
+        jml_bytecode_emit_byte(new_name);
+    }
 }
 
 
@@ -1125,6 +1143,7 @@ jml_for_statement(void)
 }
 
 
+/*TODO*/
 // static void
 // jml_for_statement(void)
 // {

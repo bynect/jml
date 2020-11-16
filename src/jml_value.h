@@ -150,6 +150,9 @@ bool jml_hashmap_set(jml_hashmap_t *map, jml_obj_string_t *key,
 
 bool jml_hashmap_del(jml_hashmap_t *map, jml_obj_string_t *key);
 
+jml_value_t jml_hashmap_pop(jml_hashmap_t *map,
+    jml_obj_string_t *key);
+
 void jml_hashmap_add(jml_hashmap_t *source, jml_hashmap_t *dest);
 
 jml_obj_string_t *jml_hashmap_find(jml_hashmap_t *map,

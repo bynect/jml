@@ -27,6 +27,7 @@ typedef enum {
     OP_LESS,
     OP_LESSEQ,
     OP_NOTEQ,
+    OP_SWAP,
     OP_JMP,
     OP_JMP_IF_FALSE,
     OP_LOOP,

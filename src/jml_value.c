@@ -7,6 +7,7 @@
 #include <jml_value.h>
 #include <jml_gc.h>
 #include <jml_util.h>
+#include <jml_vm.h>
 
 
 void
@@ -284,6 +285,22 @@ jml_hashmap_set(jml_hashmap_t *map,
     entry->key = key;
     entry->value = value;
     return new_key;
+}
+
+
+jml_value_t
+jml_hashmap_pop(jml_hashmap_t *map,
+    jml_obj_string_t *key)
+{
+    jml_value_t value;
+    
+    if (!jml_hashmap_get(map, key, &value)) {
+        return OBJ_VAL(vm->sentinel);
+    }
+
+    jml_hashmap_del(map, key);
+
+    return value;
 }
 
 
