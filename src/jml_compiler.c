@@ -604,6 +604,14 @@ jml_dot(bool assignable)
 
 
 static void
+jml_grouping(JML_UNUSED(bool assignable))
+{
+    jml_expression();
+    jml_parser_consume(TOKEN_RPAREN, "Expect ')' after expression.");
+}
+
+
+static void
 jml_literal(JML_UNUSED(bool assignable))
 {
     switch (parser.previous.type) {
@@ -617,10 +625,20 @@ jml_literal(JML_UNUSED(bool assignable))
 
 
 static void
-jml_grouping(JML_UNUSED(bool assignable))
+jml_number(JML_UNUSED(bool assignable))
 {
-    jml_expression();
-    jml_parser_consume(TOKEN_RPAREN, "Expect ')' after expression.");
+    double value = strtod(parser.previous.start, NULL);
+    jml_bytecode_emit_const(NUM_VAL(value));
+}
+
+
+static void
+jml_string(JML_UNUSED(bool assignable))
+{
+    jml_bytecode_emit_const(
+        OBJ_VAL(jml_obj_string_copy(parser.previous.start + 1,
+            parser.previous.length - 2))
+    );
 }
 
 
@@ -640,26 +658,39 @@ jml_array(JML_UNUSED(bool assignable))
     }
 
     jml_parser_consume(TOKEN_RSQARE, "Expect ']' after array.");
-
     jml_bytecode_emit_bytes(OP_ARRAY, item_count);
 }
 
 
 static void
-jml_number(JML_UNUSED(bool assignable))
+jml_map(JML_UNUSED(bool assignable))
 {
-    double value = strtod(parser.previous.start, NULL);
-    jml_bytecode_emit_const(NUM_VAL(value));
-}
+    uint8_t item_count = 0;
+    if (!jml_parser_check(TOKEN_RBRACE)) {
+        do {
+            jml_parser_advance();
 
+            jml_token_type_print(parser.previous.type);
+            jml_token_type_print(parser.current.type);
 
-static void
-jml_string(JML_UNUSED(bool assignable))
-{
-    jml_bytecode_emit_const(
-        OBJ_VAL(jml_obj_string_copy(parser.previous.start + 1,
-            parser.previous.length - 2))
-    );
+            jml_string(true);
+
+            jml_parser_consume(TOKEN_COLON, "Expect colon in map");
+
+            jml_token_type_print(parser.previous.type);
+            jml_token_type_print(parser.current.type);
+
+            jml_expression();
+            if (item_count == 255) {
+                jml_parser_error("Can't have more than 255 items in map.");
+            }
+
+            item_count += 2;
+        } while (jml_parser_match(TOKEN_COMMA));
+    }
+
+    jml_parser_consume(TOKEN_RBRACE, "Expect '}' after map.");
+    jml_bytecode_emit_bytes(OP_MAP, item_count);
 }
 
 
@@ -764,7 +795,7 @@ jml_parser_rule rules[] = {
     [TOKEN_RSQARE]      = {NULL,        NULL,       PREC_NONE},
     [TOKEN_LSQARE]      = {jml_array,   NULL,       PREC_NONE},
     [TOKEN_RBRACE]      = {NULL,        NULL,       PREC_NONE},
-    [TOKEN_LBRACE]      = {NULL,        NULL,       PREC_NONE},
+    [TOKEN_LBRACE]      = {jml_map,     NULL,       PREC_NONE},
 
     [TOKEN_COLON]       = {NULL,        NULL,       PREC_NONE},
     [TOKEN_SEMI]        = {NULL,        NULL,       PREC_NONE},

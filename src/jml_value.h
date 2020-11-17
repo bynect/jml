@@ -162,6 +162,8 @@ void jml_hashmap_remove_white(jml_hashmap_t *map);
 
 void jml_hashmap_mark(jml_hashmap_t *map);
 
+jml_hashmap_entry_t *jml_hashmap_iterator(jml_hashmap_t *map);
+
 
 static inline bool
 jml_is_falsey(jml_value_t value)

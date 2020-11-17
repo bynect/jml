@@ -1173,7 +1173,16 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_MAP) {
-                /*TODO*/
+                int item_count      = READ_BYTE();
+                jml_obj_map_t *map  = jml_obj_map_new();
+                jml_value_t *values = vm->stack_top - item_count;
+
+                for (int i = 0; i < item_count; i += 2) {
+                    jml_hashmap_set(&map->hashmap,
+                        AS_STRING(values[i]) , values[i+1]);
+                }
+
+                jml_vm_push(OBJ_VAL(map));
                 END_OP();
             }
 

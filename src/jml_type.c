@@ -139,8 +139,6 @@ jml_obj_map_new(void)
 
     map->hashmap        = hashmap;
 
-    /*TODO*/
-
     return map;
 }
 
@@ -352,9 +350,26 @@ jml_obj_print(jml_value_t value)
             break;
         }
 
-        case OBJ_MAP:
-            printf("<map>");
+        case OBJ_MAP: {
+            jml_hashmap_t hashmap   = AS_MAP(value)->hashmap;
+            int item_count          = hashmap.count - 1;
+
+            jml_hashmap_entry_t *entries = jml_hashmap_iterator(&hashmap);
+
+            printf("{");
+            for (int i = 0; i < item_count; ++i) {
+                printf("\"%s\":", entries[i].key->chars);
+                jml_value_print(entries[i].value);
+                printf(", ");
+            }
+
+            printf("\"%s\":", entries[item_count].key->chars);
+            jml_value_print(entries[item_count].value);
+            printf("}");
+
+            jml_realloc(entries, 0UL);
             break;
+        }
 
         case OBJ_CLASS:
             printf("<class %s>", AS_CLASS(value)->name->chars);
