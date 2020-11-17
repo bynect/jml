@@ -21,7 +21,7 @@ jml_py_platform(PyObject *self, PyObject *Py_UNUSED(args))
 static PyMethodDef jml_py_methods[] = {
     {"version",     (PyCFunction)jml_py_version,    METH_NOARGS,    "Returns the version of the jml interpreter."},
     {"platform",    (PyCFunction)jml_py_platform,   METH_NOARGS,    "Returns the platform detected by jml."},
-    {NULL, NULL, 0, NULL}
+    {NULL,          NULL,                           0,              NULL}
 };
 
 
@@ -34,8 +34,6 @@ typedef struct {
 static void
 jml_py_vm_dealloc(jml_py_vm *self)
 {
-    jml_vm_free(self->internal_vm);
-
     PyObject_GC_UnTrack(self);
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
@@ -44,7 +42,9 @@ jml_py_vm_dealloc(jml_py_vm *self)
 static PyObject *
 jml_py_vm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    /*FIXME*/
     static jml_vm_t *singleton_vm;
+
     if (singleton_vm == NULL) {
         singleton_vm = jml_vm_new();
     }

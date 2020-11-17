@@ -688,6 +688,8 @@ jml_vm_run(void)
         &&exec_OP_DEF_GLOBAL,
         &&exec_OP_SET_MEMBER,
         &&exec_OP_GET_MEMBER,
+        &&exec_OP_SET_INDEX,
+        &&exec_OP_GET_INDEX,
         &&exec_OP_SUPER,
         &&exec_OP_ARRAY,
         &&exec_OP_MAP,
@@ -1152,6 +1154,51 @@ jml_vm_run(void)
                 END_OP();
             }
 
+            EXEC_OP(OP_SET_INDEX) {
+                /*TODO*/
+                END_OP();
+            }
+
+            EXEC_OP(OP_GET_INDEX) {
+                jml_value_t         index   = jml_vm_pop();
+                jml_obj_string_t   *name    = READ_STRING();
+
+                jml_value_t         indexed;
+                jml_value_t         value;
+
+                if (!jml_hashmap_get(&vm->globals, name, &value)) {
+                    frame->pc = pc;
+                    jml_vm_error("Undefined variable '%s'.", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                if (IS_STRING(index) && IS_MAP(value)) {
+                    if (!jml_hashmap_get(&AS_MAP(value)->hashmap,
+                        AS_STRING(index), &indexed))
+                        indexed             = NONE_VAL;
+
+                } else if (IS_NUM(index) && IS_ARRAY(value)) {
+                    jml_value_array_t array = AS_ARRAY(value)->values;
+                    int num_index   = AS_NUM(index);
+
+                    if (num_index > array.count
+                        || num_index < -array.count) {
+                        indexed = NONE_VAL;
+                    } else {
+                        num_index           = num_index >= 0 ? num_index
+                                                : array.count - num_index;
+                        indexed             = array.values[num_index];
+                    }
+                } else {
+                    frame->pc = pc;
+                    jml_vm_error("Can index only by number or string.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_vm_push(indexed);
+                END_OP();
+            }
+
             EXEC_OP(OP_SUPER) {
                 jml_obj_string_t *name = READ_STRING();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
@@ -1225,7 +1272,7 @@ jml_cfunction_register(const char *name,
 
     jml_hashmap_set(
         &vm->globals, AS_CFUNCTION(vm->stack[0])->name,
-            vm->stack[0]
+        vm->stack[0]
     );
 
     jml_vm_pop();

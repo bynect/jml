@@ -669,16 +669,9 @@ jml_map(JML_UNUSED(bool assignable))
     if (!jml_parser_check(TOKEN_RBRACE)) {
         do {
             jml_parser_advance();
-
-            jml_token_type_print(parser.previous.type);
-            jml_token_type_print(parser.current.type);
-
             jml_string(true);
 
-            jml_parser_consume(TOKEN_COLON, "Expect colon in map");
-
-            jml_token_type_print(parser.previous.type);
-            jml_token_type_print(parser.current.type);
+            jml_parser_consume(TOKEN_COLON, "Expect colon in map.");
 
             jml_expression();
             if (item_count == 255) {
@@ -717,11 +710,15 @@ jml_variable_named(jml_token_t name,
         jml_bytecode_emit_bytes(set_op, (uint8_t)arg);
 
     } else if (assignable && jml_parser_match(TOKEN_ARROW)) {
-        uint8_t old_name = jml_identifier_const(&name);
+        jml_bytecode_emit_bytes(OP_SWAP, (uint8_t)arg);
         uint8_t new_name = jml_identifier_const(&parser.current);
-
-        jml_bytecode_emit_bytes(OP_SWAP, old_name);
         jml_bytecode_emit_byte(new_name);
+
+    } else if (jml_parser_match(TOKEN_LSQARE)) {
+        jml_expression();
+
+        jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
+        jml_bytecode_emit_bytes(OP_GET_INDEX, (uint8_t)arg);
     } else {
         jml_bytecode_emit_bytes(get_op, (uint8_t)arg);
     }

@@ -314,6 +314,12 @@ jml_bytecode_instruction_disassemble(
         case OP_GET_MEMBER:
             return jml_bytecode_instruction_const("OP_GET_MEMBER", bytecode, offset);
 
+        case OP_SET_INDEX:
+            return jml_bytecode_instruction_const("OP_SET_INDEX", bytecode, offset);
+
+        case OP_GET_INDEX:
+            return jml_bytecode_instruction_const("OP_GET_INDEX", bytecode, offset);
+
         case OP_SUPER:
             return jml_bytecode_instruction_const("OP_SUPER", bytecode, offset);
 

@@ -39,7 +39,6 @@ jml_interpret_result jml_vm_interpret(const char *source);
 
 #else
 
-#undef  JML_COMPUTED_GOTO
 #define JML_UNUSED(arg)             arg
 
 #endif
