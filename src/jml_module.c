@@ -34,11 +34,21 @@ void
 jml_module_register(jml_obj_module_t *module, 
     jml_module_function *functions)
 {
+    if (module == NULL || functions == NULL) {
+        jml_vm_error("Error while importing module.");
+        return;
+    }
+
+    /*FIXME*/
+
     jml_module_function *current = functions;
 
     while (current->function != NULL) {
-        jml_cfunction_register(current->name,
-            current->function, module); /*TODO*/
+        jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
+            current->name, current->function, module);
+
+        jml_hashmap_set(&module->globals, cfunction->name,
+            OBJ_VAL(cfunction));
 
         ++current;
     }
@@ -129,15 +139,17 @@ jml_module_close(jml_obj_module_t *module)
 
 jml_obj_cfunction_t *
 jml_module_get_raw(jml_obj_module_t *module,
-    const char *function_name)
+    const char *function_name, bool silent)
 {
 #ifdef JML_PLATFORM_NIX
-    jml_cfunction cfunction = dlsym(
+    jml_cfunction cfunction = (jml_cfunction)dlsym(
         module->handle, function_name);
 
     char *result = dlerror();
     if (result || cfunction == NULL) {
-        jml_vm_error("ImportExc %s.", result);
+        if (!silent)
+            jml_vm_error("ImportExc %s.", result);
+
         return NULL;
     }
 

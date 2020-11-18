@@ -6,10 +6,6 @@
 #include <jml_common.h>
 
 
-typedef struct jml_obj_s        jml_obj_t;
-typedef struct jml_string_s     jml_obj_string_t;
-
-
 #ifdef JML_NAN_TAGGING
 
 #define SIGN_BIT                    ((uint64_t)0x8000000000000000)

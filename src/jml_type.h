@@ -60,7 +60,7 @@ struct jml_obj_s {
 };
 
 
-struct jml_string_s {
+struct jml_obj_string_s {
     jml_obj_t                       obj;
     char                           *chars;
     size_t                          length;
@@ -68,92 +68,92 @@ struct jml_string_s {
 };
 
 
-typedef struct {
+struct jml_obj_array_s {
     jml_obj_t                       obj;
     jml_value_array_t               values;
-} jml_obj_array_t;
+};
 
 
-typedef struct {
+struct jml_obj_map_s {
     jml_obj_t                       obj;
     jml_hashmap_t                   hashmap;
-} jml_obj_map_t;
+};
 
 
-typedef struct {
+struct jml_obj_module_s {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
     void                           *handle;
     jml_hashmap_t                   globals;
-} jml_obj_module_t;
+};
 
 
-typedef struct jml_obj_class_s {
+struct jml_obj_class_s {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
     jml_hashmap_t                   methods;
     struct jml_obj_class_s         *super;
     jml_obj_module_t               *module;
-} jml_obj_class_t;
+};
 
 
-typedef struct {
+struct jml_obj_instance_s {
     jml_obj_t                       obj;
     jml_obj_class_t                *klass;
     jml_hashmap_t                   fields;
-} jml_obj_instance_t;
+};
 
 
-typedef struct {
+struct jml_obj_function_s {
     jml_obj_t                       obj;
     int                             arity;
     int                             upvalue_count;
     jml_bytecode_t                  bytecode;
     jml_obj_string_t               *name;
     jml_obj_module_t               *module;
-} jml_obj_function_t;
+};
 
 
-typedef struct jml_obj_upvalue_t {
+struct jml_obj_upvalue_s {
     jml_obj_t                       obj;
     jml_value_t                    *location;
     jml_value_t                     closed;
-    struct jml_obj_upvalue_t       *next;
-} jml_obj_upvalue_t;
+    struct jml_obj_upvalue_s       *next;
+};
 
 
-typedef struct {
+struct jml_obj_closure_s {
     jml_obj_t                       obj;
     jml_obj_function_t             *function;
     jml_obj_upvalue_t             **upvalues;
     uint8_t                         upvalue_count;
-} jml_obj_closure_t;
+};
 
 
-typedef struct {
+struct jml_obj_method_t {
     jml_obj_t                       obj;
     jml_value_t                     receiver;
     jml_obj_closure_t              *method;
-} jml_obj_method_t;
+};
 
 
 typedef jml_value_t (*jml_cfunction)(int arg_count, jml_value_t *args);
 
 
-typedef struct {
+struct jml_obj_cfunction_t {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
     jml_cfunction                   function;
     jml_obj_module_t               *module;
-} jml_obj_cfunction_t;
+};
 
 
-typedef struct {
+struct jml_obj_exception_t {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
     jml_obj_string_t               *message;
     jml_obj_module_t               *module;
-} jml_obj_exception_t;
+};
 
 
 jml_obj_string_t *jml_obj_string_take(char *chars,

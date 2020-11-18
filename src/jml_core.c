@@ -13,8 +13,8 @@
 #include <jml_gc.h>
 
 
-/*core helper functions*/
-static jml_obj_exception_t *
+/*helper functions*/
+jml_obj_exception_t *
 jml_core_exception_args(int arg_count, int expected_arg)
 {
     char message[38];
@@ -34,7 +34,7 @@ jml_core_exception_args(int arg_count, int expected_arg)
 }
 
 
-static jml_obj_exception_t *
+jml_obj_exception_t *
 jml_core_exception_implemented(jml_value_t value)
 {
     char message[26];
@@ -48,7 +48,7 @@ jml_core_exception_implemented(jml_value_t value)
 }
 
 
-static jml_obj_exception_t *
+jml_obj_exception_t *
 jml_core_exception_types(bool mult, int arg_count, ...)
 {
     va_list types;

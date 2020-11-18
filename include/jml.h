@@ -14,6 +14,37 @@ extern "C" {
 
 
 /*API*/
+typedef struct jml_obj_s            jml_obj_t;
+typedef struct jml_obj_string_s     jml_obj_string_t;
+typedef struct jml_obj_array_s      jml_obj_array_t;
+typedef struct jml_obj_map_s        jml_obj_map_t;
+typedef struct jml_obj_module_s     jml_obj_module_t;
+typedef struct jml_obj_class_s      jml_obj_class_t;
+typedef struct jml_obj_instance_s   jml_obj_instance_t;
+typedef struct jml_obj_function_s   jml_obj_function_t;
+typedef struct jml_obj_upvalue_s    jml_obj_upvalue_t;
+typedef struct jml_obj_closure_s    jml_obj_closure_t;
+typedef struct jml_obj_method_t     jml_obj_method_t;
+typedef struct jml_obj_cfunction_t  jml_obj_cfunction_t;
+typedef struct jml_obj_exception_t  jml_obj_exception_t;
+
+#include <jml_value.h>
+#include <jml_type.h>
+
+
+typedef jml_value_t (*jml_cfunction)(int arg_count, jml_value_t *args);
+
+
+typedef struct {
+    const char                     *name;
+    jml_cfunction                   function;
+} jml_module_function;
+
+
+void jml_module_register(jml_obj_module_t *module,
+    jml_module_function *functions);
+
+
 typedef enum {
     INTERPRET_OK,
     INTERPRET_COMPILE_ERROR,
@@ -29,6 +60,10 @@ jml_vm_t *jml_vm_new(void);
 void jml_vm_free(jml_vm_t *vm_ptr);
 
 jml_interpret_result jml_vm_interpret(const char *source);
+
+
+/*UTILITY*/
+void *jml_realloc(void *ptr, size_t new_size);
 
 
 /*MACRO*/

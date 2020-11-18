@@ -20,7 +20,6 @@ jml_obj_allocate(size_t size, jml_obj_type type)
 
     object->type                = type;
     object->marked              = false;
-
     object->next                = vm->objects;
     vm->objects                 = object;
 
@@ -244,7 +243,7 @@ jml_obj_cfunction_new(const char *name,
     jml_obj_cfunction_t *cfunction = ALLOCATE_OBJ(
         jml_obj_cfunction_t, OBJ_CFUNCTION);
 
-     cfunction->name = jml_obj_string_copy(
+     cfunction->name    = jml_obj_string_copy(
         name, strlen(name));
 
     cfunction->function = function;
@@ -282,7 +281,7 @@ jml_obj_exception_format(const char *name,
     va_start(args, message_format);
 
     /*FIXME*/
-    size_t size = strlen(message_format) * sizeof(char) * 16;
+    size_t size = strlen(message_format) * sizeof(char) * 32;
     char *message = (char*)jml_realloc(NULL, size);
     vsprintf(message, message_format, args);
 

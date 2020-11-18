@@ -549,14 +549,14 @@ jml_or(JML_UNUSED(bool assignable))
 static void
 jml_binary(JML_UNUSED(bool assignable))
 {
-    jml_token_type operator = parser.previous.type;
+    jml_token_type operator_token = parser.previous.type;
 
-    jml_parser_rule *rule = jml_parser_rule_get(operator);
+    jml_parser_rule *rule = jml_parser_rule_get(operator_token);
     jml_parser_precedence_parse(
         (jml_parser_precedence)(rule->precedence + 1)
     );
 
-    switch (operator) {
+    switch (operator_token) {
         case TOKEN_PLUS:        jml_bytecode_emit_byte(OP_ADD);         break;
         case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_SUB);         break;
         case TOKEN_STAR:        jml_bytecode_emit_byte(OP_MUL);         break;

@@ -139,7 +139,6 @@ jml_vm_free(jml_vm_t *vm_ptr)
     vm_ptr->path_string     = NULL;
 
     vm_ptr->external        = NULL;
-
     vm_ptr->sentinel        = NULL;
 
     jml_gc_free_objs();
@@ -338,11 +337,12 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
         else if (module->handle != NULL) {
             jml_obj_cfunction_t *cfunction = jml_module_get_raw(
-                module, name->chars);
+                module, name->chars, false);
 
-            if (cfunction == NULL)
+            if (cfunction == NULL
+                || cfunction->function == NULL)
                 return false;
-            
+
             value = OBJ_VAL(cfunction);
             jml_hashmap_set(&module->globals, name, value);
             return jml_vm_call_value(value, arg_count);
@@ -521,16 +521,14 @@ jml_vm_module_import(jml_obj_string_t *name)
             ) : NONE_VAL);
 
         jml_obj_cfunction_t *cfunction = jml_module_get_raw(
-            module, "__module");
-
-        jml_hashmap_set(&module->globals, vm->module_string,
-            cfunction != NULL ? OBJ_VAL(cfunction) : NONE_VAL);
+            module, "__module", true);
 
         value = OBJ_VAL(module);
+        /*FIXME*/
+        if (cfunction->function != NULL) cfunction->function(0, NULL);
+
         jml_hashmap_set(&vm->modules, name, value);
         jml_hashmap_set(&vm->globals, name, value);
-
-        /*TODO*/
     }
 
     jml_vm_push(value);
@@ -547,8 +545,10 @@ jml_vm_module_bind(jml_obj_module_t *module,
         name, &function)) {
 
         jml_obj_cfunction_t *cfunction = jml_module_get_raw(
-            module, name->chars);
-        
+            module, name->chars, true);
+
+        /*FIXME*/
+
         if (cfunction != NULL) {
             jml_hashmap_set(&module->globals,
                 name, OBJ_VAL(cfunction));

@@ -1,8 +1,6 @@
 #ifndef JML_UTIL_H_
 #define JML_UTIL_H_
 
-#include <jml.h>
-
 #include <jml_common.h>
 
 
@@ -34,8 +32,8 @@ jml_strsfx(const char *suf,
 
 #ifdef JML_PLATFORM_NIX
 
-#include <unistd.h>
 #include <limits.h>
+#include <unistd.h>
 #include <sys/param.h>
 
 #define JML_PATH_MAX                PATH_MAX

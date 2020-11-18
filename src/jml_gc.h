@@ -37,8 +37,6 @@
 void *jml_reallocate(void *ptr,
     size_t old_size, size_t new_size);
 
-void *jml_realloc(void *ptr, size_t new_size);
-
 void jml_gc_free_objs(void);
 
 void jml_gc_collect(void);

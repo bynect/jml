@@ -1,5 +1,7 @@
 #include <stdlib.h>
 
+#include <jml.h>
+
 #include <jml_gc.h>
 #include <jml_vm.h>
 #include <jml_module.h>
@@ -172,6 +174,13 @@ jml_free_object(jml_obj_t *object)
 
         case OBJ_MODULE: {
             jml_obj_module_t *module = (jml_obj_module_t*)object;
+
+            jml_obj_cfunction_t *free_function = jml_module_get_raw(
+                module, "__free", true);
+
+            if (free_function != NULL)
+                free_function->function(0, NULL);
+
             jml_hashmap_free(&module->globals);
             jml_module_close(module);
             FREE(jml_obj_module_t, object);
