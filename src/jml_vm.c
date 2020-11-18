@@ -520,13 +520,11 @@ jml_vm_module_import(jml_obj_string_t *name)
                 jml_obj_string_copy(path, strlen(path))
             ) : NONE_VAL);
 
-        jml_obj_cfunction_t *cfunction = jml_module_get_raw(
-            module, "__module", true);
+        if (!jml_module_initialize(module)) {
+            jml_vm_error("ImportExc: Import of '%s' failed.", module->name->chars);
+        }
 
         value = OBJ_VAL(module);
-        /*FIXME*/
-        if (cfunction->function != NULL) cfunction->function(0, NULL);
-
         jml_hashmap_set(&vm->modules, name, value);
         jml_hashmap_set(&vm->globals, name, value);
     }
@@ -1202,8 +1200,8 @@ jml_vm_run(void)
             EXEC_OP(OP_SUPER) {
                 jml_obj_string_t *name = READ_STRING();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
+                frame->pc = pc;
                 if (!jml_vm_method_bind(superclass, name)) {
-                    frame->pc = pc;
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 END_OP();

@@ -41,10 +41,6 @@ typedef struct {
 } jml_module_function;
 
 
-void jml_module_register(jml_obj_module_t *module,
-    jml_module_function *functions);
-
-
 typedef enum {
     INTERPRET_OK,
     INTERPRET_COMPILE_ERROR,

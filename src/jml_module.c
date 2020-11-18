@@ -1,7 +1,5 @@
 #include <stdio.h>
 
-#include <jml.h>
-
 #include <jml_module.h>
 #include <jml_vm.h>
 #include <jml_util.h>
@@ -28,31 +26,6 @@
 #define SHARED_LIB_EXT              "dll"
 
 #endif
-
-
-void
-jml_module_register(jml_obj_module_t *module, 
-    jml_module_function *functions)
-{
-    if (module == NULL || functions == NULL) {
-        jml_vm_error("Error while importing module.");
-        return;
-    }
-
-    /*FIXME*/
-
-    jml_module_function *current = functions;
-
-    while (current->function != NULL) {
-        jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
-            current->name, current->function, module);
-
-        jml_hashmap_set(&module->globals, cfunction->name,
-            OBJ_VAL(cfunction));
-
-        ++current;
-    }
-}
 
 
 jml_obj_module_t *
@@ -156,4 +129,90 @@ jml_module_get_raw(jml_obj_module_t *module,
     return jml_obj_cfunction_new(
         function_name, cfunction, module);
 #endif
+}
+
+
+jml_module_function *
+jml_module_get_table(jml_obj_module_t *module,
+    bool silent)
+{
+#ifdef JML_PLATFORM_NIX
+    jml_module_function *table = dlsym(
+        module->handle, "__functions"
+    );
+
+    char *result = dlerror();
+    if (result || table == NULL) {
+        if (!silent)
+            jml_vm_error("ImportExc %s.", result);
+
+        return NULL;
+    }
+
+    return table;
+#endif
+}
+
+
+void
+jml_module_register(jml_obj_module_t *module,
+    jml_module_function *function_table)
+{
+    jml_module_function *current = function_table;
+
+    while (current->function != NULL) {
+        jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
+            current->name, current->function, module);
+        
+        jml_hashmap_set(&module->globals, cfunction->name,
+            OBJ_VAL(cfunction));
+
+        ++current;
+    }
+}
+
+
+bool
+jml_module_initialize(jml_obj_module_t *module)
+{
+    jml_module_function *table = dlsym(
+        module->handle, "module_table"
+    );
+
+    if (table == NULL) return false;
+
+    jml_obj_cfunction_t *initializer = jml_module_get_raw(
+        module, "module_init", true);
+
+    if (initializer != NULL && initializer->function != NULL) {
+        jml_value_t value = OBJ_VAL(module);
+        initializer->function(1, &value);
+    }
+
+    jml_module_function *current = table;
+
+    while (current->function != NULL) {
+        jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
+            current->name, current->function, module);
+        
+        jml_hashmap_set(&module->globals, cfunction->name,
+            OBJ_VAL(cfunction));
+
+        ++current;
+    }
+
+    return true;
+}
+
+
+void
+jml_module_finalize(jml_obj_module_t *module)
+{
+    jml_obj_cfunction_t *free_function = jml_module_get_raw(
+        module, "module_free", true);
+
+    if (free_function != NULL)
+        free_function->function(0, NULL);
+
+    jml_module_close(module);
 }
