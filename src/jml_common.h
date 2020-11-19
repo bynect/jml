@@ -13,6 +13,8 @@
 
 #define JML_BACKTRACE
 #define JML_RECURSIVE_SEARCH
+#undef  JML_LAZY_IMPORT
+
 
 #ifdef JML_NDEBUG
 
@@ -23,7 +25,6 @@
 #undef  JML_TRACE_MEM
 #undef  JML_PRINT_TOKEN
 #undef  JML_DEBUG
-#undef  JML_LAZY_IMPORT
 
 #else
 
@@ -33,7 +34,6 @@
 #define JML_TRACE_GC
 #undef  JML_TRACE_MEM
 #undef  JML_PRINT_TOKEN
-#undef  JML_LAZY_IMPORT
 
 #endif
 

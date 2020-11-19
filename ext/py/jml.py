@@ -23,7 +23,8 @@ def jml_setup():
                     "-Wextra",
                     "-Werror",
                     "-Wno-unused-parameter",
-                    "-std=c99"
+                    "-std=c99",
+                    "-Wl,--export-dynamic"
                 ],
                 sources = [
                     "ext/py/jml_py.c",

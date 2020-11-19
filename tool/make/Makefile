@@ -22,4 +22,4 @@ libjml.a: *.o
 
 .PHONY: clean
 clean:
-	rm -f *.o bin/jml lib/libjml.*
+	rm -f *.o bin/jml lib/*
