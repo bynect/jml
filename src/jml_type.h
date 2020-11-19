@@ -139,6 +139,8 @@ struct jml_obj_method_t {
 
 typedef jml_value_t (*jml_cfunction)(int arg_count, jml_value_t *args);
 
+typedef void (*jml_mfunction)(jml_obj_module_t *module);
+
 
 struct jml_obj_cfunction_t {
     jml_obj_t                       obj;

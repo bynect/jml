@@ -1,5 +1,5 @@
 {
-   Ignore dlopen bug.
+   Ignore dlopen leaks.
    Memcheck:Leak
    ...
    fun:_dl_open

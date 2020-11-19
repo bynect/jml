@@ -261,13 +261,13 @@ jml_obj_exception_new(const char *name,
     jml_obj_exception_t *exc = ALLOCATE_OBJ(
         jml_obj_exception_t, OBJ_EXCEPTION);
 
-    exc->name       = jml_obj_string_copy(name,
-        strlen(name));
+    exc->name           = jml_obj_string_copy(
+        name, strlen(name));
 
-    exc->message    = jml_obj_string_copy(message,
-        strlen(message));
+    exc->message        = jml_obj_string_copy(
+        message, strlen(message));
 
-    exc->module     = NULL; /*TODO*/
+    exc->module         = NULL; /*TODO*/
 
     return exc;
 }

@@ -23,6 +23,7 @@
 #undef  JML_TRACE_MEM
 #undef  JML_PRINT_TOKEN
 #undef  JML_DEBUG
+#undef  JML_LAZY_IMPORT
 
 #else
 
@@ -32,6 +33,7 @@
 #define JML_TRACE_GC
 #undef  JML_TRACE_MEM
 #undef  JML_PRINT_TOKEN
+#undef  JML_LAZY_IMPORT
 
 #endif
 

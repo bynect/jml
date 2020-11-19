@@ -115,13 +115,13 @@ jml_module_get_raw(jml_obj_module_t *module,
     const char *function_name, bool silent)
 {
 #ifdef JML_PLATFORM_NIX
-    jml_cfunction cfunction = (jml_cfunction)dlsym(
+    jml_cfunction cfunction = dlsym(
         module->handle, function_name);
 
     char *result = dlerror();
     if (result || cfunction == NULL) {
         if (!silent)
-            jml_vm_error("ImportExc %s.", result);
+            jml_vm_error("ImportExc: %s.", result);
 
         return NULL;
     }
@@ -144,7 +144,7 @@ jml_module_get_table(jml_obj_module_t *module,
     char *result = dlerror();
     if (result || table == NULL) {
         if (!silent)
-            jml_vm_error("ImportExc %s.", result);
+            jml_vm_error("ImportExc: %s.", result);
 
         return NULL;
     }
@@ -175,20 +175,20 @@ jml_module_register(jml_obj_module_t *module,
 bool
 jml_module_initialize(jml_obj_module_t *module)
 {
+    jml_mfunction initializer = dlsym(
+        module->handle, "module_init"
+    );
+
+    if (initializer != NULL) {
+        initializer(module);
+    }
+
+#ifndef JML_LAZY_IMPORT
     jml_module_function *table = dlsym(
         module->handle, "module_table"
     );
 
     if (table == NULL) return false;
-
-    jml_obj_cfunction_t *initializer = jml_module_get_raw(
-        module, "module_init", true);
-
-    if (initializer != NULL && initializer->function != NULL) {
-        jml_value_t value = OBJ_VAL(module);
-        initializer->function(1, &value);
-    }
-
     jml_module_function *current = table;
 
     while (current->function != NULL) {
@@ -200,6 +200,7 @@ jml_module_initialize(jml_obj_module_t *module)
 
         ++current;
     }
+#endif
 
     return true;
 }
@@ -208,11 +209,12 @@ jml_module_initialize(jml_obj_module_t *module)
 void
 jml_module_finalize(jml_obj_module_t *module)
 {
-    jml_obj_cfunction_t *free_function = jml_module_get_raw(
-        module, "module_free", true);
+    jml_mfunction free_function = dlsym(
+        module->handle, "module_free"
+    );
 
     if (free_function != NULL)
-        free_function->function(0, NULL);
+        free_function(module);
 
     jml_module_close(module);
 }

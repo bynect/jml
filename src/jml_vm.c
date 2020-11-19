@@ -522,6 +522,7 @@ jml_vm_module_import(jml_obj_string_t *name)
 
         if (!jml_module_initialize(module)) {
             jml_vm_error("ImportExc: Import of '%s' failed.", module->name->chars);
+            return false;
         }
 
         value = OBJ_VAL(module);
@@ -539,18 +540,20 @@ jml_vm_module_bind(jml_obj_module_t *module,
     jml_obj_string_t *name)
 {
     jml_value_t function;
-    if (!jml_hashmap_get(&module->globals,
-        name, &function)) {
+    if (!jml_hashmap_get(&module->globals, name, &function)) {
 
+#ifndef JML_LAZY_IMPORT
+        goto err;
+#else
         jml_obj_cfunction_t *cfunction = jml_module_get_raw(
             module, name->chars, true);
-
-        /*FIXME*/
 
         if (cfunction != NULL) {
             jml_hashmap_set(&module->globals,
                 name, OBJ_VAL(cfunction));
-        } else {
+        } else goto err;
+#endif
+        err: {
             jml_vm_error(
                 "Undefined member '%s'.", name->chars
             );
@@ -558,7 +561,6 @@ jml_vm_module_bind(jml_obj_module_t *module,
         }
     }
 
-    /*TODO*/
     jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
         AS_CSTRING(jml_vm_peek(0)),
         AS_CFUNCTION(function)->function,

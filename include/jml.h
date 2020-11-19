@@ -1,11 +1,6 @@
 #ifndef JML_H_
 #define JML_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 /*INFO*/
 #define JML_VERSION_MAJOR           0
 #define JML_VERSION_MINOR           1
@@ -33,6 +28,8 @@ typedef struct jml_obj_exception_t  jml_obj_exception_t;
 
 
 typedef jml_value_t (*jml_cfunction)(int arg_count, jml_value_t *args);
+
+typedef void (*jml_mfunction)(jml_obj_module_t *module);
 
 
 typedef struct {
@@ -134,9 +131,5 @@ void *jml_realloc(void *ptr, size_t new_size);
 
 #endif
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* JML_H_ */
