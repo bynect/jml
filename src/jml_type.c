@@ -15,7 +15,7 @@
 static jml_obj_t *
 jml_obj_allocate(size_t size, jml_obj_type type)
 {
-    jml_obj_t *object           = (jml_obj_t*)jml_reallocate(
+    jml_obj_t *object           = jml_reallocate(
         NULL, 0UL, size);
 
     object->type                = type;

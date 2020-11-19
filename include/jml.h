@@ -19,9 +19,9 @@ typedef struct jml_obj_instance_s   jml_obj_instance_t;
 typedef struct jml_obj_function_s   jml_obj_function_t;
 typedef struct jml_obj_upvalue_s    jml_obj_upvalue_t;
 typedef struct jml_obj_closure_s    jml_obj_closure_t;
-typedef struct jml_obj_method_t     jml_obj_method_t;
-typedef struct jml_obj_cfunction_t  jml_obj_cfunction_t;
-typedef struct jml_obj_exception_t  jml_obj_exception_t;
+typedef struct jml_obj_method_s     jml_obj_method_t;
+typedef struct jml_obj_cfunction_s  jml_obj_cfunction_t;
+typedef struct jml_obj_exception_s  jml_obj_exception_t;
 
 #include <jml_value.h>
 #include <jml_type.h>
@@ -36,6 +36,16 @@ typedef struct {
     const char                     *name;
     jml_cfunction                   function;
 } jml_module_function;
+
+
+jml_obj_exception_t *jml_core_exception_args(
+    int arg_count, int expected_arg);
+
+jml_obj_exception_t *jml_core_exception_implemented(
+    jml_value_t value);
+
+jml_obj_exception_t *jml_core_exception_types(
+    bool mult, int arg_count, ...);
 
 
 typedef enum {

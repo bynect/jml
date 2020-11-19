@@ -132,28 +132,6 @@ jml_module_get_raw(jml_obj_module_t *module,
 }
 
 
-jml_module_function *
-jml_module_get_table(jml_obj_module_t *module,
-    bool silent)
-{
-#ifdef JML_PLATFORM_NIX
-    jml_module_function *table = dlsym(
-        module->handle, "__functions"
-    );
-
-    char *result = dlerror();
-    if (result || table == NULL) {
-        if (!silent)
-            jml_vm_error("ImportExc: %s.", result);
-
-        return NULL;
-    }
-
-    return table;
-#endif
-}
-
-
 void
 jml_module_register(jml_obj_module_t *module,
     jml_module_function *function_table)
@@ -194,14 +172,13 @@ jml_module_initialize(jml_obj_module_t *module)
     while (current->function != NULL) {
         jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
             current->name, current->function, module);
-        
+
         jml_hashmap_set(&module->globals, cfunction->name,
             OBJ_VAL(cfunction));
 
         ++current;
     }
 #endif
-
     return true;
 }
 

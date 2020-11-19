@@ -1,23 +1,24 @@
 CC=gcc
-CFLAGS=-g -Wall -Wextra -Werror -std=c99
+CFLAGS=-Wall -Wextra -Werror -std=c99 -g
+
+DEFINES=
 INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
 LIBS=-lm -ldl
+
 SHARED=-shared -fPIC
-DEFINE=-DJML_NDEBUG
+EXE=-Wl,--export-dynamic
+
+
+all: jml libjml.a
 
 %.o: src/%.c cli/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) $(SHARED) -c $^ $(LIBS)
+	$(CC) -c $^ $(CFLAGS) $(DEFINES) $(INCLUDES) $(LIBS)
 
 jml: *.o
-	$(CC) $(CFLAGS) $(INCLUDES) -o bin/$@ $^ $(LIBS)
-
-libjml.so: *.o
-	$(CC) $(CFLAGS) $(INCLUDES) $(SHARED) -o lib/$@ $^ $(LIBS)
+	$(CC) -o bin/$@ $^ $(CFLAGS) $(DEFINES) $(INCLUDES) $(LIBS) $(EXE)
 
 libjml.a: *.o
 	ar rcs lib/$@ $^
-
-all: jml libjml.so libjml.a
 
 .PHONY: clean
 clean:

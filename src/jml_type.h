@@ -130,7 +130,7 @@ struct jml_obj_closure_s {
 };
 
 
-struct jml_obj_method_t {
+struct jml_obj_method_s {
     jml_obj_t                       obj;
     jml_value_t                     receiver;
     jml_obj_closure_t              *method;
@@ -142,7 +142,7 @@ typedef jml_value_t (*jml_cfunction)(int arg_count, jml_value_t *args);
 typedef void (*jml_mfunction)(jml_obj_module_t *module);
 
 
-struct jml_obj_cfunction_t {
+struct jml_obj_cfunction_s {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
     jml_cfunction                   function;
@@ -150,7 +150,7 @@ struct jml_obj_cfunction_t {
 };
 
 
-struct jml_obj_exception_t {
+struct jml_obj_exception_s {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
     jml_obj_string_t               *message;
