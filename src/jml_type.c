@@ -337,8 +337,12 @@ jml_obj_print(jml_value_t value)
         case OBJ_ARRAY: {
             printf("[");
             jml_value_array_t array = AS_ARRAY(value)->values;
-            int item_count          = array.count - 1;
+            if (array.count <= 0) {
+                printf("]");
+                break;
+            }
 
+            int item_count          = array.count - 1;
             for (int i = 0; i < item_count; ++i) {
                 jml_value_print(array.values[i]);
                 printf(", ");

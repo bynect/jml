@@ -4,15 +4,6 @@
 #include <jml_common.h>
 
 
-char *jml_strsep(char **str, const char *sep);
-
-char *jml_strtok(char *input, const char *delimiter);
-
-char *jml_strdup(const char *str);
-
-char *jml_strcat(char *dest, char *src);
-
-
 static inline bool
 jml_strprfx(const char *pre,
     const char *str, size_t length)

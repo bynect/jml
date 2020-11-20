@@ -68,6 +68,14 @@ jml_interpret_result jml_vm_interpret(const char *source);
 /*UTILITY*/
 void *jml_realloc(void *ptr, size_t new_size);
 
+char *jml_strsep(char **str, const char *sep);
+
+char *jml_strtok(char *input, const char *delimiter);
+
+char *jml_strdup(const char *str);
+
+char *jml_strcat(char *dest, char *src);
+
 
 /*MACRO*/
 #ifdef __GNUC__

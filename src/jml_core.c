@@ -261,6 +261,9 @@ jml_core_size(int arg_count, jml_value_t *args)
     if (IS_STRING(value))
         return NUM_VAL(AS_STRING(value)->length);
 
+    if (IS_ARRAY(value))
+        return NUM_VAL(AS_ARRAY(value)->values.count);
+
     return OBJ_VAL(
         jml_core_exception_implemented(value)
     );
