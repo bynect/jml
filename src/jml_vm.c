@@ -57,7 +57,11 @@ jml_vm_error(const char *format, ...)
             else
                 fprintf(stderr, "__main\n");
         } else {
-            fprintf(stderr, "function %s()\n", function->name->chars);
+            if (function->module != NULL)
+                fprintf(stderr, "function %s.%s()\n",
+                    function->module->name->chars, function->name->chars);
+            else
+                fprintf(stderr, "function %s()\n", function->name->chars);
         }
     }
 
@@ -172,7 +176,8 @@ jml_vm_pop(void)
 static void
 jml_vm_pop_two(void)
 {
-    vm->stack_top -= 2;
+    jml_vm_pop();
+    jml_vm_pop();
 }
 
 
@@ -271,10 +276,10 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
             case OBJ_CFUNCTION: {
                 jml_obj_cfunction_t *cfunction_obj  = AS_CFUNCTION(callee);
                 jml_cfunction        cfunction      = cfunction_obj->function;
+                jml_value_t          result         = cfunction(
+                    arg_count, vm->stack_top - arg_count);
 
-                jml_value_t result  = cfunction(arg_count, vm->stack_top - arg_count);
                 vm->stack_top       -= arg_count + 1;
-
                 if (IS_EXCEPTION(result)) {
                     vm->external = cfunction_obj->name;
                     jml_vm_exception(AS_EXCEPTION(result));
@@ -511,14 +516,24 @@ jml_vm_module_import(jml_obj_string_t *name)
         char path[JML_PATH_MAX];
 
         jml_obj_module_t *module = jml_module_open(name, path);
-
         if (module == NULL)
             return false;
 
-        jml_hashmap_set(&module->globals, vm->path_string,
-            path != NULL ? OBJ_VAL(
+        jml_vm_push(OBJ_VAL(module));
+
+        if (path != NULL) {
+            jml_vm_push(OBJ_VAL(
                 jml_obj_string_copy(path, strlen(path))
-            ) : NONE_VAL);
+            ));
+            
+            jml_hashmap_set(&module->globals,
+                vm->path_string, jml_vm_peek(0));
+
+            jml_vm_pop();
+        } else {
+            jml_hashmap_set(&module->globals,
+                vm->path_string, NONE_VAL);
+        }
 
         if (!jml_module_initialize(module)) {
             jml_vm_error("ImportExc: Import of '%s' failed.", module->name->chars);
@@ -528,6 +543,7 @@ jml_vm_module_import(jml_obj_string_t *name)
         value = OBJ_VAL(module);
         jml_hashmap_set(&vm->modules, name, value);
         jml_hashmap_set(&vm->globals, name, value);
+        jml_vm_pop();
     }
 
     jml_vm_push(value);
@@ -1155,7 +1171,44 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_SET_INDEX) {
-                /*TODO*/
+                jml_obj_string_t   *name    = READ_STRING();
+                jml_value_t         to_set  = jml_vm_pop();
+                jml_value_t         index   = jml_vm_pop();
+
+                jml_value_t         value;
+
+                if (!jml_hashmap_get(&vm->globals, name, &value)) {
+                    frame->pc = pc;
+                    jml_vm_error("Undefined variable '%s'.", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                if (IS_STRING(index) && IS_MAP(value)) {
+                    jml_obj_map_t *map = AS_MAP(value);
+                    jml_hashmap_set(&map->hashmap,
+                        AS_STRING(index), to_set);
+
+                } else if (IS_NUM(index) && IS_ARRAY(value)) {
+                    jml_value_array_t array = AS_ARRAY(value)->values;
+                    int num_index   = AS_NUM(index);
+
+                    if (num_index > array.count || num_index < -array.count) {
+                        frame->pc = pc;
+                        jml_vm_error("Out bound assignment to array.");
+                        return INTERPRET_RUNTIME_ERROR;
+
+                    } else if (num_index < 0)
+                        array.values[array.count + num_index] = to_set;
+                    else
+                        array.values[num_index] = to_set;
+
+                } else {
+                    frame->pc = pc;
+                    jml_vm_error("Can index only by number or string.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_vm_push(value);
                 END_OP();
             }
 
@@ -1175,20 +1228,18 @@ jml_vm_run(void)
                 if (IS_STRING(index) && IS_MAP(value)) {
                     if (!jml_hashmap_get(&AS_MAP(value)->hashmap,
                         AS_STRING(index), &indexed))
-                        indexed             = NONE_VAL;
+                        indexed     = NONE_VAL;
 
                 } else if (IS_NUM(index) && IS_ARRAY(value)) {
                     jml_value_array_t array = AS_ARRAY(value)->values;
                     int num_index   = AS_NUM(index);
 
-                    if (num_index > array.count
-                        || num_index < -array.count) {
-                        indexed = NONE_VAL;
-                    } else {
-                        num_index           = num_index >= 0 ? num_index
-                                                : array.count - num_index;
-                        indexed             = array.values[num_index];
-                    }
+                    if (num_index > array.count || num_index < -array.count)
+                        indexed     = NONE_VAL;
+                    else if (num_index < 0)
+                        indexed     = array.values[array.count + num_index];
+                    else
+                        indexed     = array.values[num_index];
                 } else {
                     frame->pc = pc;
                     jml_vm_error("Can index only by number or string.");
@@ -1267,15 +1318,22 @@ void
 jml_cfunction_register(const char *name,
     jml_cfunction function, jml_obj_module_t *module)
 {
-    jml_vm_push(OBJ_VAL(jml_obj_cfunction_new(name,
-        function, module)));
+    jml_vm_push(OBJ_VAL(
+        jml_obj_string_copy(name, strlen(name))
+    ));
+
+    jml_vm_push(OBJ_VAL(
+        jml_obj_cfunction_new(AS_CSTRING(jml_vm_peek(0)),
+            function, module)
+    ));
 
     jml_hashmap_set(
-        &vm->globals, AS_CFUNCTION(vm->stack[0])->name,
-        vm->stack[0]
+        &vm->globals,
+        AS_STRING(jml_vm_peek(1)),
+        jml_vm_peek(0)
     );
 
-    jml_vm_pop();
+    jml_vm_pop_two();
 }
 
 

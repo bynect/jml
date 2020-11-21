@@ -89,6 +89,7 @@ jml_parser_advance(void)
 
 #ifdef JML_PRINT_TOKEN
         jml_token_type_print(parser.current.type);
+        printf("    %.*s\n", parser.current.length, parser.current.start);
 #endif
         if (parser.current.type != TOKEN_ERROR) break;
 
@@ -718,7 +719,12 @@ jml_variable_named(jml_token_t name,
         jml_expression();
 
         jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
-        jml_bytecode_emit_bytes(OP_GET_INDEX, (uint8_t)arg);
+
+        if (assignable && jml_parser_match(TOKEN_EQUAL)) {
+            jml_expression();
+            jml_bytecode_emit_bytes(OP_SET_INDEX, (uint8_t)arg);
+        } else
+            jml_bytecode_emit_bytes(OP_GET_INDEX, (uint8_t)arg);
     } else {
         jml_bytecode_emit_bytes(get_op, (uint8_t)arg);
     }
@@ -843,12 +849,9 @@ jml_parser_rule rules[] = {
     [TOKEN_NOT]         = {jml_unary,   NULL,       PREC_NONE},
     [TOKEN_OR]          = {NULL,        jml_or,     PREC_OR},
 
-    /*TODO*/
-    [TOKEN_ATOM]        = {NULL,        NULL,       PREC_NONE},
     [TOKEN_TRUE]        = {jml_literal, NULL,       PREC_NONE},
     [TOKEN_FALSE]       = {jml_literal, NULL,       PREC_NONE},
     [TOKEN_NONE]        = {jml_literal, NULL,       PREC_NONE},
-
     [TOKEN_NAME]        = {jml_variable,NULL,       PREC_NONE},
     [TOKEN_NUMBER]      = {jml_number,  NULL,       PREC_NONE},
     [TOKEN_STRING]      = {jml_string,  NULL,       PREC_NONE},

@@ -118,8 +118,7 @@ jml_obj_array_new(jml_value_t *values,
     array->values           = value_array;
 
     for (int i = 0; i < item_count; ++i) {
-        jml_value_array_write(&array->values,
-        values[i]);
+        jml_value_array_write(&array->values, values[i]);
     }
 
     return array;
@@ -361,12 +360,12 @@ jml_obj_print(jml_value_t value)
 
             printf("{");
             for (int i = 0; i < item_count; ++i) {
-                printf("\"%s\":", entries[i].key->chars);
+                printf("\"%s\": ", entries[i].key->chars);
                 jml_value_print(entries[i].value);
                 printf(", ");
             }
 
-            printf("\"%s\":", entries[item_count].key->chars);
+            printf("\"%s\": ", entries[item_count].key->chars);
             jml_value_print(entries[item_count].value);
             printf("}");
 

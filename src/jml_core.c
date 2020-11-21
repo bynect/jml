@@ -55,7 +55,7 @@ jml_core_exception_types(bool mult, int arg_count, ...)
     va_start(types, arg_count);
 
     size_t size = (arg_count + 1) * 32;
-    char *message = (char*)jml_realloc(NULL, size);
+    char *message = jml_realloc(NULL, size);
 
     char *next = va_arg(types, char*);
     sprintf(message, "Expected arguments of type '%s'", next);
@@ -163,7 +163,7 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
     int               fmt_args  = 0;
 
     size_t size                 = fmt_obj->length + 16 * arg_count;
-    char *string                = (char*)jml_realloc(NULL, size);
+    char *string                = jml_realloc(NULL, size);
     memset(string, 0, size);
 
     char *token                 = jml_strtok(fmt_str, "{}");
@@ -227,7 +227,7 @@ jml_core_reverse(int arg_count, jml_value_t *args)
         return OBJ_VAL(jml_obj_string_take(
             str, strlen(str))
         );
-    
+
     } else if (IS_ARRAY(value)) {
         jml_obj_array_t *array  = AS_ARRAY(value);
 

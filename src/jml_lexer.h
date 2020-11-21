@@ -67,13 +67,10 @@ typedef enum {
     TOKEN_NOT,
     TOKEN_OR,
 
-    /* atomics */
-    TOKEN_ATOM,
+    /* literals */
     TOKEN_TRUE,
     TOKEN_FALSE,
     TOKEN_NONE,
-
-    /* literals */
     TOKEN_NAME,
     TOKEN_NUMBER,
     TOKEN_STRING,

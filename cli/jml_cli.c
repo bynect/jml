@@ -19,7 +19,7 @@ jml_cli_fread(const char *path)
     size_t size = ftell(file);
     rewind(file);
 
-    char *buffer = (char*)realloc(NULL, size + 1);
+    char *buffer = jml_realloc(NULL, size + 1);
     if (buffer == NULL) {
         fprintf(stderr, "Not enough memory to read '%s'.\n", path);
         exit(EXIT_FAILURE);

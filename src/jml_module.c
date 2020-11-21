@@ -194,4 +194,5 @@ jml_module_finalize(jml_obj_module_t *module)
         free_function(module);
 
     jml_module_close(module);
+    jml_hashmap_del(&vm->modules, module->name);
 }

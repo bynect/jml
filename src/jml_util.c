@@ -63,7 +63,7 @@ char *
 jml_strdup(const char *str)
 {
     size_t length = strlen(str) + 1;
-    char *dest = (char*)jml_realloc(NULL,
+    char *dest = jml_realloc(NULL,
         length);
 
     if (!dest) return NULL;
@@ -131,7 +131,7 @@ jml_file_read(const char *path)
     size_t size = ftell(file);
     rewind(file);
 
-    char *buffer = (char*)jml_realloc(NULL, size + 1);
+    char *buffer = jml_realloc(NULL, size + 1);
     if (buffer == NULL) return NULL;
 
     size_t read = fread(buffer, sizeof(char), size, file);

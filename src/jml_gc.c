@@ -20,7 +20,7 @@ jml_reallocate(void *ptr,
 
     if (new_size > old_size) {
 #ifdef JML_STRESS_GC
-        jml_gc_collect(vm);
+        jml_gc_collect();
 #else
         if (vm->allocated > vm->next_gc)
             jml_gc_collect();
@@ -90,12 +90,15 @@ jml_gc_mark_roots(void)
     }
 
     jml_hashmap_mark(&vm->globals);
+    jml_hashmap_mark(&vm->modules);
     jml_compiler_mark_roots();
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
     jml_gc_mark_obj((jml_obj_t*)vm->call_string);
     jml_gc_mark_obj((jml_obj_t*)vm->module_string);
     jml_gc_mark_obj((jml_obj_t*)vm->path_string);
-    jml_gc_mark_obj((jml_obj_t*)vm->external);
+
+    if (vm->external != NULL)
+        jml_gc_mark_obj((jml_obj_t*)vm->external);
 }
 
 
@@ -106,15 +109,16 @@ jml_gc_mark_obj(jml_obj_t *object)
     if (object->marked) return;
 
 #ifdef JML_TRACE_GC
-    printf("[GC]  |%p marked ", (void*)object);
-    jml_obj_print(OBJ_VAL(object));
-    printf("|\n");
+    printf("[GC]  |%p marked %s|\n",
+        (void*)object,
+        jml_obj_stringify_type(OBJ_VAL(object))
+    );
 #endif
 
     object->marked = true;
     if (vm->gray_capacity < vm->gray_count + 1) {
         vm->gray_capacity = GROW_CAPACITY(vm->gray_capacity);
-        vm->gray_stack = (jml_obj_t**)realloc(vm->gray_stack,
+        vm->gray_stack = (jml_obj_t**)jml_realloc(vm->gray_stack,
             sizeof(jml_obj_t*) * vm->gray_capacity);
 
         if (vm->gray_stack == NULL) exit(EXIT_FAILURE);
@@ -145,7 +149,7 @@ jml_free_object(jml_obj_t *object)
 {
 #ifdef JML_TRACE_MEM
     printf(
-        "[MEM] |%p freed (type %s)|\n",
+        "[MEM] |%p freed %s|\n",
         (void*)object,
         jml_obj_stringify_type(object)
     );
@@ -261,11 +265,10 @@ jml_gc_sweep(void)
             jml_obj_t *unreached = object;
             object               = object->next;
 
-            if (previous != NULL) {
+            if (previous != NULL)
                 previous->next   = object;
-            } else {
+            else
                 vm->objects      = object;
-            }
 
             jml_free_object(unreached);
         }
@@ -277,20 +280,29 @@ static void
 jml_gc_blacken_obj(jml_obj_t *object)
 {
 #ifdef JML_TRACE_GC
-    printf("[GC]  |%p blackened ", (void*)object);
-    jml_value_print(OBJ_VAL(object));
-    printf("|\n");
+    printf("[GC]  |%p blackened %s|\n",
+        (void*)object,
+        jml_obj_stringify_type(OBJ_VAL(object))
+    );
 #endif
-
     switch (object->type) {
+        case OBJ_STRING:
+            break;
+
         case OBJ_ARRAY: {
-            jml_gc_mark_array(
-                &((jml_obj_array_t*)object)->values);
+            jml_gc_mark_array(&((jml_obj_array_t*)object)->values);
             break;
         }
 
         case OBJ_MAP: {
             jml_hashmap_mark(&((jml_obj_map_t*)object)->hashmap);
+            break;
+        }
+
+        case OBJ_MODULE: {
+            jml_obj_module_t *module = (jml_obj_module_t*)object;
+            jml_gc_mark_obj((jml_obj_t*)module->name);
+            jml_hashmap_mark(&module->globals);
             break;
         }
 
@@ -332,16 +344,24 @@ jml_gc_blacken_obj(jml_obj_t *object)
         }
 
         case OBJ_UPVALUE: {
-            jml_gc_mark_value(
-                ((jml_obj_upvalue_t*)object)->closed);
+            jml_gc_mark_value(((jml_obj_upvalue_t*)object)->closed);
             break;
         }
 
-        case OBJ_CFUNCTION:
-        case OBJ_EXCEPTION:
-        case OBJ_MODULE:
-        case OBJ_STRING:
+        case OBJ_CFUNCTION: {
+            jml_obj_cfunction_t *cfunction = (jml_obj_cfunction_t*)object;
+            jml_gc_mark_obj((jml_obj_t*)cfunction->name);
+            //jml_gc_mark_obj((jml_obj_t*)cfunction->module);
             break;
+        }
+
+        case OBJ_EXCEPTION: {
+            jml_obj_exception_t *exc = (jml_obj_exception_t*)object;
+            jml_gc_mark_obj((jml_obj_t*)exc->name);
+            jml_gc_mark_obj((jml_obj_t*)exc->message);
+            //jml_gc_mark_obj((jml_obj_t*)exc->module);
+            break;
+        }
     }
 }
 

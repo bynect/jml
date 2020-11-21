@@ -73,8 +73,6 @@ jml_std_regex_match(int arg_count, jml_value_t *args)
 }
 
 
-#include <stdio.h>
-
 static jml_value_t
 jml_std_regex_search(int arg_count, jml_value_t *args)
 {

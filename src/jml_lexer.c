@@ -250,7 +250,9 @@ jml_number_literal(void)
 {
     while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
 
-    if (jml_lexer_peek() == '.' && jml_is_digit(jml_lexer_peek_next())) {
+    if (jml_lexer_peek() == '.'
+        && jml_is_digit(jml_lexer_peek_next())) {
+
         jml_lexer_advance();
         while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
     }
@@ -325,247 +327,243 @@ jml_token_type_print(jml_token_type type)
 {
     switch(type) {
         case TOKEN_RPAREN:
-            printf("%s\n", "TOKEN_RPAREN");
+            printf("%s", "TOKEN_RPAREN");
             break;
 
         case TOKEN_LPAREN:
-            printf("%s\n", "TOKEN_LPAREN");
+            printf("%s", "TOKEN_LPAREN");
             break;
 
         case TOKEN_RSQARE:
-            printf("%s\n", "TOKEN_RSQARE");
+            printf("%s", "TOKEN_RSQARE");
             break;
 
         case TOKEN_LSQARE:
-            printf("%s\n", "TOKEN_LSQARE");
+            printf("%s", "TOKEN_LSQARE");
             break;
 
         case TOKEN_RBRACE:
-            printf("%s\n", "TOKEN_RBRACE");
+            printf("%s", "TOKEN_RBRACE");
             break;
 
         case TOKEN_LBRACE:
-            printf("%s\n", "TOKEN_LBRACE");
+            printf("%s", "TOKEN_LBRACE");
             break;
 
         case TOKEN_COLON:
-            printf("%s\n", "TOKEN_COLON");
+            printf("%s", "TOKEN_COLON");
             break;
 
         case TOKEN_SEMI:
-            printf("%s\n", "TOKEN_SEMI");
+            printf("%s", "TOKEN_SEMI");
             break;
 
         case TOKEN_COMMA:
-            printf("%s\n", "TOKEN_COMMA");
+            printf("%s", "TOKEN_COMMA");
             break;
 
         case TOKEN_DOT:
-            printf("%s\n", "TOKEN_DOT");
+            printf("%s", "TOKEN_DOT");
             break;
 
         case TOKEN_PIPE:
-            printf("%s\n", "TOKEN_PIPE");
+            printf("%s", "TOKEN_PIPE");
             break;
 
         case TOKEN_CARET:
-            printf("%s\n", "TOKEN_CARET");
+            printf("%s", "TOKEN_CARET");
             break;
 
         case TOKEN_AMP:
-            printf("%s\n", "TOKEN_AMP");
+            printf("%s", "TOKEN_AMP");
             break;
 
         case TOKEN_TILDE:
-            printf("%s\n", "TOKEN_TILDE");
+            printf("%s", "TOKEN_TILDE");
             break;
 
         case TOKEN_QUEST:
-            printf("%s\n", "TOKEN_QUEST");
+            printf("%s", "TOKEN_QUEST");
             break;
 
         case TOKEN_BANG:
-            printf("%s\n", "TOKEN_BANG");
+            printf("%s", "TOKEN_BANG");
             break;
 
         case TOKEN_HASH:
-            printf("%s\n", "TOKEN_HASH");
+            printf("%s", "TOKEN_HASH");
             break;
 
         case TOKEN_AT:
-            printf("%s\n", "TOKEN_AT");
+            printf("%s", "TOKEN_AT");
             break;
 
         case TOKEN_ARROW:
-            printf("%s\n", "TOKEN_ARROW");
+            printf("%s", "TOKEN_ARROW");
             break;
 
         case TOKEN_PLUS:
-            printf("%s\n", "TOKEN_PLUS");
+            printf("%s", "TOKEN_PLUS");
             break;
 
         case TOKEN_MINUS:
-            printf("%s\n", "TOKEN_MINUS");
+            printf("%s", "TOKEN_MINUS");
             break;
 
         case TOKEN_STAR:
-            printf("%s\n", "TOKEN_STAR");
+            printf("%s", "TOKEN_STAR");
             break;
 
         case TOKEN_STARSTAR:
-            printf("%s\n", "TOKEN_STARSTAR");
+            printf("%s", "TOKEN_STARSTAR");
             break;
 
         case TOKEN_SLASH:
-            printf("%s\n", "TOKEN_SLASH");
+            printf("%s", "TOKEN_SLASH");
             break;
 
         case TOKEN_PERCENT:
-            printf("%s\n", "TOKEN_PERCENT");
+            printf("%s", "TOKEN_PERCENT");
             break;
 
         case TOKEN_EQUAL:
-            printf("%s\n", "TOKEN_EQUAL");
+            printf("%s", "TOKEN_EQUAL");
             break;
 
         case TOKEN_EQEQUAL:
-            printf("%s\n", "TOKEN_EQEQUAL");
+            printf("%s", "TOKEN_EQEQUAL");
             break;
 
         case TOKEN_GREATER:
-            printf("%s\n", "TOKEN_GREATER");
+            printf("%s", "TOKEN_GREATER");
             break;
 
         case TOKEN_GREATEREQ:
-            printf("%s\n", "TOKEN_GREATEREQ");
+            printf("%s", "TOKEN_GREATEREQ");
             break;
 
         case TOKEN_LESS:
-            printf("%s\n", "TOKEN_LESS");
+            printf("%s", "TOKEN_LESS");
             break;
 
         case TOKEN_LESSEQ:
-            printf("%s\n", "TOKEN_LESSEQ");
+            printf("%s", "TOKEN_LESSEQ");
             break;
 
         case TOKEN_NOTEQ:
-            printf("%s\n", "TOKEN_NOTEQ");
+            printf("%s", "TOKEN_NOTEQ");
             break;
 
         case TOKEN_FOR:
-            printf("%s\n", "TOKEN_FOR");
+            printf("%s", "TOKEN_FOR");
             break;
 
         case TOKEN_WHILE:
-            printf("%s\n", "TOKEN_WHILE");
+            printf("%s", "TOKEN_WHILE");
             break;
 
         case TOKEN_BREAK:
-            printf("%s\n", "TOKEN_BREAK");
+            printf("%s", "TOKEN_BREAK");
             break;
 
         case TOKEN_SKIP:
-            printf("%s\n", "TOKEN_SKIP");
+            printf("%s", "TOKEN_SKIP");
             break;
 
         case TOKEN_IN:
-            printf("%s\n", "TOKEN_IN");
+            printf("%s", "TOKEN_IN");
             break;
 
         case TOKEN_WITH:
-            printf("%s\n", "TOKEN_WITH");
+            printf("%s", "TOKEN_WITH");
             break;
 
         case TOKEN_IF:
-            printf("%s\n", "TOKEN_IF");
+            printf("%s", "TOKEN_IF");
             break;
 
         case TOKEN_ELSE:
-            printf("%s\n", "TOKEN_ELSE");
+            printf("%s", "TOKEN_ELSE");
             break;
 
         case TOKEN_CLASS:
-            printf("%s\n", "TOKEN_CLASS");
+            printf("%s", "TOKEN_CLASS");
             break;
 
         case TOKEN_SELF:
-            printf("%s\n", "TOKEN_SELF");
+            printf("%s", "TOKEN_SELF");
             break;
 
         case TOKEN_SUPER:
-            printf("%s\n", "TOKEN_SUPER");
+            printf("%s", "TOKEN_SUPER");
             break;
 
         case TOKEN_LET:
-            printf("%s\n", "TOKEN_LET");
+            printf("%s", "TOKEN_LET");
             break;
 
         case TOKEN_FN:
-            printf("%s\n", "TOKEN_FN");
+            printf("%s", "TOKEN_FN");
             break;
 
         case TOKEN_RETURN:
-            printf("%s\n", "TOKEN_RETURN");
+            printf("%s", "TOKEN_RETURN");
             break;
 
         case TOKEN_IMPORT:
-            printf("%s\n", "TOKEN_IMPORT");
+            printf("%s", "TOKEN_IMPORT");
             break;
 
         case TOKEN_AND:
-            printf("%s\n", "TOKEN_AND");
+            printf("%s", "TOKEN_AND");
             break;
 
         case TOKEN_NOT:
-            printf("%s\n", "TOKEN_NOT");
+            printf("%s", "TOKEN_NOT");
             break;
 
         case TOKEN_OR:
-            printf("%s\n", "TOKEN_OR");
-            break;
-
-        case TOKEN_ATOM:
-            printf("%s\n", "TOKEN_ATOM");
+            printf("%s", "TOKEN_OR");
             break;
 
         case TOKEN_TRUE:
-            printf("%s\n", "TOKEN_TRUE");
+            printf("%s", "TOKEN_TRUE");
             break;
 
         case TOKEN_FALSE:
-            printf("%s\n", "TOKEN_FALSE");
+            printf("%s", "TOKEN_FALSE");
             break;
 
         case TOKEN_NONE:
-            printf("%s\n", "TOKEN_NONE");
+            printf("%s", "TOKEN_NONE");
             break;
 
         case TOKEN_NAME:
-            printf("%s\n", "TOKEN_NAME");
+            printf("%s", "TOKEN_NAME");
             break;
 
         case TOKEN_NUMBER:
-            printf("%s\n", "TOKEN_NUMBER");
+            printf("%s", "TOKEN_NUMBER");
             break;
 
         case TOKEN_STRING:
-            printf("%s\n", "TOKEN_STRING");
+            printf("%s", "TOKEN_STRING");
             break;
 
         case TOKEN_LINE:
-            printf("%s\n", "TOKEN_LINE");
+            printf("%s", "TOKEN_LINE");
             break;
 
         case TOKEN_ERROR:
-            printf("%s\n", "TOKEN_ERROR");
+            printf("%s", "TOKEN_ERROR");
             break;
 
         case TOKEN_EOF:
-            printf("%s\n", "TOKEN_EOF");
+            printf("%s", "TOKEN_EOF");
             break;
 
         default:
-            printf("%s\n", "unknown token type");
+            printf("%s", "unknown token type");
             break;
     }
 }
