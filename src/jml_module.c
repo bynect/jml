@@ -65,15 +65,18 @@ jml_module_open(jml_obj_string_t *module_name,
             goto err;
         }
 
-        strcpy(path, filename_so);
+        if (path != NULL)
+            strcpy(path, filename_so);
 
         jml_realloc(module_str, 0UL);
+
         return jml_obj_module_new(
-            module_name->chars, handle);
+            module_name, handle);
 
     } else if (jml_file_exist(filename_jml)) {
         /*TODO*/
-        strcpy(path, filename_jml);
+        if (path != NULL)
+            strcpy(path, filename_jml);
         jml_vm_error("ImportExc: Cannot import jml module.");
         goto err;
 
@@ -115,19 +118,25 @@ jml_module_get_raw(jml_obj_module_t *module,
     const char *function_name, bool silent)
 {
 #ifdef JML_PLATFORM_NIX
-    jml_cfunction cfunction = dlsym(
+    jml_cfunction raw = dlsym(
         module->handle, function_name);
 
     char *result = dlerror();
-    if (result || cfunction == NULL) {
+    if (result || raw == NULL) {
         if (!silent)
             jml_vm_error("ImportExc: %s.", result);
 
         return NULL;
     }
 
-    return jml_obj_cfunction_new(
-        function_name, cfunction, module);
+    jml_vm_push(jml_string_intern(function_name));
+
+    jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
+        AS_STRING(jml_vm_peek(0)), raw, module);
+
+    jml_vm_pop();
+
+    return cfunction;
 #endif
 }
 
@@ -139,12 +148,21 @@ jml_module_register(jml_obj_module_t *module,
     jml_module_function *current = function_table;
 
     while (current->function != NULL) {
-        jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
-            current->name, current->function, module);
-        
-        jml_hashmap_set(&module->globals, cfunction->name,
-            OBJ_VAL(cfunction));
+        jml_vm_push(jml_string_intern(current->name));
 
+        jml_vm_push(OBJ_VAL(
+            jml_obj_cfunction_new(
+                AS_STRING(jml_vm_peek(0)),
+                current->function, module
+            )
+        ));
+
+        jml_hashmap_set(&module->globals,
+            AS_STRING(jml_vm_peek(0)),
+            jml_vm_peek(1)
+        );
+
+        jml_vm_pop_two();
         ++current;
     }
 }
@@ -170,12 +188,21 @@ jml_module_initialize(jml_obj_module_t *module)
     jml_module_function *current = table;
 
     while (current->function != NULL) {
-        jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
-            current->name, current->function, module);
+        jml_vm_push(jml_string_intern(current->name));
 
-        jml_hashmap_set(&module->globals, cfunction->name,
-            OBJ_VAL(cfunction));
+        jml_vm_push(OBJ_VAL(
+            jml_obj_cfunction_new(
+                AS_STRING(jml_vm_peek(1)),
+                current->function, module
+            )
+        ));
 
+        jml_hashmap_set(&module->globals,
+            AS_STRING(jml_vm_peek(1)),
+            jml_vm_peek(0)
+        );
+
+        jml_vm_pop_two();
         ++current;
     }
 #endif
@@ -194,5 +221,4 @@ jml_module_finalize(jml_obj_module_t *module)
         free_function(module);
 
     jml_module_close(module);
-    jml_hashmap_del(&vm->modules, module->name);
 }

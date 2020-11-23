@@ -374,7 +374,7 @@ jml_identifier_const(jml_token_t *name) {
 
 static bool
 jml_identifier_equal(jml_token_t *a,
-    jml_token_t *b) 
+    jml_token_t *b)
 {
     if (a->length != b->length) return false;
     return memcmp(a->start, b->start, a->length) == 0;
@@ -466,7 +466,7 @@ jml_variable_declaration(void)
             && local->depth < current->scope_depth) {
             break;
         }
-        
+
         if (jml_identifier_equal(name, &local->name)) {
             jml_parser_error(
                 "Already variable with this name in this scope."
@@ -479,7 +479,7 @@ jml_variable_declaration(void)
 
 
 static uint8_t
-jml_variable_parse(const char *message) 
+jml_variable_parse(const char *message)
 {
     jml_parser_consume(TOKEN_NAME, message);
 

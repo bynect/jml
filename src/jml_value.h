@@ -78,6 +78,8 @@ typedef struct {
 
 #define BOOL_VAL(value)                                 \
     ((jml_value_t){VAL_BOOL, {.boolean = value}})
+#define TRUE_VAL                    BOOL_VAL(true)
+#define FALSE_VAL                   BOOL_VAL(false)
 #define NONE_VAL                                        \
     ((jml_value_t){VAL_NONE, {.number = 0}})
 #define NUM_VAL(value)                                  \

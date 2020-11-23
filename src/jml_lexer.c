@@ -183,7 +183,7 @@ jml_identifier_check(void)
                 }
             }
             break;
-        case 'n': 
+        case 'n':
             if (lexer.current - lexer.start > 1
                 && lexer.start[1] == 'o') {
                 switch (lexer.start[2]) {
@@ -195,7 +195,7 @@ jml_identifier_check(void)
         case 'o': return jml_keyword_match(1, 1, "r", TOKEN_OR);
         case 'l': return jml_keyword_match(1, 2, "et", TOKEN_LET);
         case 'r': return jml_keyword_match(1, 5, "eturn", TOKEN_RETURN);
-        case 's': 
+        case 's':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'e': return jml_keyword_match(2, 2, "lf", TOKEN_SELF);
@@ -205,7 +205,7 @@ jml_identifier_check(void)
             }
             break;
         case 't': return jml_keyword_match(1, 3, "rue", TOKEN_TRUE);
-        case 'w': 
+        case 'w':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'i': return jml_keyword_match(2, 2, "th", TOKEN_WITH);

@@ -37,6 +37,9 @@ typedef struct jml_vm_s {
     int                             gray_count;
     int                             gray_capacity;
     jml_obj_t                     **gray_stack;
+
+    jml_value_t                     exempt_stack[EXEMPT_MAX];
+    jml_value_t                    *exempt;
 } jml_vm_t;
 
 
@@ -46,10 +49,15 @@ void jml_vm_push(jml_value_t value);
 
 jml_value_t jml_vm_pop();
 
-void jml_cfunction_register(const char *name,
-    jml_cfunction function, jml_obj_module_t *module);
+void jml_vm_pop_two(void);
+
+jml_value_t jml_vm_peek(int distance);
 
 void jml_vm_error(const char *format, ...);
+
+
+void jml_cfunction_register(const char *name,
+    jml_cfunction function, jml_obj_module_t *module);
 
 
 extern jml_vm_t *vm;

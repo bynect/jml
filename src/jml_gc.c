@@ -6,7 +6,7 @@
 #include <jml_vm.h>
 #include <jml_module.h>
 
-#ifdef JML_TRACE_GC
+#if defined(JML_TRACE_GC) || (defined(JML_ROUND_GC))
 #include <stdio.h>
 #include <time.h>
 #endif
@@ -70,6 +70,22 @@ jml_realloc(void *ptr,
 }
 
 
+void
+jml_gc_exempt_push(jml_value_t value)
+{
+    *vm->exempt = value;
+    vm->exempt++;
+}
+
+
+jml_value_t
+jml_gc_exempt_pop(void)
+{
+    vm->exempt--;
+    return *vm->exempt; 
+}
+
+
 static void
 jml_gc_mark_roots(void)
 {
@@ -80,25 +96,32 @@ jml_gc_mark_roots(void)
     }
 
     for (int i = 0; i < vm->frame_count; i++) {
+
         jml_gc_mark_obj((jml_obj_t*)vm->frames[i].closure);
     }
 
     for (jml_obj_upvalue_t *upvalue = vm->open_upvalues;
-        upvalue != NULL;
-        upvalue = upvalue->next) {
+        upvalue != NULL; upvalue = upvalue->next) {
+
         jml_gc_mark_obj((jml_obj_t*)upvalue);
+    }
+
+    for (jml_value_t *exempt = vm->exempt_stack;
+        exempt < vm->exempt; exempt++) {
+
+        jml_gc_mark_value(*exempt);
     }
 
     jml_hashmap_mark(&vm->globals);
     jml_hashmap_mark(&vm->modules);
+
     jml_compiler_mark_roots();
+
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
     jml_gc_mark_obj((jml_obj_t*)vm->call_string);
     jml_gc_mark_obj((jml_obj_t*)vm->module_string);
     jml_gc_mark_obj((jml_obj_t*)vm->path_string);
-
-    if (vm->external != NULL)
-        jml_gc_mark_obj((jml_obj_t*)vm->external);
+    jml_gc_mark_obj((jml_obj_t*)vm->external);
 }
 
 
@@ -351,7 +374,6 @@ jml_gc_blacken_obj(jml_obj_t *object)
         case OBJ_CFUNCTION: {
             jml_obj_cfunction_t *cfunction = (jml_obj_cfunction_t*)object;
             jml_gc_mark_obj((jml_obj_t*)cfunction->name);
-            //jml_gc_mark_obj((jml_obj_t*)cfunction->module);
             break;
         }
 
@@ -359,7 +381,6 @@ jml_gc_blacken_obj(jml_obj_t *object)
             jml_obj_exception_t *exc = (jml_obj_exception_t*)object;
             jml_gc_mark_obj((jml_obj_t*)exc->name);
             jml_gc_mark_obj((jml_obj_t*)exc->message);
-            //jml_gc_mark_obj((jml_obj_t*)exc->module);
             break;
         }
     }
@@ -379,11 +400,15 @@ jml_gc_trace_refs(void)
 void
 jml_gc_collect(void)
 {
-#ifdef JML_TRACE_GC
+#ifdef JML_ROUND_GC
+    static int generation = 0;
+
     size_t before = vm->allocated;
     time_t start  = clock();
+
     printf(
-        "[GC]  |gc started {current: %zd bytes}|\n", before
+        "[GC]  |gc started {current: %zd bytes, generation: %d}|\n",
+        before, generation
     );
 #endif
 
@@ -394,12 +419,15 @@ jml_gc_collect(void)
 
     vm->next_gc = vm->allocated * GC_HEAP_GROW_FACTOR;
 
-#ifdef JML_TRACE_GC
+#ifdef JML_ROUND_GC
     time_t elapsed = clock() - start;
     size_t after = vm->allocated;
+
     printf(
         "[GC]  |gc ended {current: %zd bytes, collected: %zd bytes, next: %zd bytes, elapsed:%.3lds}|\n",
         after, before - after, vm->next_gc, (long)elapsed
     );
+
+    generation++;
 #endif
 }

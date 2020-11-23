@@ -19,7 +19,7 @@ jml_core_exception_args(int arg_count, int expected_arg)
 {
     char message[38];
 
-    sprintf(message, "Expected '%d' arguments but got '%d'.", 
+    sprintf(message, "Expected '%d' arguments but got '%d'.",
         expected_arg, arg_count);
 
     if (arg_count > expected_arg)
@@ -286,9 +286,7 @@ jml_core_char(int arg_count, jml_value_t *args)
         chr[0] = (char)AS_NUM(value);
         chr[1] = '\0';
 
-        return OBJ_VAL(
-            jml_obj_string_copy(chr, 2)
-        );
+        return jml_string_intern(chr);
     }
 
     return OBJ_VAL(

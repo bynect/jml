@@ -167,9 +167,11 @@ jml_obj_string_t *jml_obj_string_copy(const char *chars,
 jml_obj_array_t *jml_obj_array_new(jml_value_t *values,
     int item_count);
 
+void jml_obj_array_add(jml_obj_array_t *array, jml_value_t value);
+
 jml_obj_map_t *jml_obj_map_new(void);
 
-jml_obj_module_t *jml_obj_module_new(const char *name, void *handle);
+jml_obj_module_t *jml_obj_module_new(jml_obj_string_t *name, void *handle);
 
 jml_obj_class_t *jml_obj_class_new(jml_obj_string_t *name);
 
@@ -184,7 +186,7 @@ jml_obj_closure_t *jml_obj_closure_new(jml_obj_function_t *function);
 
 jml_obj_upvalue_t *jml_obj_upvalue_new(jml_value_t *slot);
 
-jml_obj_cfunction_t *jml_obj_cfunction_new(const char *name,
+jml_obj_cfunction_t *jml_obj_cfunction_new(jml_obj_string_t *name,
     jml_cfunction function, jml_obj_module_t *module);
 
 jml_obj_exception_t *jml_obj_exception_new(const char *name,

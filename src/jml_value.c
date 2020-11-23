@@ -138,7 +138,7 @@ jml_value_equal(jml_value_t a, jml_value_t b)
         case VAL_NUM:       return AS_NUM(a) == AS_NUM(b);
         case VAL_OBJ:       return AS_OBJ(a) == AS_OBJ(b);
 
-        default:            return false; 
+        default:            return false;
     }
 #endif
 }
@@ -293,7 +293,7 @@ jml_hashmap_pop(jml_hashmap_t *map,
     jml_obj_string_t *key)
 {
     jml_value_t value;
-    
+
     if (!jml_hashmap_get(map, key, &value)) {
         return OBJ_VAL(vm->sentinel);
     }
@@ -395,14 +395,17 @@ jml_hashmap_mark(jml_hashmap_t *map)
 jml_hashmap_entry_t *
 jml_hashmap_iterator(jml_hashmap_t *map)
 {
-    jml_hashmap_entry_t *entries = (jml_hashmap_entry_t*)jml_realloc(
-        NULL, map->count);
+    jml_hashmap_entry_t *entries = jml_realloc(
+        NULL, map->count + 1);
 
-    int length = 0;
-    for (int i = 0; i <= map->capacity; i++) {
+    /*FIXME*/
+
+    int count = 0;
+    for (int i = 0; i <= map->capacity && count <= map->count; i++) {
         jml_hashmap_entry_t entry = map->entries[i];
         if (entry.key != NULL) {
-            entries[length++] = entry;
+            entries[count] = entry;
+            ++count;
         }
     }
 

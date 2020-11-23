@@ -18,11 +18,13 @@ jml_vm_t *vm;
 
 
 static void
-jml_vm_stack_reset(void)
+jml_vm_stack_reset(jml_vm_t *vm_ptr)
 {
-    vm->stack_top = vm->stack;
-    vm->frame_count = 0;
-    vm->open_upvalues = NULL;
+    vm_ptr->stack_top       = vm_ptr->stack;
+    vm_ptr->frame_count     = 0;
+    vm_ptr->open_upvalues   = NULL;
+
+    vm_ptr->exempt          = vm_ptr->exempt_stack;
 }
 
 
@@ -65,7 +67,7 @@ jml_vm_error(const char *format, ...)
         }
     }
 
-    jml_vm_stack_reset();
+    jml_vm_stack_reset(vm);
 }
 
 
@@ -97,13 +99,14 @@ jml_vm_new(void)
 void
 jml_vm_init(jml_vm_t *vm_ptr)
 {
-    jml_vm_stack_reset();
+    jml_vm_stack_reset(vm_ptr);
 
     jml_obj_t *sentinel = (jml_obj_t*)jml_realloc(NULL, sizeof(jml_obj_t));
     memset(sentinel, 0, sizeof(jml_obj_t));
 
     vm_ptr->sentinel        = sentinel;
     vm_ptr->objects         = vm_ptr->sentinel;
+
     vm_ptr->allocated       = 0;
     vm_ptr->next_gc         = 1024 * 1024 * 4;
 
@@ -173,7 +176,7 @@ jml_vm_pop(void)
 }
 
 
-static void
+void
 jml_vm_pop_two(void)
 {
     jml_vm_pop();
@@ -181,7 +184,7 @@ jml_vm_pop_two(void)
 }
 
 
-static jml_value_t
+jml_value_t
 jml_vm_peek(int distance)
 {
   return vm->stack_top[-1 - distance];
@@ -335,23 +338,33 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
     } else if (IS_MODULE(receiver)) {
         jml_obj_module_t *module = AS_MODULE(receiver);
-
         jml_value_t value;
+
         if (jml_hashmap_get(&module->globals, name, &value))
             return jml_vm_call_value(value, arg_count);
-
+ 
+#ifndef JML_LAZY_IMPORT
+        else {
+            jml_vm_error("Undefined property '%s'.", name->chars);
+            return false;
+        }
+#else
         else if (module->handle != NULL) {
             jml_obj_cfunction_t *cfunction = jml_module_get_raw(
-                module, name->chars, false);
+                module, name->chars, true);
 
-            if (cfunction == NULL
-                || cfunction->function == NULL)
+            if (cfunction == NULL || cfunction->function == NULL) {
+                jml_vm_error("Undefined property '%s'.", name->chars);
                 return false;
+            }
 
             value = OBJ_VAL(cfunction);
-            jml_hashmap_set(&module->globals, name, value);
+            jml_vm_push(value);
+            jml_hashmap_set(&module->globals, name, jml_vm_peek(0));
+            jml_vm_pop();
             return jml_vm_call_value(value, arg_count);
         }
+#endif
     }
 
     jml_vm_error("Cannot call %s", name->chars);
@@ -364,9 +377,7 @@ jml_vm_method_bind(jml_obj_class_t *klass,
     jml_obj_string_t *name)
 {
     jml_value_t method;
-    if (!jml_hashmap_get(&klass->methods,
-        name, &method)) {
-
+    if (!jml_hashmap_get(&klass->methods, name, &method)) {
         jml_vm_error(
             "Undefined property '%s'.", name->chars
         );
@@ -399,7 +410,7 @@ jml_vm_upvalue_capture(jml_value_t *local)
     jml_obj_upvalue_t *previous = NULL;
     jml_obj_upvalue_t *upvalue = vm->open_upvalues;
 
-    while (upvalue != NULL 
+    while (upvalue != NULL
         && upvalue->location > local) {
 
         previous = upvalue;
@@ -522,13 +533,10 @@ jml_vm_module_import(jml_obj_string_t *name)
         jml_vm_push(OBJ_VAL(module));
 
         if (path != NULL) {
-            jml_vm_push(OBJ_VAL(
-                jml_obj_string_copy(path, strlen(path))
-            ));
-            
+            jml_vm_push(jml_string_intern(path));
+
             jml_hashmap_set(&module->globals,
                 vm->path_string, jml_vm_peek(0));
-
             jml_vm_pop();
         } else {
             jml_hashmap_set(&module->globals,
@@ -557,17 +565,22 @@ jml_vm_module_bind(jml_obj_module_t *module,
 {
     jml_value_t function;
     if (!jml_hashmap_get(&module->globals, name, &function)) {
-
-#ifndef JML_LAZY_IMPORT
-        goto err;
-#else
+#ifdef JML_LAZY_IMPORT
         jml_obj_cfunction_t *cfunction = jml_module_get_raw(
             module, name->chars, true);
 
-        if (cfunction != NULL) {
+        if (cfunction == NULL) goto err;
+        else {
+            function = OBJ_VAL(cfunction);
+            jml_vm_push(function);
+
             jml_hashmap_set(&module->globals,
-                name, OBJ_VAL(cfunction));
-        } else goto err;
+                name, jml_vm_peek(0));
+
+            jml_vm_pop();
+        }
+#else
+        goto err;
 #endif
         err: {
             jml_vm_error(
@@ -577,14 +590,8 @@ jml_vm_module_bind(jml_obj_module_t *module,
         }
     }
 
-    jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
-        AS_CSTRING(jml_vm_peek(0)),
-        AS_CFUNCTION(function)->function,
-        module
-    );
-
     jml_vm_pop();
-    jml_vm_push(OBJ_VAL(cfunction));
+    jml_vm_push(function);
     return true;
 }
 
@@ -1318,13 +1325,11 @@ void
 jml_cfunction_register(const char *name,
     jml_cfunction function, jml_obj_module_t *module)
 {
-    jml_vm_push(OBJ_VAL(
-        jml_obj_string_copy(name, strlen(name))
-    ));
+    jml_vm_push(jml_string_intern(name));
 
     jml_vm_push(OBJ_VAL(
-        jml_obj_cfunction_new(AS_CSTRING(jml_vm_peek(0)),
-            function, module)
+        jml_obj_cfunction_new(
+            AS_STRING(jml_vm_peek(1)), function, module)
     ));
 
     jml_hashmap_set(
@@ -1334,6 +1339,15 @@ jml_cfunction_register(const char *name,
     );
 
     jml_vm_pop_two();
+}
+
+
+jml_value_t
+jml_string_intern(const char *string)
+{
+    return OBJ_VAL(
+        jml_obj_string_copy(string, strlen(string))
+    );
 }
 
 

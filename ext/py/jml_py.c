@@ -74,13 +74,13 @@ jml_py_vm_interpret(PyObject *self, PyObject *args)
 
     if (jml_vm_interpret(source) == INTERPRET_OK)
         return Py_True;
-    
+
     return Py_False;
 }
 
 
 static PyMethodDef jml_py_vm_methods[] = {
-    {"interpret",   jml_py_vm_interpret, METH_VARARGS,  "Interprets the given source code.\n" 
+    {"interpret",   jml_py_vm_interpret, METH_VARARGS,  "Interprets the given source code.\n"
                                                         "Returns True if successful, otherwise False."},
     {NULL}
 };

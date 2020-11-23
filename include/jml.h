@@ -38,6 +38,13 @@ typedef struct {
 } jml_module_function;
 
 
+#ifdef __cplusplus
+#define MODULE_TABLE_HEAD           extern "C" jml_module_function module_table[]
+#else
+#define MODULE_TABLE_HEAD           jml_module_function module_table[]
+#endif
+
+
 jml_obj_exception_t *jml_core_exception_args(
     int arg_count, int expected_arg);
 
@@ -63,6 +70,13 @@ jml_vm_t *jml_vm_new(void);
 void jml_vm_free(jml_vm_t *vm_ptr);
 
 jml_interpret_result jml_vm_interpret(const char *source);
+
+
+jml_value_t jml_string_intern(const char *string);
+
+void jml_gc_exempt_push(jml_value_t value);
+
+jml_value_t jml_gc_exempt_pop(void);
 
 
 /*UTILITY*/

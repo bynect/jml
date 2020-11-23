@@ -89,7 +89,8 @@ jml_obj_string_t *
 jml_obj_string_copy(const char *chars, size_t length)
 {
     uint32_t hash               = jml_obj_string_hash(
-        chars, length);
+        chars, length
+    );
 
     jml_obj_string_t *interned  = jml_hashmap_find(
         &vm->strings,chars, length, hash
@@ -115,13 +116,29 @@ jml_obj_array_new(jml_value_t *values,
 
     jml_value_array_t value_array;
     jml_value_array_init(&value_array);
+
     array->values           = value_array;
 
     for (int i = 0; i < item_count; ++i) {
-        jml_value_array_write(&array->values, values[i]);
+        jml_vm_push(values[i]);
+        jml_value_array_write(&array->values, jml_vm_peek(0));
+        jml_vm_pop();
     }
 
     return array;
+}
+
+
+void
+jml_obj_array_add(jml_obj_array_t *array,
+    jml_value_t value)
+{
+    jml_vm_push(value);
+
+    jml_value_array_write(&array->values,
+        jml_vm_peek(0));
+
+    jml_vm_pop();
 }
 
 
@@ -160,10 +177,11 @@ jml_obj_class_new(jml_obj_string_t *name)
 jml_obj_instance_t *
 jml_obj_instance_new(jml_obj_class_t *klass)
 {
-    jml_obj_instance_t *instance    = ALLOCATE_OBJ(
+    jml_obj_instance_t *instance = ALLOCATE_OBJ(
         jml_obj_instance_t, OBJ_INSTANCE);
 
-    instance->klass                 = klass;
+    instance->klass              = klass;
+
     jml_hashmap_init(&instance->fields);
 
     return instance;
@@ -179,6 +197,7 @@ jml_obj_method_new(jml_value_t receiver,
 
     bound->receiver         = receiver;
     bound->method           = method;
+
     return bound;
 }
 
@@ -199,6 +218,7 @@ jml_obj_closure_new(jml_obj_function_t *function)
     closure->function = function;
     closure->upvalues = upvalues;
     closure->upvalue_count = function->upvalue_count;
+
     return closure;
 }
 
@@ -226,7 +246,6 @@ jml_obj_function_new(void)
     function->arity              = 0;
     function->upvalue_count      = 0;
     function->name               = NULL;
-    
     function->module             = NULL; /*TODO*/
 
     jml_bytecode_init(&function->bytecode);
@@ -236,17 +255,14 @@ jml_obj_function_new(void)
 
 
 jml_obj_cfunction_t *
-jml_obj_cfunction_new(const char *name, 
+jml_obj_cfunction_new(jml_obj_string_t *name,
     jml_cfunction function, jml_obj_module_t *module)
 {
     jml_obj_cfunction_t *cfunction = ALLOCATE_OBJ(
         jml_obj_cfunction_t, OBJ_CFUNCTION);
 
-     cfunction->name    = jml_obj_string_copy(
-        name, strlen(name));
-
+    cfunction->name     = name;
     cfunction->function = function;
-
     cfunction->module   = module;
 
     return cfunction;
@@ -257,16 +273,18 @@ jml_obj_exception_t *
 jml_obj_exception_new(const char *name,
     const char *message)
 {
+    jml_vm_push(jml_string_intern(name));
+    jml_vm_push(jml_string_intern(message));
+
     jml_obj_exception_t *exc = ALLOCATE_OBJ(
         jml_obj_exception_t, OBJ_EXCEPTION);
 
-    exc->name           = jml_obj_string_copy(
-        name, strlen(name));
-
-    exc->message        = jml_obj_string_copy(
-        message, strlen(message));
+    exc->name           = AS_STRING(jml_vm_peek(1));
+    exc->message        = AS_STRING(jml_vm_peek(0));
 
     exc->module         = NULL; /*TODO*/
+
+    jml_vm_pop_two();
 
     return exc;
 }
@@ -288,7 +306,7 @@ jml_obj_exception_format(const char *name,
 
     jml_obj_exception_t *exc = jml_obj_exception_new(
         name, message);
-    
+
     jml_realloc(message, 0UL);
 
     return exc;
@@ -296,14 +314,12 @@ jml_obj_exception_format(const char *name,
 
 
 jml_obj_module_t *
-jml_obj_module_new(const char *name, void *handle)
+jml_obj_module_new(jml_obj_string_t *name, void *handle)
 {
     jml_obj_module_t *module = ALLOCATE_OBJ(
         jml_obj_module_t, OBJ_MODULE);
 
-    module->name    = jml_obj_string_copy(
-        name, strlen(name));
-
+    module->name    = name;
     module->handle  = handle;
 
     jml_hashmap_init(&module->globals);
@@ -353,12 +369,16 @@ jml_obj_print(jml_value_t value)
         }
 
         case OBJ_MAP: {
+            printf("{");
             jml_hashmap_t hashmap   = AS_MAP(value)->hashmap;
-            int item_count          = hashmap.count - 1;
+            if (hashmap.count <= 0) {
+                printf("}");
+                break;
+            }
 
+            int item_count          = hashmap.count - 1;
             jml_hashmap_entry_t *entries = jml_hashmap_iterator(&hashmap);
 
-            printf("{");
             for (int i = 0; i < item_count; ++i) {
                 printf("\"%s\": ", entries[i].key->chars);
                 jml_value_print(entries[i].value);
@@ -382,7 +402,7 @@ jml_obj_print(jml_value_t value)
             break;
 
         case OBJ_INSTANCE:
-            printf("<instance of %s>", 
+            printf("<instance of %s>",
                 AS_INSTANCE(value)->klass->name->chars);
             break;
 

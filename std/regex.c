@@ -1,5 +1,6 @@
 #include <regex.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <jml.h>
 
@@ -85,15 +86,16 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
 
     REGEX_REUSE(rule, result);
 
-    size_t              size            = 32;
-    int                 max_match       = 16;
-    int                 max_group       = 16;
+    size_t              size        = 32;
+    int                 max_match   = 16;
+    int                 max_group   = 16;
 
     regmatch_t       *matches       = jml_realloc(NULL, max_match * sizeof(regmatch_t));
-    jml_value_t      *values        = jml_realloc(NULL, size * sizeof(jml_value_t));
+    char *copy                      = jml_strdup(string->chars);
+    char *current                   = copy;
 
-    char *copy = jml_strdup(string->chars);
-    char *current = copy;
+    jml_obj_array_t *array = jml_obj_array_new(NULL, 0);
+    jml_gc_exempt_push(OBJ_VAL(array));
 
     int i = 0;
     for (i = 0; i < max_match; ++i) {
@@ -110,7 +112,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
         int offset = 0;
 
         for (groups = 0; groups < max_group; ++groups) {
-            if (matches[groups].rm_so == (size_t)-1)
+            if (matches[groups].rm_so == -1UL)
                 break;
 
             if (groups == 0)
@@ -119,25 +121,19 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
             if (max_group <= groups + 1)
                 max_group *= 1.5;
 
-            if (size <= i + groups + 1) {
-                size *= 1.5;
-                values  = jml_realloc(values, size * sizeof(jml_value_t));
-            }
-
             int index = matches[groups].rm_eo - matches[groups].rm_so;
-            values[groups + i] = OBJ_VAL(
+
+            jml_obj_array_add(array, OBJ_VAL(
                 jml_obj_string_copy(current + matches[groups].rm_so, index)
-            );
+            ));
         }
         current += offset;
     }
 
-    jml_obj_array_t *array = jml_obj_array_new(values, i);
-
-    jml_realloc(values, 0UL);
     jml_realloc(copy, 0UL);
     jml_realloc(matches, 0UL);
 
+    jml_gc_exempt_pop();
     return OBJ_VAL(array);
 
     REGEX_ERR();
@@ -149,8 +145,8 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
 #undef REGEX_ERR
 
 
-/*function table*/
-jml_module_function module_table[] = {
+/*module table*/
+MODULE_TABLE_HEAD = {
     {"match",                       &jml_std_regex_match},
     {"search",                      &jml_std_regex_search},
     {NULL,                          NULL}
