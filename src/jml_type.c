@@ -107,8 +107,7 @@ jml_obj_string_copy(const char *chars, size_t length)
 
 
 jml_obj_array_t *
-jml_obj_array_new(jml_value_t *values,
-    int item_count)
+jml_obj_array_new(void)
 {
     jml_obj_array_t *array  = ALLOCATE_OBJ(
         jml_obj_array_t, OBJ_ARRAY
@@ -118,12 +117,6 @@ jml_obj_array_new(jml_value_t *values,
     jml_value_array_init(&value_array);
 
     array->values           = value_array;
-
-    for (int i = 0; i < item_count; ++i) {
-        jml_vm_push(values[i]);
-        jml_value_array_write(&array->values, jml_vm_peek(0));
-        jml_vm_pop();
-    }
 
     return array;
 }
@@ -212,12 +205,12 @@ jml_obj_closure_new(jml_obj_function_t *function)
         upvalues[i] = NULL;
     }
 
-    jml_obj_closure_t *closure = ALLOCATE_OBJ(
+    jml_obj_closure_t *closure   = ALLOCATE_OBJ(
         jml_obj_closure_t, OBJ_CLOSURE);
 
-    closure->function = function;
-    closure->upvalues = upvalues;
-    closure->upvalue_count = function->upvalue_count;
+    closure->function       = function;
+    closure->upvalues       = upvalues;
+    closure->upvalue_count  = function->upvalue_count;
 
     return closure;
 }
@@ -261,9 +254,9 @@ jml_obj_cfunction_new(jml_obj_string_t *name,
     jml_obj_cfunction_t *cfunction = ALLOCATE_OBJ(
         jml_obj_cfunction_t, OBJ_CFUNCTION);
 
-    cfunction->name     = name;
-    cfunction->function = function;
-    cfunction->module   = module;
+    cfunction->name         = name;
+    cfunction->function     = function;
+    cfunction->module       = module;
 
     return cfunction;
 }
@@ -279,10 +272,9 @@ jml_obj_exception_new(const char *name,
     jml_obj_exception_t *exc = ALLOCATE_OBJ(
         jml_obj_exception_t, OBJ_EXCEPTION);
 
-    exc->name           = AS_STRING(jml_vm_peek(1));
-    exc->message        = AS_STRING(jml_vm_peek(0));
-
-    exc->module         = NULL; /*TODO*/
+    exc->name               = AS_STRING(jml_vm_peek(1));
+    exc->message            = AS_STRING(jml_vm_peek(0));
+    exc->module             = NULL; /*TODO*/
 
     jml_vm_pop_two();
 

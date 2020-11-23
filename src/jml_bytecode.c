@@ -324,10 +324,10 @@ jml_bytecode_instruction_disassemble(
             return jml_bytecode_instruction_const("OP_SUPER", bytecode, offset);
 
         case OP_ARRAY:
-            return jml_bytecode_instruction_const("OP_ARRAY", bytecode, offset);
+            return jml_bytecode_instruction_byte("OP_ARRAY", bytecode, offset);
 
         case OP_MAP:
-            return jml_bytecode_instruction_const("OP_MAP", bytecode, offset);
+            return jml_bytecode_instruction_byte("OP_MAP", bytecode, offset);
 
         case OP_IMPORT:
             return jml_bytecode_instruction_const("OP_IMPORT", bytecode, offset);

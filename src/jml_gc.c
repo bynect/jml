@@ -5,10 +5,13 @@
 #include <jml_gc.h>
 #include <jml_vm.h>
 #include <jml_module.h>
+#include <jml_compiler.h>
 
-#if defined(JML_TRACE_GC) || (defined(JML_ROUND_GC))
+#if defined (JML_TRACE_GC) || (defined (JML_ROUND_GC))
+
 #include <stdio.h>
 #include <time.h>
+
 #endif
 
 
@@ -86,6 +89,13 @@ jml_gc_exempt_pop(void)
 }
 
 
+jml_value_t
+jml_gc_exempt_peek(int distance)
+{
+    return vm->exempt[-1 - distance];
+}
+
+
 static void
 jml_gc_mark_roots(void)
 {
@@ -116,6 +126,8 @@ jml_gc_mark_roots(void)
     jml_hashmap_mark(&vm->modules);
 
     jml_compiler_mark_roots();
+
+    jml_gc_mark_obj(vm->sentinel);
 
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
     jml_gc_mark_obj((jml_obj_t*)vm->call_string);

@@ -26,7 +26,7 @@
 #undef  JML_ROUND_GC
 #undef  JML_TRACE_MEM
 #undef  JML_PRINT_TOKEN
-#undef  JML_DEBUG
+#undef  JML_ASSERTION
 
 #else
 
@@ -37,11 +37,12 @@
 #define JML_ROUND_GC
 #undef  JML_TRACE_MEM
 #undef  JML_PRINT_TOKEN
+#undef JML_ASSERTION
 
 #endif
 
 
-#ifdef JML_DEBUG
+#ifdef JML_ASSERTION
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,7 +52,7 @@
         if (!condition) {                               \
             fprintf(                                    \
                 stderr,                                 \
-                "[%s:%d] Assert failed in %s: ",        \
+                "[%s:%d] Assertion failed in %s: ",     \
                 __FILE__, __LINE__, __func__            \
             );                                          \
             fprintf(                                    \
@@ -65,7 +66,7 @@
 #define UNREACHABLE()                                   \
     do {                                                \
         fprintf(                                        \
-            stderr,"[%s:%d] Hit unreachable code %s\n", \
+            stderr,"[%s:%d] Unreachable hit in %s\n",   \
             __FILE__, __LINE__, __func__                \
         );                                              \
         abort();                                        \

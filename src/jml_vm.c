@@ -187,7 +187,7 @@ jml_vm_pop_two(void)
 jml_value_t
 jml_vm_peek(int distance)
 {
-  return vm->stack_top[-1 - distance];
+    return vm->stack_top[-1 - distance];
 }
 
 
@@ -480,11 +480,17 @@ jml_string_equal(jml_obj_string_t *string1,
 }
 
 
-static inline jml_obj_array_t *
+static jml_obj_array_t *
 jml_array_copy(jml_obj_array_t *array)
 {
-    return jml_obj_array_new(
-        array->values.values, array->values.count);
+    jml_vm_push(OBJ_VAL(jml_obj_array_new()));
+
+    for (int i = 0; i < array->values.count; i++) {
+        jml_obj_array_add(AS_ARRAY(jml_vm_peek(0)),
+            array->values.values[i]);
+    }
+
+    return AS_ARRAY(jml_vm_pop());
 }
 
 
@@ -1179,8 +1185,8 @@ jml_vm_run(void)
 
             EXEC_OP(OP_SET_INDEX) {
                 jml_obj_string_t   *name    = READ_STRING();
-                jml_value_t         to_set  = jml_vm_pop();
-                jml_value_t         index   = jml_vm_pop();
+                jml_value_t         to_set  = jml_vm_peek(0);
+                jml_value_t         index   = jml_vm_peek(1);
 
                 jml_value_t         value;
 
@@ -1201,7 +1207,7 @@ jml_vm_run(void)
 
                     if (num_index > array.count || num_index < -array.count) {
                         frame->pc = pc;
-                        jml_vm_error("Out bound assignment to array.");
+                        jml_vm_error("Out of bounds assignment to array.");
                         return INTERPRET_RUNTIME_ERROR;
 
                     } else if (num_index < 0)
@@ -1215,12 +1221,13 @@ jml_vm_run(void)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
+                jml_vm_pop_two();
                 jml_vm_push(value);
                 END_OP();
             }
 
             EXEC_OP(OP_GET_INDEX) {
-                jml_value_t         index   = jml_vm_pop();
+                jml_value_t         index   = jml_vm_peek(0);
                 jml_obj_string_t   *name    = READ_STRING();
 
                 jml_value_t         indexed;
@@ -1253,6 +1260,7 @@ jml_vm_run(void)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
+                jml_vm_pop();
                 jml_vm_push(indexed);
                 END_OP();
             }
@@ -1268,26 +1276,32 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_ARRAY) {
-                int item_count = READ_BYTE();
+                int item_count      = READ_BYTE();
+                jml_value_t *values = vm->stack_top - item_count;
 
-                jml_vm_push(
-                    OBJ_VAL(jml_obj_array_new(vm->stack_top - item_count,
-                        item_count))
-                );
+                jml_vm_push(OBJ_VAL(jml_obj_array_new()));
+
+                for (int i = 0; i < item_count; i++) {
+                    jml_obj_array_add(AS_ARRAY(jml_vm_peek(0)), values[i]);
+                }
                 END_OP();
             }
 
             EXEC_OP(OP_MAP) {
                 int item_count      = READ_BYTE();
-                jml_obj_map_t *map  = jml_obj_map_new();
                 jml_value_t *values = vm->stack_top - item_count;
 
-                for (int i = 0; i < item_count; i += 2) {
-                    jml_hashmap_set(&map->hashmap,
-                        AS_STRING(values[i]) , values[i+1]);
-                }
+                jml_vm_push(OBJ_VAL(jml_obj_map_new()));
 
-                jml_vm_push(OBJ_VAL(map));
+                for (int i = 0; i < item_count; i += 2) {
+                    jml_vm_push(values[i]);
+                    jml_vm_push(values[i+1]);
+
+                    jml_hashmap_set(&AS_MAP(jml_vm_peek(2))->hashmap,
+                        AS_STRING(jml_vm_peek(1)) , jml_vm_peek(0));
+
+                    jml_vm_pop_two();
+                }
                 END_OP();
             }
 

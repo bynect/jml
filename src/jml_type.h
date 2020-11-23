@@ -164,8 +164,7 @@ jml_obj_string_t *jml_obj_string_take(char *chars,
 jml_obj_string_t *jml_obj_string_copy(const char *chars,
     size_t length);
 
-jml_obj_array_t *jml_obj_array_new(jml_value_t *values,
-    int item_count);
+jml_obj_array_t *jml_obj_array_new(void);
 
 void jml_obj_array_add(jml_obj_array_t *array, jml_value_t value);
 

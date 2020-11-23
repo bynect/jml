@@ -693,7 +693,8 @@ jml_variable_named(jml_token_t name,
     bool assignable)
 {
     uint8_t get_op, set_op;
-    int arg = jml_local_resolve(current, &name);
+    int arg     = jml_local_resolve(current, &name);
+
     if (arg != -1) {
         get_op = OP_GET_LOCAL;
         set_op = OP_SET_LOCAL;

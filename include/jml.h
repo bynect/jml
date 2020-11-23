@@ -78,9 +78,12 @@ void jml_gc_exempt_push(jml_value_t value);
 
 jml_value_t jml_gc_exempt_pop(void);
 
+jml_value_t jml_gc_exempt_peek(int distance);
+
 
 /*UTILITY*/
 void *jml_realloc(void *ptr, size_t new_size);
+
 
 char *jml_strsep(char **str, const char *sep);
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 
 from distutils.core import setup, Extension
 
@@ -13,11 +15,20 @@ def jml_setup():
             Extension(
                 name = "jml",
                 language = "c",
-                define_macros = [("JML_NDEBUG", None)],
-                include_dirs = [
-                    "src", "include"
+                define_macros = [
+                    ("JML_NDEBUG", None)
                 ],
-                libraries = ["m", "dl"],
+                include_dirs = [
+                    "src",
+                    "include"
+                ],
+                library_dirs = [
+                    "lib"
+                ],
+                libraries = [
+                    "m",
+                    "dl"
+                ],
                 extra_compile_args = [
                     "-Wall",
                     "-Wextra",

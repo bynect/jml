@@ -348,21 +348,12 @@ jml_hashmap_find(jml_hashmap_t *map, const char *chars,
 
         if (entry->key == NULL) {
             if (IS_NONE(entry->value)) return NULL;
-        } else if (entry->key->length == length &&
-            entry->key->hash == hash &&
-            memcmp(entry->key->chars, chars, length) == 0) {
-        return entry->key;
-        }
 
-        if (entry->key == NULL) {
-            if (IS_NONE(entry->value)) return NULL;
-        } else {
-            if ((entry->key->length == length)
-                && (entry->key->hash == hash)
-                && (memcmp(entry->key->chars, chars, length) == 0))
+        } else if ((entry->key->length == length)
+            && (entry->key->hash == hash)
+            && (memcmp(entry->key->chars, chars, length) == 0))
 
                 return entry->key;
-        }
 
         index = (index + 1) & map->capacity;
     }
@@ -395,18 +386,17 @@ jml_hashmap_mark(jml_hashmap_t *map)
 jml_hashmap_entry_t *
 jml_hashmap_iterator(jml_hashmap_t *map)
 {
-    jml_hashmap_entry_t *entries = jml_realloc(
-        NULL, map->count + 1);
-
-    /*FIXME*/
+    jml_hashmap_entry_t *entries = calloc(
+        map->count, sizeof(jml_hashmap_entry_t));
 
     int count = 0;
-    for (int i = 0; i <= map->capacity && count <= map->count; i++) {
+    for (int i = 0; i <= map->capacity; i++) {
         jml_hashmap_entry_t entry = map->entries[i];
-        if (entry.key != NULL) {
-            entries[count] = entry;
-            ++count;
-        }
+
+        if (entry.key == NULL)      continue;
+        if (count == map->count)    break;
+
+        entries[count++] = entry;
     }
 
     return entries;

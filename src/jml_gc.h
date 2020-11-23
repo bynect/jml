@@ -3,7 +3,6 @@
 
 #include <jml_common.h>
 #include <jml_type.h>
-#include <jml_compiler.h>
 
 
 #define GC_HEAP_GROW_FACTOR 1.5
