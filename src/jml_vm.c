@@ -472,11 +472,9 @@ static bool
 jml_string_equal(jml_obj_string_t *string1,
     jml_obj_string_t *string2)
 {
-    if (string1->length != string2->length)
-        return false;
-
-    return strncmp(string1->chars, string2->chars,
-        string1->length) == 0;
+    return (string1->length == string2->length)
+        && (strncmp(string1->chars, string2->chars,
+            string1->length) == 0);
 }
 
 
@@ -510,12 +508,10 @@ jml_array_concatenate(void)
         for (int i = 0; i < array2->values.count; ++i)
             jml_value_array_write(&copy->values,
                 array2->values.values[i]);
-
     } else {
         jml_value_array_write(&copy->values, value);
+        goto end;
     }
-
-    goto end;
 
     end: {
         jml_vm_pop_two();

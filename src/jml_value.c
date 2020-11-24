@@ -16,10 +16,13 @@ jml_value_print(jml_value_t value)
 #ifdef JML_NAN_TAGGING
     if (IS_BOOL(value)) {
         printf(AS_BOOL(value) ? "true" : "false");
+
     } else if (IS_NONE(value)) {
         printf("none");
+
     } else if (IS_NUM(value)) {
         printf("%g", AS_NUM(value));
+
     } else if (IS_OBJ(value)) {
         jml_obj_print(value);
     }
@@ -386,8 +389,10 @@ jml_hashmap_mark(jml_hashmap_t *map)
 jml_hashmap_entry_t *
 jml_hashmap_iterator(jml_hashmap_t *map)
 {
-    jml_hashmap_entry_t *entries = calloc(
-        map->count, sizeof(jml_hashmap_entry_t));
+    jml_hashmap_entry_t *entries = jml_realloc(NULL,
+        map->count * sizeof(jml_hashmap_entry_t));
+
+    memset(entries, 0, map->count * sizeof(jml_hashmap_entry_t));
 
     int count = 0;
     for (int i = 0; i <= map->capacity; i++) {
