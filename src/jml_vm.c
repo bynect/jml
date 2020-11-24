@@ -54,9 +54,16 @@ jml_vm_error(const char *format, ...)
         );
 
         if (function->name == NULL) {
-            if (vm->external != NULL)
-                fprintf(stderr, "function %s()\n", vm->external->chars);
-            else
+            if (vm->external != NULL) {
+                if (vm->external->module != NULL) {
+                    fprintf(stderr, "function %s.%s()\n",
+                        vm->external->module->name->chars,
+                        vm->external->name->chars
+                    );
+                } else
+                    fprintf(stderr, "function %s()\n", vm->external->name->chars);
+
+            } else
                 fprintf(stderr, "__main\n");
         } else {
             if (function->module != NULL)
@@ -106,6 +113,7 @@ jml_vm_init(jml_vm_t *vm_ptr)
 
     vm_ptr->sentinel        = sentinel;
     vm_ptr->objects         = vm_ptr->sentinel;
+    vm_ptr->external        = NULL;
 
     vm_ptr->allocated       = 0;
     vm_ptr->next_gc         = 1024 * 1024 * 4;
@@ -128,7 +136,6 @@ jml_vm_init(jml_vm_t *vm_ptr)
     vm_ptr->module_string   = jml_obj_string_copy("__module", 8);
     vm_ptr->path_string     = jml_obj_string_copy("__path", 6);
 
-    vm_ptr->external        = NULL;
     jml_core_register();
 }
 
@@ -146,7 +153,6 @@ jml_vm_free(jml_vm_t *vm_ptr)
     vm_ptr->path_string     = NULL;
 
     vm_ptr->external        = NULL;
-    vm_ptr->sentinel        = NULL;
 
     jml_gc_free_objs();
 
@@ -279,14 +285,16 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
             case OBJ_CFUNCTION: {
                 jml_obj_cfunction_t *cfunction_obj  = AS_CFUNCTION(callee);
                 jml_cfunction        cfunction      = cfunction_obj->function;
-                jml_value_t          result         = cfunction(
-                    arg_count, vm->stack_top - arg_count);
+                jml_value_t          result         = cfunction(arg_count,
+                    vm->stack_top - arg_count);
 
-                vm->stack_top       -= arg_count + 1;
+                vm->stack_top   -= arg_count + 1;
+
                 if (IS_EXCEPTION(result)) {
-                    vm->external = cfunction_obj->name;
+                    vm->external = cfunction_obj;
                     jml_vm_exception(AS_EXCEPTION(result));
                     return false;
+
                 } else {
                     jml_vm_push(result);
                     return true;
@@ -1338,8 +1346,8 @@ jml_cfunction_register(const char *name,
     jml_vm_push(jml_string_intern(name));
 
     jml_vm_push(OBJ_VAL(
-        jml_obj_cfunction_new(
-            AS_STRING(jml_vm_peek(1)), function, module)
+        jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
+            function, module)
     ));
 
     jml_hashmap_set(
@@ -1364,7 +1372,7 @@ jml_string_intern(const char *string)
 jml_interpret_result
 jml_vm_interpret(const char *source)
 {
-    jml_obj_function_t *function = jml_compiler_compile(source);
+    jml_obj_function_t *function = jml_compiler_compile(source, NULL);
     if (function == NULL) return INTERPRET_COMPILE_ERROR;
 
     jml_vm_push(OBJ_VAL(function));

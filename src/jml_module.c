@@ -4,6 +4,7 @@
 #include <jml_vm.h>
 #include <jml_util.h>
 #include <jml_gc.h>
+#include <jml_compiler.h>
 
 
 #ifdef JML_PLATFORM_NIX
@@ -42,7 +43,7 @@ jml_module_open(jml_obj_string_t *module_name,
 #ifdef JML_RECURSIVE_SEARCH
     char temp_so[256];
     char temp_jml[256];
-    char buffer[JML_PATH_MAX];
+    char buffer[JML_PATH_MAX] = { 0 };
 
     sprintf(temp_so, "%s.%s", module_str, SHARED_LIB_EXT);
     sprintf(temp_jml, "%s.jml", module_str);
@@ -52,6 +53,11 @@ jml_module_open(jml_obj_string_t *module_name,
 
     else if (jml_file_find(temp_jml, buffer))
         sprintf(filename_jml, "%s", buffer);
+    
+    else {
+        jml_vm_error("ImportExc: Module not found.");
+        goto err;
+    }
 #else
     sprintf(filename_so, "./%s.%s", module_str, SHARED_LIB_EXT);
     sprintf(filename_jml, "./%s.jml", module_str);
@@ -77,6 +83,7 @@ jml_module_open(jml_obj_string_t *module_name,
         /*TODO*/
         if (path != NULL)
             strcpy(path, filename_jml);
+
         jml_vm_error("ImportExc: Cannot import jml module.");
         goto err;
 
@@ -151,10 +158,8 @@ jml_module_register(jml_obj_module_t *module,
         jml_vm_push(jml_string_intern(current->name));
 
         jml_vm_push(OBJ_VAL(
-            jml_obj_cfunction_new(
-                AS_STRING(jml_vm_peek(0)),
-                current->function, module
-            )
+            jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
+                current->function, module)
         ));
 
         jml_hashmap_set(&module->globals,
@@ -191,10 +196,8 @@ jml_module_initialize(jml_obj_module_t *module)
         jml_vm_push(jml_string_intern(current->name));
 
         jml_vm_push(OBJ_VAL(
-            jml_obj_cfunction_new(
-                AS_STRING(jml_vm_peek(1)),
-                current->function, module
-            )
+            jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
+                current->function, module)
         ));
 
         jml_hashmap_set(&module->globals,

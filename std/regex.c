@@ -167,5 +167,5 @@ void
 module_free(jml_obj_module_t *module)
 {
     if (last_rule != NULL)
-        regfree(last_rule);
+        jml_realloc(last_rule, 0UL);
 }

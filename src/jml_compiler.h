@@ -71,6 +71,9 @@ typedef struct jml_compiler_s {
     int                             local_count;
     jml_upvalue_t                   upvalues[LOCAL_MAX];
     int                             scope_depth;
+
+    bool                            in_module;
+    jml_obj_module_t               *module;
 } jml_compiler_t;
 
 
@@ -83,7 +86,8 @@ typedef struct jml_class_compiler_s {
 
 void jml_compiler_mark_roots(void);
 
-jml_obj_function_t *jml_compiler_compile(const char *source);
+jml_obj_function_t *jml_compiler_compile(const char *source,
+    jml_obj_module_t *module);
 
 
 #endif /* JML_COMPILER_H_ */

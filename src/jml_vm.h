@@ -28,8 +28,8 @@ typedef struct jml_vm_s {
     jml_obj_string_t               *call_string;
     jml_obj_string_t               *module_string;
     jml_obj_string_t               *path_string;
-    jml_obj_string_t               *external;
 
+    jml_obj_cfunction_t            *external;
     jml_obj_t                      *sentinel;
     jml_obj_t                      *objects;
     size_t                          allocated;

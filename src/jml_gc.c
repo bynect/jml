@@ -127,12 +127,12 @@ jml_gc_mark_roots(void)
 
     jml_compiler_mark_roots();
 
-    jml_gc_mark_obj(vm->sentinel);
-
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
     jml_gc_mark_obj((jml_obj_t*)vm->call_string);
     jml_gc_mark_obj((jml_obj_t*)vm->module_string);
     jml_gc_mark_obj((jml_obj_t*)vm->path_string);
+
+    jml_gc_mark_obj((jml_obj_t*)vm->sentinel);
     jml_gc_mark_obj((jml_obj_t*)vm->external);
 }
 
@@ -277,10 +277,14 @@ jml_gc_free_objs(void)
 
     while (object != NULL) {
         jml_obj_t *next     = object->next;
-        jml_free_object(object);
+
+        if (object != vm->sentinel)
+            jml_free_object(object);
+
         object              = next;
     }
 
+    jml_realloc(vm->sentinel, 0UL);
     jml_realloc(vm->gray_stack, 0UL);
 }
 

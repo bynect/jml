@@ -242,11 +242,14 @@ jml_bytecode_emit_const(jml_value_t value)
 
 static void
 jml_compiler_init(jml_compiler_t *compiler,
-    jml_function_type type)
+    jml_function_type type, jml_obj_module_t *module)
 {
-    compiler->enclosing = current;
-    compiler->function = NULL;
-    compiler->type = type;
+    compiler->enclosing     = current;
+    compiler->function      = NULL;
+    compiler->type          = type;
+
+    compiler->in_module     = module == NULL ? false : true;
+    compiler->module        = module;
 
     compiler->local_count = 0;
     compiler->scope_depth = 0;
@@ -922,7 +925,7 @@ static void
 jml_function(jml_function_type type)
 {
     jml_compiler_t compiler;
-    jml_compiler_init(&compiler, type);
+    jml_compiler_init(&compiler, type, current->module);
     jml_scope_begin();
 
     jml_parser_consume(TOKEN_LPAREN, "Expect '(' after function name.");
@@ -1225,15 +1228,17 @@ jml_if_statement(void)
 static void
 jml_declaration(void)
 {
-    if (jml_parser_match(TOKEN_CLASS)) {
+    if (jml_parser_match(TOKEN_CLASS))
         jml_class_declaration();
-    } else if (jml_parser_match(TOKEN_FN)) {
+
+    else if (jml_parser_match(TOKEN_FN))
         jml_function_declaration();
-    } else if (jml_parser_match(TOKEN_LET)) {
+
+    else if (jml_parser_match(TOKEN_LET))
         jml_let_declaration();
-    } else {
+
+    else
         jml_statement();
-    }
 
     if (parser.panicked)
         jml_parser_synchronize();
@@ -1262,17 +1267,19 @@ jml_statement(void)
         jml_scope_begin();
         jml_block();
         jml_scope_end();
+
     } else
         jml_expression();
 }
 
 
 jml_obj_function_t *
-jml_compiler_compile(const char *source)
+jml_compiler_compile(const char *source,
+    jml_obj_module_t *module)
 {
     jml_lexer_init(source);
     jml_compiler_t compiler;
-    jml_compiler_init(&compiler, FUNCTION_MAIN);
+    jml_compiler_init(&compiler, FUNCTION_MAIN, module);
 
     parser.w_error = false;
     parser.panicked = false;
