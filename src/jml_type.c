@@ -239,7 +239,7 @@ jml_obj_function_new(void)
     function->arity              = 0;
     function->upvalue_count      = 0;
     function->name               = NULL;
-    function->module             = NULL; /*TODO*/
+    function->module             = NULL;
 
     jml_bytecode_init(&function->bytecode);
 
@@ -274,7 +274,7 @@ jml_obj_exception_new(const char *name,
 
     exc->name               = AS_STRING(jml_vm_peek(1));
     exc->message            = AS_STRING(jml_vm_peek(0));
-    exc->module             = NULL; /*TODO*/
+    exc->module             = NULL;
 
     jml_vm_pop_two();
 

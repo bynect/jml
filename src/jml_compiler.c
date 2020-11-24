@@ -46,15 +46,23 @@ jml_parser_error_at(jml_token_t *token,
     if (parser.panicked) return;
     parser.panicked = true;
 
-    fprintf(stderr, "[line %d] Error", token->line);
+    fprintf(stderr, "[line %d", token->line);
+
+    if (current->in_module)
+        fprintf(stderr, " in %s", current->module->name->chars);
+
+    fprintf(stderr, "] Error");
 
     if (token->type == TOKEN_EOF) {
         fprintf(stderr, " at eof");
+
     } else if (token->type == TOKEN_ERROR) {
         /*pass*/
-    } else if (strncmp(token->start, "\n",
-        token->length)) {
+
+    } else if (strncmp(token->start,
+        "\n", token->length) == 0) {
         fprintf(stderr, " at newline");
+
     } else {
         fprintf(stderr, " at '%.*s'",
             token->length, token->start);
@@ -111,25 +119,6 @@ jml_parser_consume(jml_token_type type,
 }
 
 
-static void
-jml_parser_consume_line(void)
-{
-    if (parser.current.type == TOKEN_LINE
-        || parser.current.type == TOKEN_SEMI) {
-
-        do {
-            jml_parser_advance();
-        } while (parser.current.type == TOKEN_LINE);
-
-        return;
-    }
-
-    jml_parser_error_current(
-        "Expect newline or ';' after expression."
-    );
-}
-
-
 static inline bool
 jml_parser_check(jml_token_type type)
 {
@@ -142,8 +131,28 @@ jml_parser_match(jml_token_type type)
 {
     if (!jml_parser_check(type))
         return false;
+
     jml_parser_advance();
     return true;
+}
+
+
+static bool
+jml_parser_match_line(void)
+{
+    if (!jml_parser_match(TOKEN_LINE))
+        return false;
+
+    while (jml_parser_match(TOKEN_LINE));
+    return true;
+}
+
+
+static void
+jml_parser_newline(void)
+{
+    jml_parser_consume(TOKEN_LINE, "Expect newline.");
+    jml_parser_match_line();
 }
 
 
@@ -342,10 +351,10 @@ jml_parser_synchronize(void)
     parser.panicked = false;
 
     while (parser.current.type != TOKEN_EOF) {
-
-        if (parser.previous.type == TOKEN_SEMI
-            || (parser.previous.type == TOKEN_LINE))
+        if (parser.previous.type == TOKEN_LINE) {
+            jml_parser_match_line();
             return;
+        }
 
         switch (parser.current.type) {
             case TOKEN_FOR:
@@ -385,14 +394,16 @@ jml_identifier_equal(jml_token_t *a,
 
 
 static int
-jml_local_resolve(jml_compiler_t *compiler, jml_token_t *name) {
+jml_local_resolve(jml_compiler_t *compiler,
+    jml_token_t *name)
+{
     for (int i = compiler->local_count - 1; i >= 0; i--) {
         jml_local_t *local = &compiler->locals[i];
         if (jml_identifier_equal(name, &local->name)) {
-        if (local->depth == -1) {
-            jml_parser_error("Can't read local variable in its own initializer.");
-        }
-        return i;
+            if (local->depth == -1) {
+                jml_parser_error("Can't read local variable in its own initializer.");
+            }
+            return i;
         }
     }
 
@@ -401,7 +412,8 @@ jml_local_resolve(jml_compiler_t *compiler, jml_token_t *name) {
 
 
 static void
-jml_local_add(jml_token_t name) {
+jml_local_add(jml_token_t name)
+{
     if (current->local_count == LOCAL_MAX) {
         jml_parser_error("Too many local variables in function.");
         return;
@@ -438,7 +450,9 @@ jml_upvalue_add(jml_compiler_t *compiler,
 
 
 static int
-jml_upvalue_resolve(jml_compiler_t *compiler, jml_token_t *name) {
+jml_upvalue_resolve(jml_compiler_t *compiler,
+    jml_token_t *name)
+{
     if (compiler->enclosing == NULL) return -1;
 
     int local = jml_local_resolve(compiler->enclosing, name);
@@ -508,9 +522,13 @@ jml_variable_definition(uint8_t global)
 static uint8_t
 jml_arguments_list(void)
 {
+    jml_parser_match_line();
+
     uint8_t arg_count = 0;
     if (!jml_parser_check(TOKEN_RPAREN)) {
         do {
+            jml_parser_match_line();
+
             jml_expression();
             if (arg_count == 255)
                 jml_parser_error("Can't have more than 255 arguments.");
@@ -519,6 +537,7 @@ jml_arguments_list(void)
         } while (jml_parser_match(TOKEN_COMMA));
     }
 
+    jml_parser_match_line();
     jml_parser_consume(TOKEN_RPAREN, "Expect ')' after arguments.");
     return arg_count;
 }
@@ -527,18 +546,22 @@ jml_arguments_list(void)
 static void
 jml_and(JML_UNUSED(bool assignable))
 {
-  int jump_end = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
+    jml_parser_match_line();
 
-  jml_bytecode_emit_byte(OP_POP);
-  jml_parser_precedence_parse(PREC_AND);
+    int jump_end = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
 
-  jml_bytecode_patch_jump(jump_end);
+    jml_bytecode_emit_byte(OP_POP);
+    jml_parser_precedence_parse(PREC_AND);
+
+    jml_bytecode_patch_jump(jump_end);
 }
 
 
 static void
 jml_or(JML_UNUSED(bool assignable))
 {
+    jml_parser_match_line();
+
     int jump_else = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
     int jump_end = jml_bytecode_emit_jump(OP_JMP);
 
@@ -553,6 +576,8 @@ jml_or(JML_UNUSED(bool assignable))
 static void
 jml_binary(JML_UNUSED(bool assignable))
 {
+    jml_parser_match_line();
+
     jml_token_type operator_token = parser.previous.type;
 
     jml_parser_rule *rule = jml_parser_rule_get(operator_token);
@@ -583,6 +608,8 @@ jml_binary(JML_UNUSED(bool assignable))
 static void
 jml_call(JML_UNUSED(bool assignable))
 {
+    jml_parser_match_line();
+
     uint8_t arg_count = jml_arguments_list();
     jml_bytecode_emit_bytes(OP_CALL, arg_count);
 }
@@ -595,6 +622,7 @@ jml_dot(bool assignable)
     uint8_t name = jml_identifier_const(&parser.previous);
 
     if (assignable && jml_parser_match(TOKEN_EQUAL)) {
+        jml_parser_match_line();
         jml_expression();
         jml_bytecode_emit_bytes(OP_SET_MEMBER, name);
     } else if (jml_parser_match(TOKEN_LPAREN)) {
@@ -610,6 +638,8 @@ jml_dot(bool assignable)
 static void
 jml_grouping(JML_UNUSED(bool assignable))
 {
+    jml_parser_match_line();
+
     jml_expression();
     jml_parser_consume(TOKEN_RPAREN, "Expect ')' after expression.");
 }
@@ -649,18 +679,24 @@ jml_string(JML_UNUSED(bool assignable))
 static void
 jml_array(JML_UNUSED(bool assignable))
 {
+    jml_parser_match_line();
+
     uint8_t item_count = 0;
     if (!jml_parser_check(TOKEN_RSQARE)) {
         do {
+            jml_parser_match_line();
             jml_expression();
+
             if (item_count == 255) {
                 jml_parser_error("Can't have more than 255 items in an array.");
             }
 
+            jml_parser_match_line();
             ++item_count;
         } while (jml_parser_match(TOKEN_COMMA));
     }
 
+    jml_parser_match_line();
     jml_parser_consume(TOKEN_RSQARE, "Expect ']' after array.");
     jml_bytecode_emit_bytes(OP_ARRAY, item_count);
 }
@@ -669,23 +705,31 @@ jml_array(JML_UNUSED(bool assignable))
 static void
 jml_map(JML_UNUSED(bool assignable))
 {
+    jml_parser_match_line();
+
     uint8_t item_count = 0;
     if (!jml_parser_check(TOKEN_RBRACE)) {
         do {
+            jml_parser_match_line();
             jml_parser_advance();
             jml_string(true);
 
+            jml_parser_match_line();
             jml_parser_consume(TOKEN_COLON, "Expect colon in map.");
 
+            jml_parser_match_line();
             jml_expression();
+
             if (item_count == 255) {
                 jml_parser_error("Can't have more than 255 items in map.");
             }
 
+            jml_parser_match_line();
             item_count += 2;
         } while (jml_parser_match(TOKEN_COMMA));
     }
 
+    jml_parser_match_line();
     jml_parser_consume(TOKEN_RBRACE, "Expect '}' after map.");
     jml_bytecode_emit_bytes(OP_MAP, item_count);
 }
@@ -711,6 +755,7 @@ jml_variable_named(jml_token_t name,
     }
 
     if (assignable && jml_parser_match(TOKEN_EQUAL)) {
+        jml_parser_match_line();
         jml_expression();
         jml_bytecode_emit_bytes(set_op, (uint8_t)arg);
 
@@ -720,11 +765,13 @@ jml_variable_named(jml_token_t name,
         jml_bytecode_emit_byte(new_name);
 
     } else if (jml_parser_match(TOKEN_LSQARE)) {
+        jml_parser_match_line();
         jml_expression();
 
         jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
 
         if (assignable && jml_parser_match(TOKEN_EQUAL)) {
+            jml_parser_match_line();
             jml_expression();
             jml_bytecode_emit_bytes(OP_SET_INDEX, (uint8_t)arg);
         } else
@@ -738,6 +785,8 @@ jml_variable_named(jml_token_t name,
 static void
 jml_variable(bool assignable)
 {
+    jml_parser_match_line();
+
     jml_variable_named(parser.previous, assignable);
 }
 
@@ -745,6 +794,8 @@ jml_variable(bool assignable)
 static void
 jml_super(JML_UNUSED(bool assignable))
 {
+    jml_parser_match_line();
+
     if (class_current == NULL) {
         jml_parser_error("Can't use 'super' outside of a class.");
     } else if (!class_current->w_superclass) {
@@ -773,6 +824,8 @@ jml_super(JML_UNUSED(bool assignable))
 static void
 jml_self(JML_UNUSED(bool assignable))
 {
+    jml_parser_match_line();
+
     if (class_current == NULL) {
         jml_parser_error("Can't use 'self' outside of a class.");
         return;
@@ -784,6 +837,8 @@ jml_self(JML_UNUSED(bool assignable))
 static void
 jml_unary(JML_UNUSED(bool assignable))
 {
+    jml_parser_match_line();
+
     jml_token_type type = parser.previous.type;
     jml_parser_precedence_parse(PREC_UNARY);
 
@@ -913,6 +968,8 @@ jml_expression(void)
 static void
 jml_block(void)
 {
+    jml_parser_match_line();
+
     while (!jml_parser_check(TOKEN_RBRACE)
         && !jml_parser_check(TOKEN_EOF))
         jml_declaration();
@@ -1049,13 +1106,12 @@ jml_let_declaration(void)
 {
     uint8_t global = jml_variable_parse("Expect variable name.");
 
-    if (jml_parser_match(TOKEN_EQUAL)) {
+    if (jml_parser_match(TOKEN_EQUAL))
         jml_expression();
-    } else {
+    else
         jml_bytecode_emit_byte(OP_NONE);
-    }
-    jml_parser_consume_line();
-
+    
+    jml_parser_newline();
     jml_variable_definition(global);
 }
 
@@ -1064,7 +1120,7 @@ static void
 jml_expression_statement(void)
 {
     jml_expression();
-    jml_parser_consume_line();
+    jml_parser_newline();
     jml_bytecode_emit_byte(OP_POP);
 }
 
@@ -1076,14 +1132,15 @@ jml_return_statement(void)
         jml_parser_error("Can't return from top-level code.");
     }
 
-    if (jml_parser_match(TOKEN_SEMI)) {
+    if (jml_parser_match_line()) {
         jml_bytecode_emit_return();
+
     } else {
         if (current->type == FUNCTION_INITIALIZER)
             jml_parser_error("Can't return a value from an initializer.");
 
         jml_expression();
-        jml_parser_consume_line();
+        jml_parser_newline();
         jml_bytecode_emit_byte(OP_RETURN);
     }
 }
@@ -1098,6 +1155,7 @@ jml_import_statement(void)
     jml_bytecode_emit_bytes(OP_IMPORT, name);
 
     if (jml_parser_match(TOKEN_ARROW)) {
+        jml_parser_match_line();
         jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
         uint8_t new_name = jml_identifier_const(&parser.previous);
 
@@ -1248,6 +1306,8 @@ jml_declaration(void)
 static void
 jml_statement(void)
 {
+    jml_parser_match_line();
+
     if (jml_parser_match(TOKEN_RETURN))
         jml_return_statement();
 
@@ -1269,7 +1329,9 @@ jml_statement(void)
         jml_scope_end();
 
     } else
-        jml_expression();
+        jml_expression_statement();
+
+    jml_parser_match_line();
 }
 
 

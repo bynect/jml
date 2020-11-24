@@ -32,12 +32,12 @@
 
 #define JML_NAN_TAGGING
 #define JML_DISASSEMBLE
-#undef JML_STRESS_GC
+#undef  JML_STRESS_GC
 #undef  JML_TRACE_GC
 #define JML_ROUND_GC
 #undef  JML_TRACE_MEM
 #undef  JML_PRINT_TOKEN
-#undef JML_ASSERTION
+#undef  JML_ASSERTION
 
 #endif
 

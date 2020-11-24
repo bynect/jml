@@ -104,9 +104,11 @@ jml_skip_char(void)
     for ( ;; ) {
         char c = jml_lexer_peek();
 
-        if (commented
-            && c != '?'
-            && c != '\n') {
+        if (commented && c != '?' && c != '\n') {
+            if (jml_is_eol()) {
+                commented = !commented;
+                return;
+            }
 
             jml_lexer_advance();
             continue;
@@ -121,8 +123,11 @@ jml_skip_char(void)
 
             case '\n':
                 jml_lexer_newline();
-                jml_lexer_advance();
-                break;
+                if (commented) {
+                    jml_lexer_advance();
+                    break;
+                } else
+                    return;
 
             case '\\':
                 jml_lexer_advance();
@@ -131,6 +136,11 @@ jml_skip_char(void)
             case  '!':
                 if (jml_lexer_peek_next() == '=') return;
                 while (jml_lexer_peek() != '\n' && !jml_is_eol()) jml_lexer_advance();
+
+                if (jml_lexer_peek() == '\n') {
+                    jml_lexer_newline();
+                    jml_lexer_advance();
+                }
                 break;
 
             case '?':
@@ -222,7 +232,9 @@ static jml_token_t
 jml_identifier_literal(void)
 {
     while (jml_is_alpha(jml_lexer_peek())
-        || jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
+        || jml_is_digit(jml_lexer_peek()))
+        
+        jml_lexer_advance();
 
     return jml_token_emit(jml_identifier_check());
 }
@@ -234,6 +246,7 @@ jml_string_literal(const char delimiter)
     while (jml_lexer_peek() != delimiter) {
         char c =        jml_lexer_peek();
         if  (c == '\n') jml_lexer_newline();
+
         if  (jml_is_eol())
             return jml_token_emit_error("Unterminated string.");
 
@@ -250,7 +263,7 @@ jml_number_literal(void)
 {
     while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
 
-    if (jml_lexer_peek() == '.'
+    if ((jml_lexer_peek() == '.')
         && jml_is_digit(jml_lexer_peek_next())) {
 
         jml_lexer_advance();
@@ -309,6 +322,8 @@ jml_lexer_tokenize(void)
 
         case '\'':  return jml_string_literal('\'');
         case  '"':  return jml_string_literal('"');
+
+        case '\n':  return jml_token_emit(TOKEN_LINE);
 
         case  '@':  return jml_token_emit(TOKEN_AT);
         case  '|':  return jml_token_emit(TOKEN_PIPE);
