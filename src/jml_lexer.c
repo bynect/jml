@@ -16,7 +16,7 @@ jml_lexer_init(const char *source) {
 
 
 static inline bool
-jml_is_eol(void)
+jml_is_eof(void)
 {
     return *lexer.current == '\0';
 }
@@ -32,7 +32,7 @@ jml_lexer_peek(void)
 static inline char
 jml_lexer_peek_next(void)
 {
-    if (jml_is_eol()) return '\0';
+    if (jml_is_eof()) return '\0';
     return lexer.current[1];
 }
 
@@ -62,7 +62,7 @@ jml_lexer_newline(void)
 static bool
 jml_match(char expected)
 {
-    if (jml_is_eol())               return false;
+    if (jml_is_eof())               return false;
     if (*lexer.current != expected) return false;
 
     lexer.current++;
@@ -105,7 +105,7 @@ jml_skip_char(void)
         char c = jml_lexer_peek();
 
         if (commented && c != '?' && c != '\n') {
-            if (jml_is_eol()) {
+            if (jml_is_eof()) {
                 commented = !commented;
                 return;
             }
@@ -135,7 +135,7 @@ jml_skip_char(void)
 
             case  '!':
                 if (jml_lexer_peek_next() == '=') return;
-                while (jml_lexer_peek() != '\n' && !jml_is_eol()) jml_lexer_advance();
+                while (jml_lexer_peek() != '\n' && !jml_is_eof()) jml_lexer_advance();
 
                 if (jml_lexer_peek() == '\n') {
                     jml_lexer_newline();
@@ -247,7 +247,7 @@ jml_string_literal(const char delimiter)
         char c =        jml_lexer_peek();
         if  (c == '\n') jml_lexer_newline();
 
-        if  (jml_is_eol())
+        if  (jml_is_eof())
             return jml_token_emit_error("Unterminated string.");
 
         jml_lexer_advance();
@@ -280,7 +280,7 @@ jml_lexer_tokenize(void)
     jml_skip_char();
 
     lexer.start =           lexer.current;
-    if (jml_is_eol())       return jml_token_emit(TOKEN_EOF);
+    if (jml_is_eof())       return jml_token_emit(TOKEN_EOF);
     char c      =           jml_lexer_advance();
     if (jml_is_alpha(c))    return jml_identifier_literal();
     if (jml_is_digit(c))    return jml_number_literal();
