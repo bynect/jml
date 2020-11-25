@@ -1,13 +1,11 @@
-CC=gcc
+CC?=gcc
 CFLAGS=-Wall -Wextra -Werror -std=c99 -g
+LFLAGS=-Wl,--export-dynamic
+SFLAGS=-shared -fPIC
 
 DEFINES=
 INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
 LIBS=-lm -ldl
-
-SHARED=-shared -fPIC
-EXE=-Wl,--export-dynamic
-
 
 all: jml libjml.a
 
@@ -15,7 +13,7 @@ all: jml libjml.a
 	$(CC) -c $^ $(CFLAGS) $(DEFINES) $(INCLUDES) $(LIBS)
 
 jml: *.o
-	$(CC) -o bin/$@ $^ $(CFLAGS) $(DEFINES) $(INCLUDES) $(LIBS) $(EXE)
+	$(CC) -o bin/$@ $^ $(CFLAGS) $(LFLAGS) $(DEFINES) $(INCLUDES) $(LIBS)
 
 libjml.a: *.o
 	ar rcs lib/$@ $^

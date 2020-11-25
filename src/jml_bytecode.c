@@ -329,8 +329,8 @@ jml_bytecode_instruction_disassemble(
         case OP_MAP:
             return jml_bytecode_instruction_byte("OP_MAP", bytecode, offset);
 
-        case OP_IMPORT:
-            return jml_bytecode_instruction_const("OP_IMPORT", bytecode, offset);
+        case OP_IMPORT_GLOBAL:
+            return jml_bytecode_instruction_const("OP_IMPORT_GLOBAL", bytecode, offset);
 
         default:
             printf("Unknown opcode %d\n", instruction);

@@ -54,7 +54,7 @@ typedef enum {
     OP_SUPER,
     OP_ARRAY,
     OP_MAP,
-    OP_IMPORT
+    OP_IMPORT_GLOBAL
 } jml_bytecode_op;
 
 

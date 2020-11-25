@@ -23,7 +23,6 @@ jml_vm_stack_reset(jml_vm_t *vm_ptr)
     vm_ptr->stack_top       = vm_ptr->stack;
     vm_ptr->frame_count     = 0;
     vm_ptr->open_upvalues   = NULL;
-
     vm_ptr->exempt          = vm_ptr->exempt_stack;
 }
 
@@ -126,11 +125,13 @@ jml_vm_init(jml_vm_t *vm_ptr)
     jml_hashmap_init(&vm_ptr->strings);
     jml_hashmap_init(&vm_ptr->modules);
 
+    vm_ptr->main_string     = NULL;
     vm_ptr->init_string     = NULL;
     vm_ptr->call_string     = NULL;
     vm_ptr->module_string   = NULL;
     vm_ptr->path_string     = NULL;
 
+    vm_ptr->main_string     = jml_obj_string_copy("__main", 6);
     vm_ptr->init_string     = jml_obj_string_copy("__init", 6);
     vm_ptr->call_string     = jml_obj_string_copy("__call", 6);
     vm_ptr->module_string   = jml_obj_string_copy("__module", 8);
@@ -147,6 +148,7 @@ jml_vm_free(jml_vm_t *vm_ptr)
     jml_hashmap_free(&vm_ptr->strings);
     jml_hashmap_free(&vm_ptr->modules);
 
+    vm_ptr->main_string     = NULL;
     vm_ptr->init_string     = NULL;
     vm_ptr->call_string     = NULL;
     vm_ptr->module_string   = NULL;
@@ -553,6 +555,9 @@ jml_vm_module_import(jml_obj_string_t *name)
                 vm->path_string, NONE_VAL);
         }
 
+        jml_hashmap_set(&module->globals,
+            vm->module_string, OBJ_VAL(module->name));
+
         if (!jml_module_initialize(module)) {
             jml_vm_error("ImportExc: Import of '%s' failed.", module->name->chars);
             return false;
@@ -726,7 +731,7 @@ jml_vm_run(void)
         &&exec_OP_SUPER,
         &&exec_OP_ARRAY,
         &&exec_OP_MAP,
-        &&exec_OP_IMPORT
+        &&exec_OP_IMPORT_GLOBAL
     };
 
     DISPATCH();
@@ -1309,7 +1314,7 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_IMPORT) {
+            EXEC_OP(OP_IMPORT_GLOBAL) {
                 frame->pc = pc;
                 if (!jml_vm_module_import(READ_STRING())) {
                     return INTERPRET_RUNTIME_ERROR;
@@ -1380,6 +1385,13 @@ jml_vm_interpret(const char *source)
 
     jml_vm_pop();
     jml_vm_push(OBJ_VAL(closure));
+
+    jml_hashmap_set(&vm->globals,
+        vm->module_string, OBJ_VAL(vm->main_string));
+
+    jml_hashmap_set(&vm->globals,
+        vm->path_string, NONE_VAL);
+
     jml_vm_call_value(OBJ_VAL(closure), 0);
 
     return jml_vm_run();

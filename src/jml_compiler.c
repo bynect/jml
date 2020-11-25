@@ -1169,7 +1169,7 @@ jml_import_statement(void)
     jml_parser_consume(TOKEN_NAME, "Expect identifier after 'import'.");
     uint8_t name        = jml_identifier_const(&parser.previous);
 
-    jml_bytecode_emit_bytes(OP_IMPORT, name);
+    jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, name);
 
     if (jml_parser_match(TOKEN_ARROW)) {
         jml_parser_match_line();

@@ -176,6 +176,10 @@ jml_module_register(jml_obj_module_t *module,
 bool
 jml_module_initialize(jml_obj_module_t *module)
 {
+#ifdef JML_PLATFORM_NIX
+    if (module->handle == NULL)
+        return true;
+
     jml_mfunction initializer = dlsym(
         module->handle, "module_init"
     );
@@ -210,12 +214,20 @@ jml_module_initialize(jml_obj_module_t *module)
     }
 #endif
     return true;
+#else
+    return false;
+#endif
 }
 
 
 void
 jml_module_finalize(jml_obj_module_t *module)
 {
+#ifdef JML_PLATFORM_NIX
+    if (module == NULL
+        && module->handle == NULL)
+        return;
+
     jml_mfunction free_function = dlsym(
         module->handle, "module_free"
     );
@@ -224,4 +236,5 @@ jml_module_finalize(jml_obj_module_t *module)
         free_function(module);
 
     jml_module_close(module);
+#endif
 }

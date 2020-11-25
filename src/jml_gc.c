@@ -127,6 +127,7 @@ jml_gc_mark_roots(void)
 
     jml_compiler_mark_roots();
 
+    jml_gc_mark_obj((jml_obj_t*)vm->main_string);
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
     jml_gc_mark_obj((jml_obj_t*)vm->call_string);
     jml_gc_mark_obj((jml_obj_t*)vm->module_string);
