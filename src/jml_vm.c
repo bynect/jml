@@ -249,15 +249,28 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
             }
 
             case OBJ_CLASS: {
-                jml_obj_class_t *klass          = AS_CLASS(callee);
-                vm->stack_top[-arg_count - 1]   = OBJ_VAL(
+                jml_obj_class_t    *klass       = AS_CLASS(callee);
+                jml_value_t         instance    = OBJ_VAL(
                     jml_obj_instance_new(klass));
+
+                vm->stack_top[-arg_count - 1]   = instance;
                 jml_value_t initializer;
 
                 if (jml_hashmap_get(&klass->methods,
                     vm->init_string, &initializer)) {
 
-                    return jml_vm_call(AS_CLOSURE(initializer), arg_count);
+                    if (IS_CFUNCTION(initializer)) {
+                        bool retval = jml_vm_call_value(initializer, arg_count);
+
+                        if (jml_vm_peek(0) != instance) {
+                            jml_vm_pop();
+                            jml_vm_push(instance);
+                        }
+
+                        return retval;
+                    } else
+                        return jml_vm_call(AS_CLOSURE(initializer), arg_count);
+
                 } else if (arg_count != 0) {
                     jml_vm_error(
                         "Expected 0 arguments but got %d.", arg_count
@@ -274,7 +287,12 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 if (jml_hashmap_get(&instance->klass->methods,
                     vm->call_string, &caller)) {
 
-                    return jml_vm_call(AS_CLOSURE(caller), arg_count);
+                    if (IS_CFUNCTION(caller)) {
+                        jml_vm_push(callee);
+                        return jml_vm_call_value(caller, arg_count + 1);
+                    } else
+                        return jml_vm_call(AS_CLOSURE(caller), arg_count);
+
                 } else {
                     jml_vm_error(
                         "Instance of class '%s' is not callable.",
@@ -325,7 +343,10 @@ jml_vm_invoke_class(jml_obj_class_t *klass,
         return false;
     }
 
-    return jml_vm_call(AS_CLOSURE(method), arg_count);
+    if (IS_CFUNCTION(method))
+        return jml_vm_call_value(method, arg_count);
+    else
+        return jml_vm_call(AS_CLOSURE(method), arg_count);
 }
 
 
@@ -394,12 +415,16 @@ jml_vm_method_bind(jml_obj_class_t *klass,
         return false;
     }
 
-    jml_obj_method_t *bound = jml_obj_method_new(
-        jml_vm_peek(0), AS_CLOSURE(method)
-    );
+    jml_value_t bound;
+    if (IS_CFUNCTION(method))
+        bound = OBJ_VAL(AS_CFUNCTION(method));
+    else
+        bound = OBJ_VAL(jml_obj_method_new(
+            jml_vm_peek(0), AS_CLOSURE(method)
+        ));
 
     jml_vm_pop();
-    jml_vm_push(OBJ_VAL(bound));
+    jml_vm_push(bound);
     return true;
 }
 
@@ -1272,7 +1297,7 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_SUPER) {
-                jml_obj_string_t *name = READ_STRING();
+                jml_obj_string_t *name      = READ_STRING();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
                 frame->pc = pc;
                 if (!jml_vm_method_bind(superclass, name)) {

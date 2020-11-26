@@ -193,24 +193,24 @@ jml_module_initialize(jml_obj_module_t *module)
         module->handle, "module_table"
     );
 
-    if (table == NULL) return false;
-    jml_module_function *current = table;
+    jml_module_function *current;
+    if ((current = table) != NULL) {
+        while (current->function != NULL) {
+            jml_vm_push(jml_string_intern(current->name));
 
-    while (current->function != NULL) {
-        jml_vm_push(jml_string_intern(current->name));
+            jml_vm_push(OBJ_VAL(
+                jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
+                    current->function, module)
+            ));
 
-        jml_vm_push(OBJ_VAL(
-            jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
-                current->function, module)
-        ));
+            jml_hashmap_set(&module->globals,
+                AS_STRING(jml_vm_peek(1)),
+                jml_vm_peek(0)
+            );
 
-        jml_hashmap_set(&module->globals,
-            AS_STRING(jml_vm_peek(1)),
-            jml_vm_peek(0)
-        );
-
-        jml_vm_pop_two();
-        ++current;
+            jml_vm_pop_two();
+            ++current;
+        }
     }
 #endif
     return true;
@@ -237,4 +237,63 @@ jml_module_finalize(jml_obj_module_t *module)
 
     jml_module_close(module);
 #endif
+}
+
+
+bool
+jml_module_add_value(jml_obj_module_t *module,
+    const char *name, jml_value_t value)
+{
+    if (module == NULL || name == NULL)
+        return false;
+
+    jml_vm_push(jml_string_intern(name));
+
+    jml_hashmap_set(&module->globals,
+        AS_STRING(jml_vm_peek(0)), value);
+
+    jml_vm_pop();
+    return true;
+}
+
+
+bool
+jml_module_add_class(jml_obj_module_t *module,
+    const char *name, jml_module_function *table)
+{
+    if (module == NULL || name == NULL)
+        return false;
+
+    jml_vm_push(jml_string_intern(name));
+
+    jml_obj_class_t *klass = jml_obj_class_new(
+        AS_STRING(jml_vm_peek(0))
+    );
+    klass->module = module;
+
+    jml_module_function *current;
+    if ((current = table) != NULL) {
+        while (current->function != NULL) {
+            jml_vm_push(jml_string_intern(current->name));
+
+            jml_vm_push(OBJ_VAL(
+                jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
+                    current->function, module)
+            ));
+
+            jml_hashmap_set(&klass->methods,
+                AS_STRING(jml_vm_peek(1)),
+                jml_vm_peek(0)
+            );
+
+            jml_vm_pop_two();
+            ++current;
+        }
+    }
+
+    jml_hashmap_set(&module->globals,
+        AS_STRING(jml_vm_peek(0)), OBJ_VAL(klass));
+
+    jml_vm_pop();
+    return true;
 }

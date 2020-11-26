@@ -38,6 +38,12 @@ typedef struct {
 } jml_module_function;
 
 
+bool jml_module_add_value(jml_obj_module_t *module,
+    const char *name, jml_value_t value);
+
+bool jml_module_add_class(jml_obj_module_t *module,
+    const char *name, jml_module_function *table);
+
 #ifdef __cplusplus
 
 #define MODULE_TABLE_HEAD           extern "C" jml_module_function module_table[]
