@@ -152,7 +152,7 @@ MODULE_TABLE_HEAD = {
 };
 
 
-void
+MODULE_FUNC_HEAD
 module_init(JML_UNUSED(jml_obj_module_t *module))
 {
     last_string = NULL;
@@ -162,7 +162,7 @@ module_init(JML_UNUSED(jml_obj_module_t *module))
 }
 
 
-void
+MODULE_FUNC_HEAD
 module_free(JML_UNUSED(jml_obj_module_t *module))
 {
     if (last_rule != NULL)

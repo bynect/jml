@@ -202,6 +202,62 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
+jml_core_string_fmt(int arg_count, jml_value_t *args)
+{
+    jml_value_t fmt_value       = args[0];
+
+    if (!IS_STRING(fmt_value)) {
+        return OBJ_VAL(
+            jml_core_exception_types(false, 1, "string")
+        );
+    }
+
+    jml_obj_string_t *fmt_obj   = AS_STRING(fmt_value);
+    char             *fmt_str   = jml_strdup(fmt_obj->chars);
+    int               fmt_args  = 0;
+
+    size_t size                 = fmt_obj->length + 16 * arg_count;
+    char *string                = jml_realloc(NULL, size);
+    memset(string, 0, size);
+
+    char *token                 = jml_strtok(fmt_str, "{}");
+    while (token != NULL) {
+
+        char *value_str         = jml_value_stringify(args[fmt_args + 1]);
+
+        size_t dest_size        = strlen(string) + strlen(value_str) + strlen(token);
+        REALLOC(char, string, size, dest_size);
+
+        strcat(string, token);
+        strcat(string, value_str);
+
+        jml_realloc(value_str, 0UL);
+        token = jml_strtok(NULL, "{}");
+        ++fmt_args;
+    }
+
+    jml_realloc(token, 0UL);
+    jml_realloc(fmt_str, 0UL);
+
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, fmt_args);
+
+    if (exc != NULL) {
+        jml_realloc(string, 0UL);
+        return OBJ_VAL(exc);
+    }
+
+    int length = strlen(string) - 1;
+    
+    jml_obj_string_t *formatted = jml_obj_string_copy(string, length);
+
+    jml_realloc(string, 0UL);
+
+    return OBJ_VAL(formatted);
+}
+
+
+static jml_value_t
 jml_core_reverse(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
@@ -380,6 +436,7 @@ jml_module_function core_functions[] = {
     {"localtime",                   &jml_core_localtime},
     {"print",                       &jml_core_print},
     {"printfmt",                    &jml_core_print_fmt},
+    {"stringfmt",                   &jml_core_string_fmt},
     {"char",                        &jml_core_char},
     {"reverse",                     &jml_core_reverse},
     {"size",                        &jml_core_size},
@@ -396,8 +453,11 @@ jml_core_register(void)
     jml_module_function *current = core_functions;
 
     while (current->function != NULL) {
-        jml_cfunction_register(current->name,
-            current->function, NULL); /*TODO*/
+        jml_cfunction_register(
+            current->name,
+            current->function,
+            NULL
+        );
 
         ++current;
     }

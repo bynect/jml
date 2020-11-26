@@ -39,9 +39,15 @@ typedef struct {
 
 
 #ifdef __cplusplus
+
 #define MODULE_TABLE_HEAD           extern "C" jml_module_function module_table[]
+#define MODULE_FUNC_HEAD            extern "C" void
+
 #else
+
 #define MODULE_TABLE_HEAD           jml_module_function module_table[]
+#define MODULE_FUNC_HEAD            void
+
 #endif
 
 

@@ -13,7 +13,7 @@ typedef struct {
 } jml_call_frame_t;
 
 
-typedef struct jml_vm_s {
+struct jml_vm_s {
     jml_call_frame_t                frames[FRAMES_MAX];
     uint8_t                         frame_count;
     jml_obj_upvalue_t              *open_upvalues;
@@ -41,7 +41,7 @@ typedef struct jml_vm_s {
 
     jml_value_t                     exempt_stack[EXEMPT_MAX];
     jml_value_t                    *exempt;
-} jml_vm_t;
+};
 
 
 void jml_vm_init(jml_vm_t *vm);

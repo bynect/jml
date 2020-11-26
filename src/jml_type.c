@@ -159,7 +159,7 @@ jml_obj_class_new(jml_obj_string_t *name)
 
     klass->name             = name;
     klass->super            = NULL;
-    klass->module           = NULL; /*TODO*/
+    klass->module           = NULL;
 
     jml_hashmap_init(&klass->methods);
 
