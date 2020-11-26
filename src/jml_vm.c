@@ -705,8 +705,8 @@ jml_vm_run(void)
         &&exec_OP_LESSEQ,
         &&exec_OP_NOTEQ,
         &&exec_OP_SWAP,
-        &&exec_OP_JMP,
-        &&exec_OP_JMP_IF_FALSE,
+        &&exec_OP_JUMP,
+        &&exec_OP_JUMP_IF_FALSE,
         &&exec_OP_LOOP,
         &&exec_OP_CALL,
         &&exec_OP_METHOD,
@@ -935,13 +935,13 @@ jml_vm_run(void)
                 END_OP();
             }
 
-            EXEC_OP(OP_JMP) {
+            EXEC_OP(OP_JUMP) {
                 uint16_t offset = READ_SHORT();
                 pc += offset;
                 END_OP();
             }
 
-            EXEC_OP(OP_JMP_IF_FALSE) {
+            EXEC_OP(OP_JUMP_IF_FALSE) {
                 uint16_t offset = READ_SHORT();
                 if (jml_is_falsey(jml_vm_peek(0))) pc += offset;
                 END_OP();

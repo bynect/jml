@@ -236,10 +236,10 @@ jml_bytecode_instruction_disassemble(
         case OP_SWAP:
             return jml_bytecode_instruction_swap("OP_SWAP", bytecode, offset);
 
-        case OP_JMP:
+        case OP_JUMP:
             return jml_bytecode_instruction_jump("OP_JUMP", 1, bytecode, offset);
 
-        case OP_JMP_IF_FALSE:
+        case OP_JUMP_IF_FALSE:
             return jml_bytecode_instruction_jump("OP_JUMP_IF_FALSE", 1, bytecode, offset);
 
         case OP_LOOP:

@@ -86,7 +86,6 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
 
     REGEX_REUSE(rule, result);
 
-    size_t              size        = 32;
     int                 max_match   = 16;
     int                 max_group   = 16;
 
@@ -112,7 +111,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
         int offset  = 0;
 
         for (groups = 0; groups < max_group; ++groups) {
-            if (matches[groups].rm_so == -1UL)
+            if (matches[groups].rm_so == -1)
                 break;
 
             if (groups == 0)
@@ -154,7 +153,7 @@ MODULE_TABLE_HEAD = {
 
 
 void
-module_init(jml_obj_module_t *module)
+module_init(JML_UNUSED(jml_obj_module_t *module))
 {
     last_string = NULL;
 
@@ -164,7 +163,7 @@ module_init(jml_obj_module_t *module)
 
 
 void
-module_free(jml_obj_module_t *module)
+module_free(JML_UNUSED(jml_obj_module_t *module))
 {
     if (last_rule != NULL)
         regfree(last_rule);

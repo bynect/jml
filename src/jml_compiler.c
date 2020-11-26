@@ -547,7 +547,7 @@ jml_and(JML_UNUSED(bool assignable))
 {
     jml_parser_match_line();
 
-    int jump_end = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
+    int jump_end = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
 
     jml_bytecode_emit_byte(OP_POP);
     jml_parser_precedence_parse(PREC_AND);
@@ -561,8 +561,8 @@ jml_or(JML_UNUSED(bool assignable))
 {
     jml_parser_match_line();
 
-    int jump_else = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
-    int jump_end = jml_bytecode_emit_jump(OP_JMP);
+    int jump_else = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
+    int jump_end = jml_bytecode_emit_jump(OP_JUMP);
 
     jml_bytecode_patch_jump(jump_else);
     jml_bytecode_emit_byte(OP_POP);
@@ -1194,7 +1194,7 @@ jml_while_statement(void)
 
     jml_parser_consume(TOKEN_RPAREN, "Expect ')' after condition.");
 
-    int exit = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
+    int exit = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
 
     jml_bytecode_emit_byte(OP_POP);
     jml_statement();
@@ -1227,12 +1227,12 @@ jml_for_statement(void)
         jml_expression();
         jml_parser_consume(TOKEN_SEMI, "Expect ';' after loop condition.");
 
-        exit = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
+        exit = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
         jml_bytecode_emit_byte(OP_POP);
     }
 
     if (!jml_parser_match(TOKEN_RPAREN)) {
-        int body = jml_bytecode_emit_jump(OP_JMP);
+        int body = jml_bytecode_emit_jump(OP_JUMP);
 
         int increment = jml_bytecode_current()->count;
         jml_expression();
@@ -1271,7 +1271,7 @@ jml_for_statement(void)
 //     jml_parser_consume(TOKEN_IN, "Expect 'in' after 'for let'.");
 //     //array
 
-//     int exit = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
+//     int exit = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
 
 //     jml_bytecode_emit_byte(OP_POP);
 //     jml_statement();
@@ -1291,11 +1291,11 @@ jml_if_statement(void)
     jml_parser_match_line();
     jml_expression();
 
-    int then_jump = jml_bytecode_emit_jump(OP_JMP_IF_FALSE);
+    int then_jump = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
     jml_bytecode_emit_byte(OP_POP);
     jml_statement();
 
-    int else_jump = jml_bytecode_emit_jump(OP_JMP);
+    int else_jump = jml_bytecode_emit_jump(OP_JUMP);
     jml_bytecode_patch_jump(then_jump);
     jml_bytecode_emit_byte(OP_POP);
 
