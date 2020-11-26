@@ -39,8 +39,8 @@ jml_core_exception_implemented(jml_value_t value)
 {
     char message[26];
 
-    sprintf(message,  "Not implemented for '%s'.",
-        jml_obj_stringify_type(value));
+    sprintf(message,  "Not implemented for %s.",
+        jml_value_stringify_type(value));
 
     return jml_obj_exception_new(
         "NotImplemented", message
@@ -58,16 +58,16 @@ jml_core_exception_types(bool mult, int arg_count, ...)
     char *message = jml_realloc(NULL, size);
 
     char *next = va_arg(types, char*);
-    sprintf(message, "Expected arguments of type '%s'", next);
+    sprintf(message, "Expected arguments of <type %s>", next);
 
     for (int i = 1; i < arg_count; ++i) {
 
         char *next = va_arg(types, char*);
         char temp[32];
         if (mult)
-            sprintf(temp, " or '%s'", next);
+            sprintf(temp, " or <type %s>", next);
         else
-            sprintf(temp, " and '%s'", next);
+            sprintf(temp, " and <type %s>", next);
 
         size_t dest_size = strlen(message) + strlen(temp);
         REALLOC(char, message, size, dest_size);

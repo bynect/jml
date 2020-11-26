@@ -377,7 +377,7 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 #endif
     }
 
-    jml_vm_error("Cannot call %s", name->chars);
+    jml_vm_error("Can't call %s", name->chars);
     return false;
 }
 
@@ -654,7 +654,7 @@ jml_vm_run(void)
         if (b == 0) {                                   \
             frame->pc = pc;                             \
             jml_vm_error(                               \
-                "Cannot divide by zero."                \
+                "Can't divide by zero."                 \
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
         }                                               \
@@ -803,7 +803,7 @@ jml_vm_run(void)
                     } else {
                         frame->pc = pc;
                         jml_vm_error(
-                            "Cannot concatenate string to %s.",
+                            "Can't concatenate string to %s.",
                             jml_value_stringify_type(jml_vm_peek(0))
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -925,16 +925,13 @@ jml_vm_run(void)
                     return INTERPRET_RUNTIME_ERROR;
 
                 } else if (jml_string_equal(old_name, new_name)) {
-
                     jml_hashmap_set(&vm->globals, old_name, value);
-
                     frame->pc = pc;
-                    jml_vm_error("Cannot swap variable to itself.");
+                    jml_vm_error("Can't swap variable to itself.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
                 jml_hashmap_set(&vm->globals, new_name, value);
-
                 END_OP();
             }
 

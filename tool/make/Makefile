@@ -1,7 +1,8 @@
 CC?=gcc
 CFLAGS=-Wall -Wextra -Werror -std=c99 -g
 LFLAGS=-Wl,--export-dynamic
-SFLAGS=-shared -fPIC
+
+XSHARED=-shared -fPIC
 
 DEFINES=
 INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include

@@ -320,11 +320,10 @@ jml_scope_end(void)
         && current->locals[current->local_count - 1].depth >
             current->scope_depth) {
 
-        if (current->locals[current->local_count - 1].captured) {
+        if (current->locals[current->local_count - 1].captured)
             jml_bytecode_emit_byte(OP_CLOSE_UPVALUE);
-        } else {
+        else
             jml_bytecode_emit_byte(OP_POP);
-        }
 
         current->local_count--;
     }
@@ -595,9 +594,9 @@ jml_binary(JML_UNUSED(bool assignable))
 
         case TOKEN_EQEQUAL:     jml_bytecode_emit_byte(OP_EQUAL);       break;
         case TOKEN_GREATER:     jml_bytecode_emit_byte(OP_GREATER);     break;
-        case TOKEN_GREATEREQ:   jml_bytecode_emit_byte(OP_GREATEREQ);      break;
+        case TOKEN_GREATEREQ:   jml_bytecode_emit_byte(OP_GREATEREQ);   break;
         case TOKEN_LESS:        jml_bytecode_emit_byte(OP_LESS);        break;
-        case TOKEN_LESSEQ:      jml_bytecode_emit_byte(OP_LESSEQ);   break;
+        case TOKEN_LESSEQ:      jml_bytecode_emit_byte(OP_LESSEQ);      break;
         case TOKEN_NOTEQ:       jml_bytecode_emit_byte(OP_NOTEQ);       break;
 
         default:                UNREACHABLE();
