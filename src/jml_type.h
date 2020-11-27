@@ -111,6 +111,7 @@ struct jml_obj_function_s {
     int                             upvalue_count;
     jml_bytecode_t                  bytecode;
     jml_obj_string_t               *name;
+    jml_obj_string_t               *klass_name;
     jml_obj_module_t               *module;
 };
 
@@ -147,6 +148,7 @@ struct jml_obj_cfunction_s {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
     jml_cfunction                   function;
+    jml_obj_string_t               *klass_name;
     jml_obj_module_t               *module;
 };
 

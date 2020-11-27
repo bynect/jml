@@ -283,6 +283,8 @@ jml_module_add_class(jml_obj_module_t *module,
                     current->function, module)
             ));
 
+            AS_CFUNCTION(jml_vm_peek(0))->klass_name = klass->name;
+
             jml_hashmap_set(&klass->methods,
                 AS_STRING(jml_vm_peek(1)),
                 jml_vm_peek(0)

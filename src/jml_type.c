@@ -237,10 +237,11 @@ jml_obj_function_new(void)
     jml_obj_function_t *function = ALLOCATE_OBJ(
         jml_obj_function_t, OBJ_FUNCTION);
 
-    function->arity              = 0;
-    function->upvalue_count      = 0;
-    function->name               = NULL;
-    function->module             = NULL;
+    function->arity         = 0;
+    function->upvalue_count = 0;
+    function->name          = NULL;
+    function->klass_name    = NULL;
+    function->module        = NULL;
 
     jml_bytecode_init(&function->bytecode);
 
@@ -257,6 +258,7 @@ jml_obj_cfunction_new(jml_obj_string_t *name,
 
     cfunction->name         = name;
     cfunction->function     = function;
+    cfunction->klass_name   = NULL;
     cfunction->module       = module;
 
     return cfunction;
@@ -435,11 +437,26 @@ jml_obj_function_stringify(jml_obj_function_t *function)
         return jml_strdup("<fn __main>");
     }
 
-    char fn[11];
-    sprintf(fn, "<fn %s/%d>", function->name->chars,
+    size_t size = function->name->length * GC_HEAP_GROW_FACTOR;
+    char *fn = jml_realloc(NULL, size);
+
+    sprintf(fn, "<fn ");
+
+    if (function->module != NULL) {
+        REALLOC(fn, size, size + function->module->name->length);
+        sprintf(fn, "%s.", function->module->name->chars);
+    }
+
+    if (function->klass_name != NULL) {
+        REALLOC(fn, size, size + function->klass_name->length);
+        sprintf(fn, "%s.", function->klass_name->chars);
+    }
+
+    REALLOC(fn, size, size + function->name->length + 3);
+    sprintf(fn, "%s/%d>", function->name->chars,
         function->arity);
 
-    return jml_strdup(fn);
+    return fn;
 }
 
 
@@ -496,10 +513,20 @@ jml_obj_stringify(jml_value_t value)
         }
 
         case OBJ_EXCEPTION: {
-            char exc[15];
-            sprintf(exc, "<exception %s>",
-                AS_EXCEPTION(value)->name->chars);
-            return jml_strdup(exc);
+            jml_obj_exception_t *exc = AS_EXCEPTION(value);
+            char message[18];
+
+            if (exc->module != NULL) {
+                sprintf(message, "<exception %s.%s>",
+                    exc->module->name->chars,
+                    exc->name->chars
+                );
+            } else {
+                sprintf(message, "<exception %s>",
+                    exc->name->chars);
+            }
+
+            return jml_strdup(message);
         }
     }
     return NULL;

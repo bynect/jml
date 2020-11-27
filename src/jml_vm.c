@@ -52,25 +52,28 @@ jml_vm_error(const char *format, ...)
             function->bytecode.lines[instruction]
         );
 
-        if (function->name == NULL) {
-            if (vm->external != NULL) {
-                if (vm->external->module != NULL) {
-                    fprintf(stderr, "function %s.%s()\n",
-                        vm->external->module->name->chars,
-                        vm->external->name->chars
-                    );
-                } else
-                    fprintf(stderr, "function %s()\n", vm->external->name->chars);
+        fprintf(stderr, "function ");
 
-            } else
-                fprintf(stderr, "__main\n");
-        } else {
+        if (function->name != NULL) {
             if (function->module != NULL)
-                fprintf(stderr, "function %s.%s()\n",
-                    function->module->name->chars, function->name->chars);
-            else
-                fprintf(stderr, "function %s()\n", function->name->chars);
-        }
+                fprintf(stderr, "%s.", function->module->name->chars);
+
+            if (function->klass_name != NULL)
+                fprintf(stderr, "%s.", function->klass_name->chars);
+
+            fprintf(stderr, "%s()\n", function->name->chars);
+
+        } else if (vm->external != NULL) {
+            if (vm->external->module != NULL)
+                fprintf(stderr, "%s.", vm->external->module->name->chars);
+
+            if (vm->external->klass_name != NULL)
+                fprintf(stderr, "%s.", vm->external->klass_name->chars);
+
+            fprintf(stderr, "%s()\n", vm->external->name->chars);
+
+        } else
+            fprintf(stderr, "__main\n");
     }
 
     jml_vm_stack_reset(vm);

@@ -379,6 +379,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
         case OBJ_FUNCTION: {
             jml_obj_function_t *function = (jml_obj_function_t*)object;
             jml_gc_mark_obj((jml_obj_t*)function->name);
+            jml_gc_mark_obj((jml_obj_t*)function->klass_name);
             jml_gc_mark_array(&function->bytecode.constants);
             break;
         }
@@ -391,6 +392,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
         case OBJ_CFUNCTION: {
             jml_obj_cfunction_t *cfunction = (jml_obj_cfunction_t*)object;
             jml_gc_mark_obj((jml_obj_t*)cfunction->name);
+            jml_gc_mark_obj((jml_obj_t*)cfunction->klass_name);
             break;
         }
 

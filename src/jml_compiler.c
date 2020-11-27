@@ -271,6 +271,12 @@ jml_compiler_init(jml_compiler_t *compiler,
         );
     }
 
+    if (type != FUNCTION_MAIN && type != FUNCTION_FN) {
+        compiler->function->klass_name = jml_obj_string_copy(
+            class_current->name.start, class_current->name.length
+        );
+    }
+
     jml_local_t *local = &current->locals[current->local_count++];
     local->depth = 0;
 
