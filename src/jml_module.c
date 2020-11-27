@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <jml_module.h>
 #include <jml_vm.h>
@@ -29,16 +30,29 @@
 #endif
 
 
+static void
+jml_module_std_path(char *path)
+{
+    char *temp = getenv("JML_PATH");
+    if (temp == NULL)
+        temp = "std";
+    
+    snprintf(path, JML_PATH_MAX, "%s", temp);
+}
+
+
 jml_obj_module_t *
 jml_module_open(jml_obj_string_t *module_name,
     char *path)
 {
 #ifdef JML_PLATFORM_NIX
-    char *module_str = jml_strdup(
-        module_name->chars);
+    char *module_str = jml_strdup(module_name->chars);
 
     char filename_so[JML_PATH_MAX];
     char filename_jml[JML_PATH_MAX];
+
+    char std_path[JML_PATH_MAX];
+    jml_module_std_path(std_path);
 
 #ifdef JML_RECURSIVE_SEARCH
     char temp_so[256];
@@ -48,12 +62,12 @@ jml_module_open(jml_obj_string_t *module_name,
     sprintf(temp_so, "%s.%s", module_str, SHARED_LIB_EXT);
     sprintf(temp_jml, "%s.jml", module_str);
 
-    if (jml_file_find(temp_so, buffer))
+    if (jml_file_find_in(std_path, temp_so, buffer))
         sprintf(filename_so, "%s", buffer);
 
-    else if (jml_file_find(temp_jml, buffer))
+    else if (jml_file_find_in(std_path, temp_jml, buffer))
         sprintf(filename_jml, "%s", buffer);
-    
+
     else {
         jml_vm_error("ImportExc: Module not found.");
         goto err;

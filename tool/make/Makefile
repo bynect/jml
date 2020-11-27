@@ -11,9 +11,9 @@ CLI_D=cli
 SRC_D=src
 STD_D=std
 
-CLI_C=$(addprefix $(CLI_D)/,$(shell ls $(CLI_D) | grep '\.c'))
-SRC_C=$(addprefix $(SRC_D)/,$(shell ls $(SRC_D) | grep '\.c'))
-STD_C=$(addprefix $(STD_D)/,$(shell ls $(STD_D) | grep '\.c'))
+CLI_C=$(shell find $(CLI_D) -name '*.c')
+SRC_C=$(shell find $(SRC_D) -name '*.c')
+STD_C=$(shell find $(STD_D) -name '*.c')
 
 CLI_O=$(CLI_C:.c=.o)
 SRC_O=$(SRC_C:.c=.o)
@@ -26,10 +26,10 @@ TARGET_STD=$(STD_C:.c=.so)
 all: $(TARGET_BIN) $(TARGET_LIB) $(TARGET_STD)
 
 $(CLI_D)/%.o: $(CLI_D)/%.c
-	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) #$(LIBS)
+	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES)
 
 $(SRC_D)/%.o: $(SRC_D)/%.c
-	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) #$(LIBS)
+	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES)
 
 $(STD_D)/%.o: $(STD_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(LIBS) $(XSHARED)

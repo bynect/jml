@@ -84,7 +84,7 @@ jml_strcat(char *dest, char *src)
 
 
 bool
-jml_file_find(char *filename, char *result)
+jml_file_find(const char *filename, char *result)
 {
 #ifdef DT_DIR
 #define IS_DIR                      DT_DIR
@@ -118,6 +118,22 @@ jml_file_find(char *filename, char *result)
     return (*result != 0);
 
 #undef IS_DIR
+}
+
+
+bool
+jml_file_find_in(const char *path,
+    const char *filename, char *result)
+{
+    char *tmp = getcwd(NULL, 0);
+    chdir(path);
+    
+    bool res = jml_file_find(filename, result);
+
+    chdir(tmp);
+    jml_free(tmp);
+
+    return res;
 }
 
 
