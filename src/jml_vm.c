@@ -131,12 +131,14 @@ jml_vm_init(jml_vm_t *vm_ptr)
     vm_ptr->main_string     = NULL;
     vm_ptr->init_string     = NULL;
     vm_ptr->call_string     = NULL;
+    vm_ptr->free_string     = NULL;
     vm_ptr->module_string   = NULL;
     vm_ptr->path_string     = NULL;
 
     vm_ptr->main_string     = jml_obj_string_copy("__main", 6);
     vm_ptr->init_string     = jml_obj_string_copy("__init", 6);
     vm_ptr->call_string     = jml_obj_string_copy("__call", 6);
+    vm_ptr->free_string     = jml_obj_string_copy("__free", 6);
     vm_ptr->module_string   = jml_obj_string_copy("__module", 8);
     vm_ptr->path_string     = jml_obj_string_copy("__path", 6);
 
@@ -154,6 +156,7 @@ jml_vm_free(jml_vm_t *vm_ptr)
     vm_ptr->main_string     = NULL;
     vm_ptr->init_string     = NULL;
     vm_ptr->call_string     = NULL;
+    vm_ptr->free_string     = NULL;
     vm_ptr->module_string   = NULL;
     vm_ptr->path_string     = NULL;
 
@@ -236,7 +239,7 @@ jml_vm_call(jml_obj_closure_t *closure,
 }
 
 
-static bool
+bool
 jml_vm_call_value(jml_value_t callee, int arg_count)
 {
     if (IS_OBJ(callee)) {
@@ -263,7 +266,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                     vm->init_string, &initializer)) {
 
                     if (IS_CFUNCTION(initializer)) {
-                        bool retval = jml_vm_call_value(initializer, arg_count);
+                        bool retval = jml_vm_call_value(initializer, arg_count + 1);
 
                         if (jml_vm_peek(0) != instance) {
                             jml_vm_pop();
@@ -347,7 +350,7 @@ jml_vm_invoke_class(jml_obj_class_t *klass,
     }
 
     if (IS_CFUNCTION(method))
-        return jml_vm_call_value(method, arg_count);
+        return jml_vm_call_value(method, arg_count + 1);
     else
         return jml_vm_call(AS_CLOSURE(method), arg_count);
 }
@@ -1319,8 +1322,8 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_SUPER) {
-                jml_obj_string_t *name      = READ_STRING();
-                jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
+                jml_obj_string_t *name       = READ_STRING();
+                jml_obj_class_t  *superclass = AS_CLASS(jml_vm_pop());
                 frame->pc = pc;
                 if (!jml_vm_method_bind(superclass, name)) {
                     return INTERPRET_RUNTIME_ERROR;

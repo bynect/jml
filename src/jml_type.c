@@ -175,6 +175,7 @@ jml_obj_instance_new(jml_obj_class_t *klass)
         jml_obj_instance_t, OBJ_INSTANCE);
 
     instance->klass              = klass;
+    instance->data               = NULL;
 
     jml_hashmap_init(&instance->fields);
 

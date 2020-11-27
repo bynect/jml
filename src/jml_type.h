@@ -102,6 +102,7 @@ struct jml_obj_instance_s {
     jml_obj_t                       obj;
     jml_obj_class_t                *klass;
     jml_hashmap_t                   fields;
+    void                           *data;
 };
 
 

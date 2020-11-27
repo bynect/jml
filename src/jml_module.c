@@ -258,17 +258,19 @@ jml_module_add_value(jml_obj_module_t *module,
 
 
 bool
-jml_module_add_class(jml_obj_module_t *module,
-    const char *name, jml_module_function *table, bool inheritable)
+jml_module_add_class(jml_obj_module_t *module, const char *name,
+    jml_module_function *table, bool inheritable)
 {
     if (module == NULL || name == NULL)
         return false;
 
     jml_vm_push(jml_string_intern(name));
 
-    jml_obj_class_t *klass  = jml_obj_class_new(
-        AS_STRING(jml_vm_peek(0))
-    );
+    jml_vm_push(OBJ_VAL(
+        jml_obj_class_new(AS_STRING(jml_vm_peek(0)))
+    ));
+
+    jml_obj_class_t *klass = AS_CLASS(jml_vm_peek(0));
 
     klass->inheritable      = inheritable;
     klass->module           = module;
@@ -278,14 +280,17 @@ jml_module_add_class(jml_obj_module_t *module,
         while (current->function != NULL) {
             jml_vm_push(jml_string_intern(current->name));
 
-            jml_vm_push(OBJ_VAL(
-                jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
-                    current->function, module)
-            ));
+            jml_obj_cfunction_t *method = jml_obj_cfunction_new(
+                AS_STRING(jml_vm_peek(0)),
+                current->function,
+                module
+            );
+            
+            jml_vm_push(OBJ_VAL(method));
+            method->klass_name = klass->name;
 
-            AS_CFUNCTION(jml_vm_peek(0))->klass_name = klass->name;
-
-            jml_hashmap_set(&klass->methods,
+            jml_hashmap_set(
+                &klass->methods,
                 AS_STRING(jml_vm_peek(1)),
                 jml_vm_peek(0)
             );
@@ -296,8 +301,8 @@ jml_module_add_class(jml_obj_module_t *module,
     }
 
     jml_hashmap_set(&module->globals,
-        AS_STRING(jml_vm_peek(0)), OBJ_VAL(klass));
+        AS_STRING(jml_vm_peek(1)), jml_vm_peek(0));
 
-    jml_vm_pop();
+    jml_vm_pop_two();
     return true;
 }

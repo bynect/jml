@@ -130,6 +130,7 @@ jml_gc_mark_roots(void)
     jml_gc_mark_obj((jml_obj_t*)vm->main_string);
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
     jml_gc_mark_obj((jml_obj_t*)vm->call_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->free_string);
     jml_gc_mark_obj((jml_obj_t*)vm->module_string);
     jml_gc_mark_obj((jml_obj_t*)vm->path_string);
 
@@ -229,6 +230,17 @@ jml_free_object(jml_obj_t *object)
 
         case OBJ_INSTANCE: {
             jml_obj_instance_t *instance = (jml_obj_instance_t*)object;
+
+            if (vm->free_string != NULL) {
+                jml_value_t destructor;
+                if (jml_hashmap_get(&instance->klass->methods,
+                    vm->free_string, &destructor)) {
+
+                    jml_vm_push(OBJ_VAL(instance));
+                    jml_vm_call_value(destructor, 1);
+                }
+            }
+
             jml_hashmap_free(&instance->fields);
             FREE(jml_obj_instance_t, object);
             break;
@@ -356,6 +368,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
         case OBJ_CLASS: {
             jml_obj_class_t *klass = (jml_obj_class_t*)object;
             jml_gc_mark_obj((jml_obj_t*)klass->name);
+            jml_gc_mark_obj((jml_obj_t*)klass->super);
             jml_hashmap_mark(&klass->methods);
             break;
         }
