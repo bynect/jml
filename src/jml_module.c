@@ -51,13 +51,18 @@ jml_module_open(jml_obj_string_t *module_name,
     char filename_so[JML_PATH_MAX];
     char filename_jml[JML_PATH_MAX];
 
+#ifdef JML_RECURSIVE_SEARCH
+
     char std_path[JML_PATH_MAX];
     jml_module_std_path(std_path);
 
-#ifdef JML_RECURSIVE_SEARCH
     char temp_so[256];
     char temp_jml[256];
     char buffer[JML_PATH_MAX] = { 0 };
+
+    if (strchr(module_str, '.') != NULL) {
+        /*TODO*/
+    }
 
     sprintf(temp_so, "%s.%s", module_str, SHARED_LIB_EXT);
     sprintf(temp_jml, "%s.jml", module_str);

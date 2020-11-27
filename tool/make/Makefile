@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -Werror -std=c99 -ggdb
+CFLAGS=-Wall -Wextra -Werror -std=c99 -g
 LFLAGS=-Wl,--export-dynamic
 XSHARED=-shared -fPIC -rdynamic
 

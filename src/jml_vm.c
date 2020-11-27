@@ -268,7 +268,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                     if (IS_CFUNCTION(initializer)) {
                         bool retval = jml_vm_call_value(initializer, arg_count + 1);
 
-                        if (jml_vm_peek(0) != instance) {
+                        if (!jml_value_equal(jml_vm_peek(0), instance)) {
                             jml_vm_pop();
                             jml_vm_push(instance);
                         }
@@ -479,8 +479,8 @@ jml_vm_upvalue_capture(jml_value_t *local)
 
 static void
 jml_vm_upvalue_close(jml_value_t *last) {
-    while ((vm->open_upvalues != NULL )
-        && (vm->open_upvalues->location >= last)) {
+    while (vm->open_upvalues != NULL
+        && vm->open_upvalues->location >= last) {
 
         jml_obj_upvalue_t *upvalue  = vm->open_upvalues;
         upvalue->closed             = *upvalue->location;
@@ -735,7 +735,6 @@ jml_vm_run(void)
         &&exec_OP_LESS,
         &&exec_OP_LESSEQ,
         &&exec_OP_NOTEQ,
-        &&exec_OP_SWAP,
         &&exec_OP_JUMP,
         &&exec_OP_JUMP_IF_FALSE,
         &&exec_OP_LOOP,
@@ -759,6 +758,8 @@ jml_vm_run(void)
         &&exec_OP_GET_MEMBER,
         &&exec_OP_SET_INDEX,
         &&exec_OP_GET_INDEX,
+        &&exec_OP_SWAP_GLOBAL,
+        &&exec_OP_SWAP_LOCAL,
         &&exec_OP_SUPER,
         &&exec_OP_ARRAY,
         &&exec_OP_MAP,
@@ -940,29 +941,6 @@ jml_vm_run(void)
                 jml_vm_push(
                     BOOL_VAL(!jml_value_equal(a, b)));
 
-                END_OP();
-            }
-
-            EXEC_OP(OP_SWAP) {
-                jml_obj_string_t *old_name  = READ_STRING();
-                jml_obj_string_t *new_name  = READ_STRING();
-
-                jml_value_t value = jml_hashmap_pop(
-                    &vm->globals, old_name);
-
-                if (AS_OBJ(value) == vm->sentinel) {
-                    frame->pc = pc;
-                    jml_vm_error("Undefined variable '%s'.", old_name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
-
-                } else if (jml_string_equal(old_name, new_name)) {
-                    jml_hashmap_set(&vm->globals, old_name, value);
-                    frame->pc = pc;
-                    jml_vm_error("Can't swap variable to itself.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-
-                jml_hashmap_set(&vm->globals, new_name, value);
                 END_OP();
             }
 
@@ -1318,6 +1296,35 @@ jml_vm_run(void)
 
                 jml_vm_pop();
                 jml_vm_push(indexed);
+                END_OP();
+            }
+
+            EXEC_OP(OP_SWAP_GLOBAL) {
+                jml_obj_string_t *old_name  = READ_STRING();
+                jml_obj_string_t *new_name  = READ_STRING();
+
+                jml_value_t value = jml_hashmap_pop(
+                    &vm->globals, old_name);
+
+                if (AS_OBJ(value) == vm->sentinel) {
+                    frame->pc = pc;
+                    jml_vm_error("Undefined variable '%s'.", old_name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+
+                } else if (jml_string_equal(old_name, new_name)) {
+                    jml_hashmap_set(&vm->globals, old_name, value);
+                    frame->pc = pc;
+                    jml_vm_error("Can't swap variable to itself.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_hashmap_set(&vm->globals, new_name, value);
+                jml_vm_pop();
+                END_OP();
+            }
+
+            EXEC_OP(OP_SWAP_LOCAL) {
+                /*TODO*/
                 END_OP();
             }
 

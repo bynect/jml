@@ -233,9 +233,6 @@ jml_bytecode_instruction_disassemble(
         case OP_NOTEQ:
             return jml_bytecode_instruction_simple("OP_NOTEQ", offset);
 
-        case OP_SWAP:
-            return jml_bytecode_instruction_swap("OP_SWAP", bytecode, offset);
-
         case OP_JUMP:
             return jml_bytecode_instruction_jump("OP_JUMP", 1, bytecode, offset);
 
@@ -320,6 +317,12 @@ jml_bytecode_instruction_disassemble(
         case OP_GET_INDEX:
             return jml_bytecode_instruction_const("OP_GET_INDEX", bytecode, offset);
 
+        case OP_SWAP_GLOBAL:
+            return jml_bytecode_instruction_swap("OP_SWAP_GLOBAL", bytecode, offset);
+
+        case OP_SWAP_LOCAL:
+            return jml_bytecode_instruction_swap("OP_SWAP_LOCAL", bytecode, offset);
+
         case OP_SUPER:
             return jml_bytecode_instruction_const("OP_SUPER", bytecode, offset);
 
@@ -333,7 +336,7 @@ jml_bytecode_instruction_disassemble(
             return jml_bytecode_instruction_const("OP_IMPORT_GLOBAL", bytecode, offset);
 
         default:
-            printf("Unknown opcode %d\n", instruction);
+            printf("unknown opcode %d\n", instruction);
             return offset + 1;
     }
 }

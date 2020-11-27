@@ -30,7 +30,7 @@
 
 #else
 
-#define JML_NAN_TAGGING
+#undef JML_NAN_TAGGING
 #define JML_DISASSEMBLE
 #undef  JML_STRESS_GC
 #undef  JML_TRACE_GC

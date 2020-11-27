@@ -398,6 +398,21 @@ jml_identifier_equal(jml_token_t *a,
 }
 
 
+static void
+jml_local_add(jml_token_t name)
+{
+    if (current->local_count == LOCAL_MAX) {
+        jml_parser_error("Too many local variables in function.");
+        return;
+    }
+
+    jml_local_t *local = &current->locals[current->local_count++];
+    local->name = name;
+    local->depth = -1;
+    local->captured = false;
+}
+
+
 static int
 jml_local_resolve(jml_compiler_t *compiler,
     jml_token_t *name)
@@ -413,21 +428,6 @@ jml_local_resolve(jml_compiler_t *compiler,
     }
 
     return -1;
-}
-
-
-static void
-jml_local_add(jml_token_t name)
-{
-    if (current->local_count == LOCAL_MAX) {
-        jml_parser_error("Too many local variables in function.");
-        return;
-    }
-
-    jml_local_t *local = &current->locals[current->local_count++];
-    local->name = name;
-    local->depth = -1;
-    local->captured = false;
 }
 
 
@@ -769,11 +769,11 @@ jml_variable_named(jml_token_t name,
         jml_bytecode_emit_bytes(set_op, (uint8_t)arg);
 
     } else if (assignable && jml_parser_match(TOKEN_ARROW)) {
-        jml_bytecode_emit_bytes(OP_SWAP, (uint8_t)arg);
         jml_parser_match_line();
-
         jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
         uint8_t new_name = jml_identifier_const(&parser.previous);
+
+        jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, (uint8_t)arg);
         jml_bytecode_emit_byte(new_name);
 
     } else if (jml_parser_match(TOKEN_LSQARE)) {
@@ -1187,7 +1187,7 @@ jml_import_statement(void)
         jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
         uint8_t new_name = jml_identifier_const(&parser.previous);
 
-        jml_bytecode_emit_bytes(OP_SWAP, name);
+        jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, name);
         jml_bytecode_emit_byte(new_name);
     }
 }
