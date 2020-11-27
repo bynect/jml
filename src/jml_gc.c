@@ -73,6 +73,26 @@ jml_realloc(void *ptr,
 }
 
 
+void *
+jml_alloc(size_t size)
+{
+    void *ptr = jml_realloc(NULL, size);
+    memset(ptr, 0, size);
+
+    return ptr;
+}
+
+
+void
+jml_free(void *ptr)
+{
+    if (ptr == NULL)
+        return;
+    
+    jml_realloc(ptr, 0UL);
+}
+
+
 void
 jml_gc_exempt_push(jml_value_t value)
 {

@@ -293,17 +293,16 @@ jml_obj_exception_format(const char *name,
     va_list args;
     va_start(args, message_format);
 
-    /*FIXME*/
-    size_t size = strlen(message_format) * sizeof(char) * 32;
-    char *message = (char*)jml_realloc(NULL, size);
-    vsprintf(message, message_format, args);
+    size_t size     = strlen(message_format) * sizeof(char) * 32;
+    char  *message  = jml_alloc(size);
 
+    vsprintf(message, message_format, args);
     va_end(args);
 
     jml_obj_exception_t *exc = jml_obj_exception_new(
         name, message);
 
-    jml_realloc(message, 0UL);
+    jml_free(message);
 
     return exc;
 }

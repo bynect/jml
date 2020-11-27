@@ -7,9 +7,13 @@ DEFINES=
 INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
 LIBS=-lm -ldl
 
-CLI_C=$(addprefix cli/,$(shell ls cli | grep '\.c'))
-SRC_C=$(addprefix src/,$(shell ls src | grep '\.c'))
-STD_C=$(addprefix std/,$(shell ls std | grep '\.c'))
+CLI_D=cli
+SRC_D=src
+STD_D=std
+
+CLI_C=$(addprefix $(CLI_D)/,$(shell ls $(CLI_D) | grep '\.c'))
+SRC_C=$(addprefix $(SRC_D)/,$(shell ls $(SRC_D) | grep '\.c'))
+STD_C=$(addprefix $(STD_D)/,$(shell ls $(STD_D) | grep '\.c'))
 
 CLI_O=$(CLI_C:.c=.o)
 SRC_O=$(SRC_C:.c=.o)
@@ -21,13 +25,13 @@ TARGET_STD=$(STD_C:.c=.so)
 
 all: $(TARGET_BIN) $(TARGET_LIB) $(TARGET_STD)
 
-src/%.o: src/%.c
+$(CLI_D)/%.o: $(CLI_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) #$(LIBS)
 
-cli/%.o: cli/%.c
+$(SRC_D)/%.o: $(SRC_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) #$(LIBS)
 
-std/%.o: std/%.c
+$(STD_D)/%.o: $(STD_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(LIBS) $(XSHARED)
 
 std/%.so: std/%.o

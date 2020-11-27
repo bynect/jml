@@ -163,8 +163,7 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
     int               fmt_args  = 0;
 
     size_t size                 = fmt_obj->length + 16 * arg_count;
-    char *string                = jml_realloc(NULL, size);
-    memset(string, 0, size);
+    char *string                = jml_alloc(size);
 
     char *token                 = jml_strtok(fmt_str, "{}");
     while (token != NULL) {
@@ -177,24 +176,24 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
         strcat(string, token);
         strcat(string, value_str);
 
-        jml_realloc(value_str, 0UL);
+        jml_free(value_str);
         token = jml_strtok(NULL, "{}");
         ++fmt_args;
     }
 
-    jml_realloc(token, 0UL);
-    jml_realloc(fmt_str, 0UL);
+    jml_free(token);
+    jml_free(fmt_str);
 
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count, fmt_args);
 
     if (exc != NULL) {
-        jml_realloc(string, 0UL);
+        jml_free(string);
         return OBJ_VAL(exc);
     } else {
         int length = strlen(string) - 1;
         printf("%.*s\n", length, string);
-        jml_realloc(string, 0UL);
+        jml_free(string);
     }
 
     return NONE_VAL;
@@ -217,8 +216,7 @@ jml_core_string_fmt(int arg_count, jml_value_t *args)
     int               fmt_args  = 0;
 
     size_t size                 = fmt_obj->length + 16 * arg_count;
-    char *string                = jml_realloc(NULL, size);
-    memset(string, 0, size);
+    char *string                = jml_alloc(size);
 
     char *token                 = jml_strtok(fmt_str, "{}");
     while (token != NULL) {
@@ -231,19 +229,19 @@ jml_core_string_fmt(int arg_count, jml_value_t *args)
         strcat(string, token);
         strcat(string, value_str);
 
-        jml_realloc(value_str, 0UL);
+        jml_free(value_str);
         token = jml_strtok(NULL, "{}");
         ++fmt_args;
     }
 
-    jml_realloc(token, 0UL);
-    jml_realloc(fmt_str, 0UL);
+    jml_free(token);
+    jml_free(fmt_str);
 
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count, fmt_args);
 
     if (exc != NULL) {
-        jml_realloc(string, 0UL);
+        jml_free(string);
         return OBJ_VAL(exc);
     }
 
@@ -252,7 +250,7 @@ jml_core_string_fmt(int arg_count, jml_value_t *args)
     jml_obj_string_t *formatted = jml_obj_string_copy(
         string, length);
 
-    jml_realloc(string, 0UL);
+    jml_free(string);
 
     return OBJ_VAL(formatted);
 }

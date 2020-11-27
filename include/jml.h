@@ -96,6 +96,10 @@ jml_value_t jml_gc_exempt_peek(int distance);
 /*UTILITY*/
 void *jml_realloc(void *ptr, size_t new_size);
 
+void *jml_alloc(size_t size);
+
+void jml_free(void *ptr);
+
 
 char *jml_strsep(char **str, const char *sep);
 

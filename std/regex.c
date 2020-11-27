@@ -57,6 +57,7 @@ jml_std_regex_match(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc;
     int result;
+
     REGEX_CHECK(exc, arg_count, args, 2, "string", "string");
 
     jml_obj_string_t *rule          = AS_STRING(args[0]);
@@ -89,7 +90,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
     int                 max_match   = 16;
     int                 max_group   = 16;
 
-    regmatch_t         *matches     = jml_realloc(NULL, max_match * sizeof(regmatch_t));
+    regmatch_t         *matches     = jml_alloc(max_match * sizeof(regmatch_t));
     char               *copy        = jml_strdup(string->chars);
     char               *current     = copy;
 
@@ -129,8 +130,8 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
         current += offset;
     }
 
-    jml_realloc(copy, 0UL);
-    jml_realloc(matches, 0UL);
+    jml_free(copy);
+    jml_free(matches);
 
     jml_gc_exempt_pop();
     return OBJ_VAL(array);
@@ -157,14 +158,15 @@ module_init(JML_UNUSED(jml_obj_module_t *module))
 {
     last_string = NULL;
 
-    last_rule   = jml_realloc(NULL, sizeof(regex_t));
-    memset(last_rule, 0, sizeof(regex_t));
+    last_rule   = jml_alloc(sizeof(regex_t));
 }
 
 
 MODULE_FUNC_HEAD
 module_free(JML_UNUSED(jml_obj_module_t *module))
 {
+    last_string = NULL;
+
     if (last_rule != NULL)
         regfree(last_rule);
 }
