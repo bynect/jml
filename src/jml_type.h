@@ -92,6 +92,7 @@ struct jml_obj_class_s {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
     jml_hashmap_t                   methods;
+    bool                            inheritable;
     struct jml_obj_class_s         *super;
     jml_obj_module_t               *module;
 };

@@ -145,7 +145,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
 
 
 /*module table*/
-MODULE_TABLE_HEAD = {
+MODULE_TABLE_HEAD module_table[] = {
     {"match",                       &jml_std_regex_match},
     {"search",                      &jml_std_regex_search},
     {NULL,                          NULL}

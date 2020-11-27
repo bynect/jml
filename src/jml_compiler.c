@@ -777,8 +777,8 @@ jml_variable_named(jml_token_t name,
         jml_parser_match_line();
         jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
 
-        jml_parser_match_line();
         if (assignable && jml_parser_match(TOKEN_EQUAL)) {
+            jml_parser_match_line();
             jml_expression();
             jml_bytecode_emit_bytes(OP_SET_INDEX, (uint8_t)arg);
         } else {
@@ -904,8 +904,8 @@ jml_parser_rule rules[] = {
     [TOKEN_IF]          = {NULL,        NULL,       PREC_NONE},
     [TOKEN_ELSE]        = {NULL,        NULL,       PREC_NONE},
     [TOKEN_CLASS]       = {NULL,        NULL,       PREC_NONE},
-    [TOKEN_SELF]        = {jml_self,   NULL,       PREC_NONE},
-    [TOKEN_SUPER]       = {jml_super,    NULL,       PREC_NONE},
+    [TOKEN_SELF]        = {jml_self,    NULL,       PREC_NONE},
+    [TOKEN_SUPER]       = {jml_super,   NULL,       PREC_NONE},
     [TOKEN_LET]         = {NULL,        NULL,       PREC_NONE},
     [TOKEN_FN]          = {NULL,        NULL,       PREC_NONE},
     [TOKEN_RETURN]      = {NULL,        NULL,       PREC_NONE},
@@ -1070,6 +1070,12 @@ jml_class_declaration(void)
 
         jml_parser_consume(TOKEN_NAME, "Expect superclass name.");
         jml_variable(false);
+
+        while (jml_parser_match(TOKEN_DOT)) {
+            jml_parser_consume(TOKEN_NAME, "Expect identifier after '.'.");
+            uint8_t name = jml_identifier_const(&parser.previous);
+            jml_bytecode_emit_bytes(OP_GET_MEMBER, name);
+        }
 
         if (jml_identifier_equal(&class_name, &parser.previous)) {
             jml_parser_error("A class can't inherit from itself.");

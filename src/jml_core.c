@@ -249,7 +249,8 @@ jml_core_string_fmt(int arg_count, jml_value_t *args)
 
     int length = strlen(string) - 1;
     
-    jml_obj_string_t *formatted = jml_obj_string_copy(string, length);
+    jml_obj_string_t *formatted = jml_obj_string_copy(
+        string, length);
 
     jml_realloc(string, 0UL);
 
@@ -423,9 +424,7 @@ jml_core_type(int arg_count, jml_value_t *args)
 
     char *string = jml_value_stringify_type(args[0]);
 
-    return OBJ_VAL(jml_obj_string_take(
-        string, strlen(string)
-    ));
+    return jml_string_intern(string);
 }
 
 

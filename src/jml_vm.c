@@ -326,7 +326,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
     }
 
     jml_vm_error(
-        "Can only call functions, classes and instances."
+        "Can call only functions, classes and instances."
     );
     return false;
 }
@@ -1069,6 +1069,12 @@ jml_vm_run(void)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
+                if (!AS_CLASS(superclass)->inheritable) {
+                    frame->pc = pc;
+                    jml_vm_error("Superclass must be inheritable.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
                 jml_obj_class_t *subclass   = AS_CLASS(jml_vm_peek(0));
                 subclass->super             = AS_CLASS(superclass);
 
@@ -1227,6 +1233,12 @@ jml_vm_run(void)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
+                if (!IS_STRING(index) && !IS_NUM(index)) {
+                    frame->pc = pc;
+                    jml_vm_error("Can index only by number or string.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
                 if (IS_STRING(index) && IS_MAP(value)) {
                     jml_obj_map_t *map = AS_MAP(value);
                     jml_hashmap_set(&map->hashmap,
@@ -1248,7 +1260,7 @@ jml_vm_run(void)
 
                 } else {
                     frame->pc = pc;
-                    jml_vm_error("Can index only by number or string.");
+                    jml_vm_error("Can index only arrays and maps.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1258,8 +1270,8 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_GET_INDEX) {
-                jml_value_t         index   = jml_vm_peek(0);
                 jml_obj_string_t   *name    = READ_STRING();
+                jml_value_t         index   = jml_vm_peek(0);
 
                 jml_value_t         indexed;
                 jml_value_t         value;
@@ -1267,6 +1279,12 @@ jml_vm_run(void)
                 if (!jml_hashmap_get(&vm->globals, name, &value)) {
                     frame->pc = pc;
                     jml_vm_error("Undefined variable '%s'.", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                if (!IS_STRING(index) && !IS_NUM(index)) {
+                    frame->pc = pc;
+                    jml_vm_error("Can index only by number or string.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1285,9 +1303,10 @@ jml_vm_run(void)
                         indexed     = array.values[array.count + num_index];
                     else
                         indexed     = array.values[num_index];
+
                 } else {
                     frame->pc = pc;
-                    jml_vm_error("Can index only by number or string.");
+                    jml_vm_error("Can index only arrays and maps.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 

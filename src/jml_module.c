@@ -259,17 +259,19 @@ jml_module_add_value(jml_obj_module_t *module,
 
 bool
 jml_module_add_class(jml_obj_module_t *module,
-    const char *name, jml_module_function *table)
+    const char *name, jml_module_function *table, bool inheritable)
 {
     if (module == NULL || name == NULL)
         return false;
 
     jml_vm_push(jml_string_intern(name));
 
-    jml_obj_class_t *klass = jml_obj_class_new(
+    jml_obj_class_t *klass  = jml_obj_class_new(
         AS_STRING(jml_vm_peek(0))
     );
-    klass->module = module;
+
+    klass->inheritable      = inheritable;
+    klass->module           = module;
 
     jml_module_function *current;
     if ((current = table) != NULL) {

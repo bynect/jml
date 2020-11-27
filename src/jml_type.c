@@ -159,6 +159,7 @@ jml_obj_class_new(jml_obj_string_t *name)
 
     klass->name             = name;
     klass->super            = NULL;
+    klass->inheritable      = true;
     klass->module           = NULL;
 
     jml_hashmap_init(&klass->methods);

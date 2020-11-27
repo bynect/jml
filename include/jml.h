@@ -42,16 +42,16 @@ bool jml_module_add_value(jml_obj_module_t *module,
     const char *name, jml_value_t value);
 
 bool jml_module_add_class(jml_obj_module_t *module,
-    const char *name, jml_module_function *table);
+    const char *name, jml_module_function *table, bool inheritable);
 
 #ifdef __cplusplus
 
-#define MODULE_TABLE_HEAD           extern "C" jml_module_function module_table[]
+#define MODULE_TABLE_HEAD           extern "C" jml_module_function
 #define MODULE_FUNC_HEAD            extern "C" void
 
 #else
 
-#define MODULE_TABLE_HEAD           jml_module_function module_table[]
+#define MODULE_TABLE_HEAD           jml_module_function
 #define MODULE_FUNC_HEAD            void
 
 #endif
