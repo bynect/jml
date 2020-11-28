@@ -173,7 +173,9 @@ jml_module_register(jml_obj_module_t *module,
 {
     jml_module_function *current = function_table;
 
-    while (current->function != NULL) {
+    while (current->name != NULL
+        && current->function != NULL) {
+
         jml_vm_push(jml_string_intern(current->name));
 
         jml_vm_push(OBJ_VAL(
@@ -214,7 +216,9 @@ jml_module_initialize(jml_obj_module_t *module)
 
     jml_module_function *current;
     if ((current = table) != NULL) {
-        while (current->function != NULL) {
+        while (current->name != NULL
+            && current->function != NULL) {
+
             jml_vm_push(jml_string_intern(current->name));
 
             jml_vm_push(OBJ_VAL(
@@ -296,7 +300,9 @@ jml_module_add_class(jml_obj_module_t *module, const char *name,
 
     jml_module_function *current;
     if ((current = table) != NULL) {
-        while (current->function != NULL) {
+        while (current->name != NULL
+            && current->function != NULL) {
+
             jml_vm_push(jml_string_intern(current->name));
 
             jml_obj_cfunction_t *method = jml_obj_cfunction_new(

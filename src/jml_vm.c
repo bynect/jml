@@ -711,7 +711,12 @@ jml_vm_run(void)
 
 #define DISPATCH()                  goto *dispatcher[READ_BYTE()]
 #define EXEC_OP(op)                 exec_##op:
+
+#ifdef JML_TRACE_STACK
+#define END_OP()                    goto trace_stack
+#else
 #define END_OP()                    DISPATCH()
+#endif
 
     static void *dispatcher[] = {
         &&exec_OP_POP,
@@ -775,7 +780,29 @@ jml_vm_run(void)
 
     for ( ;; ) {
         uint8_t instruction;
+#endif
 
+#ifdef JML_TRACE_STACK
+#ifdef JML_COMPUTED_GOTO
+    trace_stack: {
+#endif
+        printf("          ");
+        for (jml_value_t *slot = vm->stack; slot < vm->stack_top; slot++) {
+            printf("[ ");
+            jml_value_print(*slot);
+            printf(" ]");
+        }
+        printf("\n");
+
+        jml_bytecode_instruction_disassemble(&frame->closure->function->bytecode,
+        (int)(frame->pc - frame->closure->function->bytecode.code));
+#ifdef JML_COMPUTED_GOTO
+        DISPATCH();
+    }
+#endif
+#endif
+
+#ifndef JML_COMPUTED_GOTO
         switch (instruction = READ_BYTE()) {
 #endif
 
@@ -809,12 +836,12 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_TRUE) {
-                jml_vm_push(BOOL_VAL(true));
+                jml_vm_push(TRUE_VAL);
                 END_OP();
             }
 
             EXEC_OP(OP_FALSE) {
-                jml_vm_push(BOOL_VAL(false));
+                jml_vm_push(FALSE_VAL);
                 END_OP();
             }
 
@@ -979,8 +1006,8 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_INVOKE) {
-                jml_obj_string_t *name = READ_STRING();
-                int arg_count = READ_BYTE();
+                jml_obj_string_t *name      = READ_STRING();
+                int               arg_count = READ_BYTE();
 
                 frame->pc = pc;
                 if (!jml_vm_invoke(name, arg_count))
@@ -992,10 +1019,10 @@ jml_vm_run(void)
             }
 
             EXEC_OP(OP_SUPER_INVOKE) {
-                jml_obj_string_t *method = READ_STRING();
-                int arg_count = READ_BYTE();
-                frame->pc = pc;
+                jml_obj_string_t *method    = READ_STRING();
+                int               arg_count = READ_BYTE();
 
+                frame->pc = pc;
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
                 if (!jml_vm_invoke_class(superclass, method, arg_count))
                     return INTERPRET_RUNTIME_ERROR;
