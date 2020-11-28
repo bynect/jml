@@ -812,6 +812,7 @@ jml_vm_run(void)
 
         jml_bytecode_instruction_disassemble(&frame->closure->function->bytecode,
         (int)(frame->pc - frame->closure->function->bytecode.code));
+
 #ifdef JML_COMPUTED_GOTO
         DISPATCH();
     }
@@ -1489,7 +1490,24 @@ jml_vm_interpret(const char *source)
     jml_hashmap_set(&vm->globals,
         vm->path_string, NONE_VAL);
 
-    jml_vm_call_value(OBJ_VAL(closure), 0);
+#ifndef NAN
+#define NAN                         -(0.f/0.f)
+#endif
 
+#ifndef INFINITY
+#define INFINITY                    HUGE_VAL
+#endif
+    jml_vm_push(jml_string_intern("nan"));
+    jml_vm_push(jml_string_intern("inf"));
+
+    jml_hashmap_set(&vm->globals,
+        AS_STRING(jml_vm_peek(1)), NUM_VAL(NAN));
+
+    jml_hashmap_set(&vm->globals,
+        AS_STRING(jml_vm_peek(0)), NUM_VAL(INFINITY));
+
+    jml_vm_pop_two();
+
+    jml_vm_call_value(OBJ_VAL(closure), 0);
     return jml_vm_run();
 }

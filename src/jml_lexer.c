@@ -179,7 +179,7 @@ jml_identifier_check(void)
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'a': return jml_keyword_match(2, 3, "lse", TOKEN_FALSE);
-                    case 'n': return TOKEN_FN;
+                    case 'n': return jml_keyword_match(2, 0, "", TOKEN_FN);
                     case 'o': return jml_keyword_match(2, 1, "r", TOKEN_FOR);
                 }
             }
@@ -187,8 +187,8 @@ jml_identifier_check(void)
         case 'i':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'f': return TOKEN_IF;
-                    case 'n': return TOKEN_IN;
+                    case 'f': return jml_keyword_match(2, 0, "", TOKEN_IF);
+                    case 'n': return jml_keyword_match(2, 0, "", TOKEN_IN);
                     case 'm': return jml_keyword_match(2, 4, "port", TOKEN_IMPORT);
                 }
             }
@@ -198,7 +198,7 @@ jml_identifier_check(void)
                 && lexer.start[1] == 'o') {
                 switch (lexer.start[2]) {
                     case 'n': return jml_keyword_match(3, 1, "e", TOKEN_NONE);
-                    case 't': return TOKEN_NOT;
+                    case 't': return jml_keyword_match(3, 0, "", TOKEN_NOT);
                 }
             }
             break;
