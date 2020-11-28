@@ -193,8 +193,7 @@ jml_vm_pop(void)
 void
 jml_vm_pop_two(void)
 {
-    jml_vm_pop();
-    jml_vm_pop();
+    vm->stack_top -= 2;
 }
 
 
@@ -266,14 +265,12 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                     vm->init_string, &initializer)) {
 
                     if (IS_CFUNCTION(initializer)) {
+                        jml_vm_push(instance);
                         bool retval = jml_vm_call_value(initializer, arg_count + 1);
-
-                        if (!jml_value_equal(jml_vm_peek(0), instance)) {
-                            jml_vm_pop();
-                            jml_vm_push(instance);
-                        }
-
+                        jml_vm_pop();
+                        jml_vm_push(instance);
                         return retval;
+
                     } else
                         return jml_vm_call(AS_CLOSURE(initializer), arg_count);
 
@@ -357,6 +354,26 @@ jml_vm_invoke_class(jml_obj_class_t *klass,
 
 
 static bool
+jml_vm_invoke_instance(jml_obj_instance_t *instance,
+    jml_obj_string_t *name, int arg_count)
+{
+    jml_value_t method;
+
+    if (!jml_hashmap_get(&instance->klass->methods, name, &method)) {
+        jml_vm_error("Undefined property '%s'.", name->chars);
+        return false;
+    }
+
+    if (IS_CFUNCTION(method)) {
+        jml_vm_push(OBJ_VAL(instance));
+        return jml_vm_call_value(method, arg_count + 1);
+
+    } else
+        return jml_vm_call(AS_CLOSURE(method), arg_count);
+}
+
+
+static bool
 jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 {
     jml_value_t receiver = jml_vm_peek(arg_count);
@@ -370,8 +387,8 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
             return jml_vm_call_value(value, arg_count);
         }
 
-        return jml_vm_invoke_class(instance->klass,
-            name, arg_count);
+        return jml_vm_invoke_instance(
+            instance, name, arg_count);
 
     } else if (IS_MODULE(receiver)) {
         jml_obj_module_t *module = AS_MODULE(receiver);
@@ -594,13 +611,12 @@ jml_vm_module_import(jml_obj_string_t *name)
             return false;
         }
 
-        value = OBJ_VAL(module);
-        jml_hashmap_set(&vm->modules, name, value);
-        jml_hashmap_set(&vm->globals, name, value);
+        jml_hashmap_set(&vm->modules, name, jml_vm_peek(0));
+        jml_hashmap_set(&vm->globals, name, jml_vm_peek(0));
+
         jml_vm_pop();
     }
 
-    jml_vm_push(value);
     return true;
 }
 
@@ -1346,7 +1362,7 @@ jml_vm_run(void)
                 }
 
                 jml_hashmap_set(&vm->globals, new_name, value);
-                jml_vm_pop();
+                jml_vm_push(value);
                 END_OP();
             }
 
