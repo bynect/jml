@@ -102,7 +102,6 @@ struct jml_obj_instance_s {
     jml_obj_t                       obj;
     jml_obj_class_t                *klass;
     jml_hashmap_t                   fields;
-    void                           *data;
 };
 
 
@@ -204,6 +203,8 @@ void jml_obj_print(jml_value_t value);
 char *jml_obj_stringify(jml_value_t value);
 
 char *jml_obj_stringify_type(jml_value_t value);
+
+bool jml_obj_is_sentinel(jml_value_t value);
 
 
 static inline bool

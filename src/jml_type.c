@@ -175,7 +175,6 @@ jml_obj_instance_new(jml_obj_class_t *klass)
         jml_obj_instance_t, OBJ_INSTANCE);
 
     instance->klass              = klass;
-    instance->data               = NULL;
 
     jml_hashmap_init(&instance->fields);
 
@@ -574,4 +573,11 @@ jml_obj_stringify_type(jml_value_t value)
             return "<type exception>";
     }
     return NULL;
+}
+
+
+bool
+jml_obj_is_sentinel(jml_value_t value)
+{
+    return (AS_OBJ(value) == vm->sentinel);
 }

@@ -32,10 +32,10 @@ $(SRC_D)/%.o: $(SRC_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES)
 
 $(STD_D)/%.o: $(STD_D)/%.c
-	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(LIBS) $(XSHARED)
+	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(XSHARED)
 
 std/%.so: std/%.o
-	$(CC) $< -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(LIBS) $(XSHARED)
+	$(CC) $< -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(XSHARED)
 
 $(TARGET_BIN): $(SRC_O) $(CLI_O)
 	$(CC) $^ -o $@ $(CFLAGS) $(LFLAGS) $(DEFINES) $(INCLUDES) $(LIBS)

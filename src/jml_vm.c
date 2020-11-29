@@ -1350,7 +1350,7 @@ jml_vm_run(void)
                 jml_value_t value = jml_hashmap_pop(
                     &vm->globals, old_name);
 
-                if (AS_OBJ(value) == vm->sentinel) {
+                if (jml_obj_is_sentinel(value)) {
                     frame->pc = pc;
                     jml_vm_error("Undefined variable '%s'.", old_name->chars);
                     return INTERPRET_RUNTIME_ERROR;

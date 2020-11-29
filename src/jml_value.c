@@ -295,15 +295,22 @@ jml_value_t
 jml_hashmap_pop(jml_hashmap_t *map,
     jml_obj_string_t *key)
 {
-    jml_value_t value;
-
-    if (!jml_hashmap_get(map, key, &value)) {
+    if (map->count == 0)
         return OBJ_VAL(vm->sentinel);
-    }
 
-    jml_hashmap_del(map, key);
+    jml_hashmap_entry_t *entry = jml_hashmap_find_entry(
+        map->entries, map->capacity, key
+    );
 
-    return value;
+    if (entry->key == NULL)
+        return OBJ_VAL(vm->sentinel);
+
+    jml_value_t temp = entry->value;
+
+    entry->key = NULL;
+    entry->value = TRUE_VAL;
+
+    return temp;
 }
 
 
@@ -311,7 +318,7 @@ bool
 jml_hashmap_del(jml_hashmap_t *map,
     jml_obj_string_t *key)
 {
-    if (map->count == 0) return false;
+    if (map->count == 0)    return false;
 
     jml_hashmap_entry_t *entry = jml_hashmap_find_entry(
         map->entries, map->capacity, key
@@ -319,7 +326,7 @@ jml_hashmap_del(jml_hashmap_t *map,
     if (entry->key == NULL) return false;
 
     entry->key = NULL;
-    entry->value = BOOL_VAL(true);
+    entry->value = TRUE_VAL;
 
     return true;
 }
