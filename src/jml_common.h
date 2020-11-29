@@ -76,7 +76,7 @@
 
 #else
 
-#define ASSERT(condition, format, ...) do { } while (false)
+#define ASSERT(condition, format, ...)
 #define UNREACHABLE()
 
 #endif

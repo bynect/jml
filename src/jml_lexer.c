@@ -38,7 +38,7 @@ jml_lexer_peek_next(void)
 
 
 static inline char
-jml_previous_char(void)
+jml_lexer_peek_previous(void)
 {
     return lexer.current[-1];
 }
@@ -60,7 +60,7 @@ jml_lexer_newline(void)
 
 
 static bool
-jml_match(char expected)
+jml_lexer_match(char expected)
 {
     if (jml_is_eof())               return false;
     if (*lexer.current != expected) return false;
@@ -88,7 +88,7 @@ jml_token_emit_error(const char *message)
 {
     jml_token_t token;
     token.type   = TOKEN_ERROR;
-    token.start  = lexer.start;
+    token.start  = message;
     token.length = strlen(message);
     token.line   = lexer.line;
 
@@ -97,7 +97,7 @@ jml_token_emit_error(const char *message)
 
 
 static void
-jml_skip_char(void)
+jml_lexer_skip_char(void)
 {
     static bool commented = false;
 
@@ -261,13 +261,30 @@ jml_string_literal(const char delimiter)
 static jml_token_t
 jml_number_literal(void)
 {
-    while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
-
-    if ((jml_lexer_peek() == '.')
-        && jml_is_digit(jml_lexer_peek_next())) {
+    if (jml_lexer_peek_previous() == '0'
+        && jml_lexer_peek() == 'x') {
 
         jml_lexer_advance();
+        if (!jml_is_hex(jml_lexer_peek()))
+            return jml_token_emit_error("Unterminated hex literal.");
+
+        while (jml_is_hex(jml_lexer_peek())) jml_lexer_advance();
+
+        if ((jml_lexer_peek() == '.')
+            && jml_is_hex(jml_lexer_peek_next())) {
+
+            jml_lexer_advance();
+            while (jml_is_hex(jml_lexer_peek())) jml_lexer_advance();
+        }
+    } else {
         while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
+
+        if ((jml_lexer_peek() == '.')
+            && jml_is_digit(jml_lexer_peek_next())) {
+
+            jml_lexer_advance();
+            while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
+        }
     }
 
     return jml_token_emit(TOKEN_NUMBER);
@@ -277,7 +294,7 @@ jml_number_literal(void)
 jml_token_t
 jml_lexer_tokenize(void)
 {
-    jml_skip_char();
+    jml_lexer_skip_char();
 
     lexer.start =           lexer.current;
     if (jml_is_eof())       return jml_token_emit(TOKEN_EOF);
@@ -286,52 +303,52 @@ jml_lexer_tokenize(void)
     if (jml_is_digit(c))    return jml_number_literal();
 
     switch (c) {
-        case  ')':  return jml_token_emit(TOKEN_RPAREN);
-        case  '(':  return jml_token_emit(TOKEN_LPAREN);
-        case  ']':  return jml_token_emit(TOKEN_RSQARE);
-        case  '[':  return jml_token_emit(TOKEN_LSQARE);
-        case  '}':  return jml_token_emit(TOKEN_RBRACE);
-        case  '{':  return jml_token_emit(TOKEN_LBRACE);
+        case  ')':  return  jml_token_emit(TOKEN_RPAREN);
+        case  '(':  return  jml_token_emit(TOKEN_LPAREN);
+        case  ']':  return  jml_token_emit(TOKEN_RSQARE);
+        case  '[':  return  jml_token_emit(TOKEN_LSQARE);
+        case  '}':  return  jml_token_emit(TOKEN_RBRACE);
+        case  '{':  return  jml_token_emit(TOKEN_LBRACE);
 
-        case  ':':  return jml_token_emit(TOKEN_COLON);
-        case  ';':  return jml_token_emit(TOKEN_SEMI);
-        case  ',':  return jml_token_emit(TOKEN_COMMA);
-        case  '.':  return jml_token_emit(TOKEN_DOT);
+        case  ':':  return  jml_token_emit(TOKEN_COLON);
+        case  ';':  return  jml_token_emit(TOKEN_SEMI);
+        case  ',':  return  jml_token_emit(TOKEN_COMMA);
+        case  '.':  return  jml_token_emit(TOKEN_DOT);
 
-        case  '+':  return jml_token_emit(TOKEN_PLUS);
-        case  '*':  return  jml_token_emit(jml_match('*')
-                    ? TOKEN_STARSTAR : TOKEN_STAR);
+        case  '+':  return  jml_token_emit(TOKEN_PLUS);
+        case  '*':  return  jml_token_emit(jml_lexer_match('*')
+                        ? TOKEN_STARSTAR : TOKEN_STAR);
 
-        case  '/':  return jml_token_emit(TOKEN_SLASH);
-        case  '%':  return jml_token_emit(TOKEN_PERCENT);
+        case  '/':  return  jml_token_emit(TOKEN_SLASH);
+        case  '%':  return  jml_token_emit(TOKEN_PERCENT);
 
-        case  '-':  return  jml_token_emit(jml_match('>')
-                    ? TOKEN_ARROW : TOKEN_MINUS);
+        case  '-':  return  jml_token_emit(jml_lexer_match('>')
+                        ? TOKEN_ARROW : TOKEN_MINUS);
 
-        case  '=':  return  jml_token_emit(jml_match('=')
-                    ? TOKEN_EQEQUAL : TOKEN_EQUAL);
+        case  '=':  return  jml_token_emit(jml_lexer_match('=')
+                        ? TOKEN_EQEQUAL : TOKEN_EQUAL);
 
-        case  '<':  return  jml_token_emit(jml_match('=')
-                    ? TOKEN_LESSEQ : TOKEN_LESS);
+        case  '<':  return  jml_token_emit(jml_lexer_match('=')
+                        ? TOKEN_LESSEQ : TOKEN_LESS);
 
-        case  '>':  return  jml_token_emit(jml_match('=')
-                    ? TOKEN_GREATEREQ : TOKEN_GREATER);
+        case  '>':  return  jml_token_emit(jml_lexer_match('=')
+                        ? TOKEN_GREATEREQ : TOKEN_GREATER);
 
-        case  '!':  return  jml_token_emit(jml_match('=')
-                    ? TOKEN_NOTEQ : TOKEN_BANG);
+        case  '!':  return  jml_token_emit(jml_lexer_match('=')
+                        ? TOKEN_NOTEQ : TOKEN_BANG);
 
-        case '\'':  return jml_string_literal('\'');
-        case  '"':  return jml_string_literal('"');
+        case '\'':  return  jml_string_literal('\'');
+        case  '"':  return  jml_string_literal('"');
 
-        case '\n':  return jml_token_emit(TOKEN_LINE);
+        case '\n':  return  jml_token_emit(TOKEN_LINE);
 
-        case  '@':  return jml_token_emit(TOKEN_AT);
-        case  '|':  return jml_token_emit(TOKEN_PIPE);
-        case  '~':  return jml_token_emit(TOKEN_TILDE);
-        case  '&':  return jml_token_emit(TOKEN_AMP);
-        case  '^':  return jml_token_emit(TOKEN_CARET);
-        case  '?':  return jml_token_emit(TOKEN_QUEST);
-        case  '#':  return jml_token_emit(TOKEN_HASH);
+        case  '@':  return  jml_token_emit(TOKEN_AT);
+        case  '|':  return  jml_token_emit(TOKEN_PIPE);
+        case  '~':  return  jml_token_emit(TOKEN_TILDE);
+        case  '&':  return  jml_token_emit(TOKEN_AMP);
+        case  '^':  return  jml_token_emit(TOKEN_CARET);
+        case  '?':  return  jml_token_emit(TOKEN_QUEST);
+        case  '#':  return  jml_token_emit(TOKEN_HASH);
     }
     return jml_token_emit_error("Unexpected character.");
 }
