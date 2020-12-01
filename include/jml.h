@@ -9,19 +9,19 @@
 
 
 /*API*/
-typedef struct jml_obj_s            jml_obj_t;
-typedef struct jml_obj_string_s     jml_obj_string_t;
-typedef struct jml_obj_array_s      jml_obj_array_t;
-typedef struct jml_obj_map_s        jml_obj_map_t;
-typedef struct jml_obj_module_s     jml_obj_module_t;
-typedef struct jml_obj_class_s      jml_obj_class_t;
-typedef struct jml_obj_instance_s   jml_obj_instance_t;
-typedef struct jml_obj_function_s   jml_obj_function_t;
-typedef struct jml_obj_upvalue_s    jml_obj_upvalue_t;
-typedef struct jml_obj_closure_s    jml_obj_closure_t;
-typedef struct jml_obj_method_s     jml_obj_method_t;
-typedef struct jml_obj_cfunction_s  jml_obj_cfunction_t;
-typedef struct jml_obj_exception_s  jml_obj_exception_t;
+typedef struct jml_obj              jml_obj_t;
+typedef struct jml_obj_string       jml_obj_string_t;
+typedef struct jml_obj_array        jml_obj_array_t;
+typedef struct jml_obj_map          jml_obj_map_t;
+typedef struct jml_obj_module       jml_obj_module_t;
+typedef struct jml_obj_class        jml_obj_class_t;
+typedef struct jml_obj_instance     jml_obj_instance_t;
+typedef struct jml_obj_function     jml_obj_function_t;
+typedef struct jml_obj_upvalue      jml_obj_upvalue_t;
+typedef struct jml_obj_closure      jml_obj_closure_t;
+typedef struct jml_obj_method       jml_obj_method_t;
+typedef struct jml_obj_cfunction    jml_obj_cfunction_t;
+typedef struct jml_obj_exception    jml_obj_exception_t;
 
 #include <jml_value.h>
 #include <jml_type.h>
@@ -74,7 +74,7 @@ typedef enum {
 } jml_interpret_result;
 
 
-typedef struct jml_vm_s jml_vm_t;
+typedef struct jml_vm jml_vm_t;
 
 
 jml_vm_t *jml_vm_new(void);

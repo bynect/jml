@@ -1,4 +1,7 @@
 CC=gcc
+AR=ar
+RM=rm -f
+
 CFLAGS=-Wall -Wextra -Werror -std=c99 -g
 LFLAGS=-Wl,--export-dynamic
 XSHARED=-shared -fPIC -rdynamic
@@ -23,7 +26,8 @@ TARGET_BIN=bin/jml
 TARGET_LIB=lib/libjml.a
 TARGET_STD=$(STD_C:.c=.so)
 
-all: $(TARGET_BIN) $(TARGET_LIB) $(TARGET_STD)
+all:: $(TARGET_BIN) $(TARGET_LIB)
+all:: $(TARGET_STD)
 
 $(CLI_D)/%.o: $(CLI_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES)
@@ -34,25 +38,25 @@ $(SRC_D)/%.o: $(SRC_D)/%.c
 $(STD_D)/%.o: $(STD_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(XSHARED)
 
-std/%.so: std/%.o
+$(STD_D)/%.so: $(STD_D)/%.o
 	$(CC) $< -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(XSHARED)
 
 $(TARGET_BIN): $(SRC_O) $(CLI_O)
 	$(CC) $^ -o $@ $(CFLAGS) $(LFLAGS) $(DEFINES) $(INCLUDES) $(LIBS)
 
 $(TARGET_LIB): $(SRC_O)
-	ar rcs $@ $^
+	$(AR) rcs $@ $^
 
 $(TARGET_STD): $(STD_O)
 
 rmobj:
-	rm -f $(CLI_O) $(SRC_O) $(STD_O)
+	$(RM) $(CLI_O) $(SRC_O) $(STD_O)
 
 rmbin:
-	rm -f $(TARGET_BIN)
+	$(RM) $(TARGET_BIN)
 
 rmlib:
-	rm -f $(TARGET_LIB) $(TARGET_STD)
+	$(RM) $(TARGET_LIB) $(TARGET_STD)
 
 .PHONY: clean
 clean: rmobj rmbin rmlib

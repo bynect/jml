@@ -13,13 +13,14 @@ typedef struct {
 } jml_call_frame_t;
 
 
-struct jml_vm_s {
+struct jml_vm {
     jml_call_frame_t                frames[FRAMES_MAX];
     uint8_t                         frame_count;
     jml_obj_upvalue_t              *open_upvalues;
 
     jml_value_t                     stack[STACK_MAX];
     jml_value_t                    *stack_top;
+
     jml_hashmap_t                   globals;
     jml_hashmap_t                   strings;
     jml_hashmap_t                   modules;

@@ -63,8 +63,8 @@ typedef struct {
 } jml_local_t;
 
 
-typedef struct jml_compiler_s {
-    struct jml_compiler_s          *enclosing;
+typedef struct jml_compiler {
+    struct jml_compiler            *enclosing;
     jml_obj_function_t             *function;
     jml_function_type               type;
     jml_local_t                     locals[LOCAL_MAX];
@@ -77,8 +77,8 @@ typedef struct jml_compiler_s {
 } jml_compiler_t;
 
 
-typedef struct jml_class_compiler_s {
-    struct jml_class_compiler_s    *enclosing;
+typedef struct jml_class_compiler {
+    struct jml_class_compiler      *enclosing;
     jml_token_t                     name;
     bool                            w_superclass;
 } jml_class_compiler_t;
