@@ -56,7 +56,10 @@ rmbin:
 	$(RM) $(TARGET_BIN)
 
 rmlib:
-	$(RM) $(TARGET_LIB) $(TARGET_STD)
+	$(RM) $(TARGET_LIB)
+
+rmstd:
+	$(RM) $(TARGET_STD)
 
 .PHONY: clean
-clean: rmobj rmbin rmlib
+clean: rmobj rmbin rmlib rmstd

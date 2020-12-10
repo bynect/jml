@@ -1,0 +1,17 @@
+//.vscode/c_cpp_properties.json
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/include",
+                "/usr/include/python3.8"//for ext/py
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c99"
+        }
+    ],
+    "version": 4
+}

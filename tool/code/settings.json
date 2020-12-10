@@ -1,0 +1,15 @@
+//.vscode/settings.json
+{
+    "files.associations": {
+        "limits": "c",
+        "type_traits": "c",
+        "typeinfo": "c",
+        "cstdlib": "c",
+        "sstream": "c",
+        "functional": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c"
+    }
+}
