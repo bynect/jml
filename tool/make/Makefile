@@ -2,13 +2,23 @@ CC=gcc
 AR=ar
 RM=rm -f
 
-CFLAGS=-Wall -Wextra -Werror -std=c99 -g
+CFLAGS=-Wall -Wextra -Werror -g
 LFLAGS=-Wl,--export-dynamic
-XSHARED=-shared -fPIC -rdynamic
+XSHARED=-shared -fPIC
+
+ifneq (,$(filter $(strip $(CC)),g++ clang++))
+	CFLAGS+=-fpermissive
+else
+	CFLAGS+=-std=c99
+endif
 
 DEFINES=
 INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
 LIBS=-lm -ldl
+
+ifdef ($(NDEBUG))
+	DEFINES+=-DJML_NDEBUG
+endif
 
 CLI_D=cli
 SRC_D=src
@@ -27,6 +37,7 @@ TARGET_LIB=lib/libjml.a
 TARGET_STD=$(STD_C:.c=.so)
 
 all:: $(TARGET_BIN) $(TARGET_LIB)
+
 all:: $(TARGET_STD)
 
 $(CLI_D)/%.o: $(CLI_D)/%.c
@@ -39,7 +50,7 @@ $(STD_D)/%.o: $(STD_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(XSHARED)
 
 $(STD_D)/%.so: $(STD_D)/%.o
-	$(CC) $< -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(XSHARED)
+	$(CC) $< -o $@ $(XSHARED)
 
 $(TARGET_BIN): $(SRC_O) $(CLI_O)
 	$(CC) $^ -o $@ $(CFLAGS) $(LFLAGS) $(DEFINES) $(INCLUDES) $(LIBS)
