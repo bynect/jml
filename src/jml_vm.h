@@ -3,14 +3,6 @@
 
 #include <jml_value.h>
 #include <jml_type.h>
-#include <jml_bytecode.h>
-
-
-typedef struct {
-    jml_obj_closure_t              *closure;
-    uint8_t                        *pc;
-    jml_value_t                    *slots;
-} jml_call_frame_t;
 
 
 struct jml_vm {

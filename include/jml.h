@@ -16,10 +16,10 @@ typedef struct jml_obj_map          jml_obj_map_t;
 typedef struct jml_obj_module       jml_obj_module_t;
 typedef struct jml_obj_class        jml_obj_class_t;
 typedef struct jml_obj_instance     jml_obj_instance_t;
+typedef struct jml_obj_method       jml_obj_method_t;
 typedef struct jml_obj_function     jml_obj_function_t;
 typedef struct jml_obj_upvalue      jml_obj_upvalue_t;
 typedef struct jml_obj_closure      jml_obj_closure_t;
-typedef struct jml_obj_method       jml_obj_method_t;
 typedef struct jml_obj_cfunction    jml_obj_cfunction_t;
 typedef struct jml_obj_exception    jml_obj_exception_t;
 
@@ -123,21 +123,21 @@ char *jml_strcat(char *dest, char *src);
 #endif
 
 
-#if defined (_WIN64) || (defined (WIN64))
+#if defined (_WIN64) || defined (WIN64)
 
 #define JML_PLATFORM_WIN
 
 #define JML_PLATFORM_STRING         "win64"
 #define JML_PLATFORM                7
 
-#elif defined (_WIN32) || (defined (WIN32))
+#elif defined (_WIN32) || defined (WIN32)
 
 #define JML_PLATFORM_WIN
 
 #define JML_PLATFORM_STRING         "win32"
 #define JML_PLATFORM                6
 
-#elif defined (__APPLE__) && (defined (TARGET_OS_MAC) || defined (__MACH__))
+#elif defined (__APPLE__) && defined (TARGET_OS_MAC) || defined (__MACH__)
 
 #define JML_PLATFORM_MAC
 #define JML_PLATFORM_NIX
@@ -145,7 +145,7 @@ char *jml_strcat(char *dest, char *src);
 #define JML_PLATFORM_STRING         "macos"
 #define JML_PLATFORM                5
 
-#elif defined (__linux__) || (defined (__linux))
+#elif defined (__linux__) || defined (__linux)
 
 #define JML_PLATFORM_NIX
 

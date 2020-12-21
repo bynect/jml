@@ -105,6 +105,13 @@ struct jml_obj_instance {
 };
 
 
+struct jml_obj_method {
+    jml_obj_t                       obj;
+    jml_value_t                     receiver;
+    jml_obj_closure_t              *method;
+};
+
+
 struct jml_obj_function {
     jml_obj_t                       obj;
     int                             arity;
@@ -116,14 +123,6 @@ struct jml_obj_function {
 };
 
 
-struct jml_obj_upvalue {
-    jml_obj_t                       obj;
-    jml_value_t                    *location;
-    jml_value_t                     closed;
-    struct jml_obj_upvalue         *next;
-};
-
-
 struct jml_obj_closure {
     jml_obj_t                       obj;
     jml_obj_function_t             *function;
@@ -132,10 +131,11 @@ struct jml_obj_closure {
 };
 
 
-struct jml_obj_method {
+struct jml_obj_upvalue {
     jml_obj_t                       obj;
-    jml_value_t                     receiver;
-    jml_obj_closure_t              *method;
+    jml_value_t                    *location;
+    jml_value_t                     closed;
+    struct jml_obj_upvalue         *next;
 };
 
 

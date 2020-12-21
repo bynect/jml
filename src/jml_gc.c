@@ -7,6 +7,7 @@
 #include <jml_module.h>
 #include <jml_compiler.h>
 
+
 #if defined (JML_TRACE_GC) || (defined (JML_ROUND_GC))
 
 #include <stdio.h>
@@ -159,8 +160,9 @@ jml_gc_mark_roots(void)
     jml_gc_mark_obj((jml_obj_t*)vm->module_string);
     jml_gc_mark_obj((jml_obj_t*)vm->path_string);
 
-    jml_gc_mark_obj((jml_obj_t*)vm->sentinel);
     jml_gc_mark_obj((jml_obj_t*)vm->external);
+
+    jml_gc_mark_obj(vm->sentinel);
 }
 
 
@@ -207,7 +209,7 @@ jml_gc_mark_array(jml_value_array_t *array)
 
 
 static void
-jml_free_object(jml_obj_t *object)
+jml_gc_free_object(jml_obj_t *object)
 {
 #ifdef JML_TRACE_MEM
     printf(
@@ -317,7 +319,7 @@ jml_gc_free_objs(void)
         jml_obj_t *next     = object->next;
 
         if (object != vm->sentinel)
-            jml_free_object(object);
+            jml_gc_free_object(object);
 
         object              = next;
     }
@@ -347,7 +349,7 @@ jml_gc_sweep(void)
             else
                 vm->objects      = object;
 
-            jml_free_object(unreached);
+            jml_gc_free_object(unreached);
         }
     }
 }

@@ -24,7 +24,7 @@
 #define FREE_ARRAY(type, ptr, old_count)                \
     jml_reallocate(ptr, sizeof(type) * (old_count), 0UL)
 
-#define REALLOC(ptr, size, dest_size)             \
+#define REALLOC(ptr, size, dest_size)                   \
     if (size <= dest_size) {                            \
         do {                                            \
             size *= GC_HEAP_GROW_FACTOR;                \

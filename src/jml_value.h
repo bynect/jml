@@ -99,6 +99,13 @@ typedef struct {
 #endif
 
 
+typedef struct {
+    jml_obj_closure_t              *closure;
+    uint8_t                        *pc;
+    jml_value_t                    *slots;
+} jml_call_frame_t;
+
+
 void jml_value_print(jml_value_t value);
 
 char *jml_value_stringify(jml_value_t value);
