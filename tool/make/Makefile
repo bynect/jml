@@ -3,7 +3,7 @@ AR=ar
 RM=rm -f
 
 CFLAGS=-Wall -Wextra -Werror -g
-LFLAGS=-Wl,--export-dynamic
+LFLAGS=-rdynamic
 XSHARED=-shared -fPIC
 
 ifneq (,$(filter $(strip $(CC)),g++ clang++))

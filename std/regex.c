@@ -35,7 +35,7 @@ static char                        *last_string;
         }                                               \
     } while (false)
 
-#define REGEX_ERR()                                     \
+#define REGEX_ERR(exc)                                  \
     do {                                                \
         regerr: {                                       \
             size_t size = 2048;                         \
@@ -71,7 +71,7 @@ jml_std_regex_match(int arg_count, jml_value_t *args)
     else if (result == REG_NOMATCH) return FALSE_VAL;
     else                            goto regerr;
 
-    REGEX_ERR();
+    REGEX_ERR(exc);
 }
 
 
@@ -136,7 +136,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
     jml_gc_exempt_pop();
     return OBJ_VAL(array);
 
-    REGEX_ERR();
+    REGEX_ERR(exc);
 }
 
 
