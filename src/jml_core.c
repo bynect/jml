@@ -139,7 +139,10 @@ static jml_value_t
 jml_core_print(int arg_count, jml_value_t *args)
 {
     for (int i = 0; i < arg_count; ++i) {
-        jml_value_print(args[i]);
+        if (IS_STRING(args[i]))
+            printf("%s", AS_CSTRING(args[i]));
+        else
+            jml_value_print(args[i]);
         printf("\n");
     }
 

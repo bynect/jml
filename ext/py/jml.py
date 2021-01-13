@@ -35,7 +35,7 @@ def jml_setup():
                     "-Werror",
                     "-Wno-unused-parameter",
                     "-std=c99",
-                    "-Wl,--export-dynamic"
+                    "-rdynamic"
                 ],
                 sources = [
                     "ext/py/jml_py.c",

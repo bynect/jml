@@ -7,7 +7,7 @@
 
 
 #define LOCAL_MAX                   (UINT8_MAX + 1)
-#define FRAMES_MAX                  64
+#define FRAMES_MAX                  128
 #define STACK_MAX                   (FRAMES_MAX * LOCAL_MAX)
 #define MAP_LOAD_MAX                0.75
 #define EXEMPT_MAX                  32
@@ -15,6 +15,7 @@
 #define JML_BACKTRACE
 #define JML_RECURSIVE_SEARCH
 #undef  JML_LAZY_IMPORT
+#define JML_EVAL
 
 
 #ifdef JML_NDEBUG

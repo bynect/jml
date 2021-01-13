@@ -83,6 +83,8 @@ void jml_vm_free(jml_vm_t *vm_ptr);
 
 jml_interpret_result jml_vm_interpret(const char *source);
 
+jml_value_t jml_vm_eval(const char *source);
+
 
 jml_value_t jml_string_intern(const char *string);
 

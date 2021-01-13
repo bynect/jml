@@ -73,7 +73,16 @@ jml_cli_repl(void)
         if (strcmp(line, "\n") == 0)
             continue;
 
-        jml_vm_interpret(line);
+#ifdef JML_EVAL
+        jml_value_t result = jml_vm_eval(line);
+
+        if (!jml_obj_is_sentinel(result) && !IS_NONE(result)) {
+            jml_value_print(result);
+            printf("\n");
+        }
+#else
+    jml_vm_interpret(line);
+#endif
     }
 }
 

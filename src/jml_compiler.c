@@ -230,11 +230,10 @@ jml_bytecode_patch_jump(int offset)
 static void
 jml_bytecode_emit_return(void)
 {
-    if (current->type == FUNCTION_INITIALIZER) {
+    if (current->type == FUNCTION_INITIALIZER)
         jml_bytecode_emit_bytes(OP_GET_LOCAL, 0);
-    } else {
+    else
         jml_bytecode_emit_byte(OP_NONE);
-    }
 
     jml_bytecode_emit_byte(OP_RETURN);
 }
@@ -1161,10 +1160,9 @@ jml_return_statement(void)
         jml_parser_error("Can't return from top-level code.");
     }
 
-    if (jml_parser_match_line()) {
+    if (jml_parser_match_line())
         jml_bytecode_emit_return();
-
-    } else {
+    else {
         if (current->type == FUNCTION_INITIALIZER)
             jml_parser_error("Can't return a value from an initializer.");
 
@@ -1179,7 +1177,7 @@ static void
 jml_import_statement(void)
 {
     jml_parser_consume(TOKEN_NAME, "Expect identifier after 'import'.");
-    uint8_t name        = jml_identifier_const(&parser.previous);
+    uint8_t name = jml_identifier_const(&parser.previous);
 
     jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, name);
 

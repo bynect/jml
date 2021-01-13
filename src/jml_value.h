@@ -37,7 +37,7 @@ jml_num_to_val(double num)
 
 
 #define AS_BOOL(value)              ((value) == TRUE_VAL)
-#define AS_NUM(value)            jml_value_to_num(value)
+#define AS_NUM(value)               jml_value_to_num(value)
 #define AS_OBJ(value)                                   \
     ((jml_obj_t*)(uintptr_t)((value) & ~(SIGN_BIT | QNAN)))
 

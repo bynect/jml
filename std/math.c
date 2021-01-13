@@ -5,6 +5,9 @@
 #include <jml.h>
 
 
+#define MATH_NAME(func)             jml_std_math_ ## func
+
+
 #define MATH_CHECK(arg_count, args, arg_num, ...)       \
     do {                                                \
         exc = jml_core_exception_args(                  \
@@ -25,9 +28,6 @@
         err:                                            \
             return OBJ_VAL(exc);                        \
     } while (false)
-
-
-#define MATH_NAME(func)             jml_std_math_ ## func
 
 
 #define MATH_FUNC1(func)                                \
@@ -126,6 +126,13 @@ MATH_FUNC1(tan)
 MATH_FUNC1(tanh)
 MATH_FUNC1(tgamma)
 MATH_FUNC1(trunc)
+
+
+#undef MATH_CHECK
+#undef MATH_ERR
+#undef MATH_FUNC1
+#undef MATH_FUNC2
+#undef MATH_FUNC3
 
 
 /*module table*/

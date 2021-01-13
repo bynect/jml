@@ -39,9 +39,9 @@ jml_vm_error(const char *format, ...)
     va_end(args);
 
 #ifdef JML_BACKTRACE
-    for (int i = 0; i < vm->frame_count; i++) {
+    for (int i = 0; i < vm->frame_count; ++i) {
 #else
-    for (int i = vm->frame_count - 1; i >= 0; i--) {
+    for (int i = vm->frame_count - 1; i >= 0; --i) {
 #endif
         jml_call_frame_t    *frame    = &vm->frames[i];
         jml_obj_function_t  *function = frame->closure->function;
@@ -178,14 +178,14 @@ void
 jml_vm_push(jml_value_t value)
 {
     *vm->stack_top = value;
-    vm->stack_top++;
+    ++vm->stack_top;
 }
 
 
 jml_value_t
 jml_vm_pop(void)
 {
-    vm->stack_top--;
+    --vm->stack_top;
     return *vm->stack_top;
 }
 
@@ -541,7 +541,7 @@ jml_array_copy(jml_obj_array_t *array)
 {
     jml_vm_push(OBJ_VAL(jml_obj_array_new()));
 
-    for (int i = 0; i < array->values.count; i++) {
+    for (int i = 0; i < array->values.count; ++i) {
         jml_obj_array_add(AS_ARRAY(jml_vm_peek(0)),
             array->values.values[i]);
     }
@@ -659,7 +659,7 @@ jml_vm_module_bind(jml_obj_module_t *module,
 
 
 static jml_interpret_result
-jml_vm_run(void)
+jml_vm_run(jml_value_t *last)
 {
     jml_call_frame_t *frame = &vm->frames[vm->frame_count - 1];
     register uint8_t *pc = frame->pc;
@@ -803,7 +803,7 @@ jml_vm_run(void)
     trace_stack: {
 #endif
         printf("          ");
-        for (jml_value_t *slot = vm->stack; slot < vm->stack_top; slot++) {
+        for (jml_value_t *slot = vm->stack; slot < vm->stack_top; ++slot) {
             printf("[ ");
             jml_value_print(*slot);
             printf(" ]");
@@ -824,7 +824,13 @@ jml_vm_run(void)
 #endif
 
             EXEC_OP(OP_POP) {
-                jml_vm_pop();
+#ifdef JML_EVAL
+                if (vm->frame_count - 1 == 0) {
+                    if (last != NULL)
+                        *last = jml_vm_pop();
+                } else
+#endif
+                    jml_vm_pop();
                 END_OP();
             }
 
@@ -1054,7 +1060,7 @@ jml_vm_run(void)
                 jml_obj_closure_t *closure = jml_obj_closure_new(function);
                 jml_vm_push(OBJ_VAL(closure));
 
-                for (int i = 0; i < closure->upvalue_count; i++) {
+                for (int i = 0; i < closure->upvalue_count; ++i) {
                     uint8_t local = READ_BYTE();
                     uint8_t index = READ_BYTE();
                     if (local)
@@ -1068,7 +1074,7 @@ jml_vm_run(void)
             EXEC_OP(OP_RETURN) {
                 jml_value_t result = jml_vm_pop();
                 jml_vm_upvalue_close(frame->slots);
-                vm->frame_count--;
+                --vm->frame_count;
 
                 if (vm->frame_count == 0) {
                     jml_vm_pop();
@@ -1388,7 +1394,7 @@ jml_vm_run(void)
 
                 jml_vm_push(OBJ_VAL(jml_obj_array_new()));
 
-                for (int i = 0; i < item_count; i++) {
+                for (int i = 0; i < item_count; ++i) {
                     jml_obj_array_add(AS_ARRAY(jml_vm_peek(0)), values[i]);
                 }
                 END_OP();
@@ -1472,11 +1478,35 @@ jml_string_intern(const char *string)
 }
 
 
+#ifndef NAN
+#define NAN                         -(0.f/0.f)
+#endif
+
+#ifndef INFINITY
+#define INFINITY                    HUGE_VAL
+#endif
+
+
+#define JML_INF_NAN()                                   \
+    jml_vm_push(jml_string_intern("nan"));              \
+    jml_vm_push(jml_string_intern("inf"));              \
+                                                        \
+    jml_hashmap_set(&vm->globals,                       \
+        AS_STRING(jml_vm_peek(1)), NUM_VAL(NAN));       \
+                                                        \
+    jml_hashmap_set(&vm->globals,                       \
+        AS_STRING(jml_vm_peek(0)), NUM_VAL(INFINITY));  \
+                                                        \
+    jml_vm_pop_two()
+
+
 jml_interpret_result
 jml_vm_interpret(const char *source)
 {
     jml_obj_function_t *function = jml_compiler_compile(source, NULL);
-    if (function == NULL) return INTERPRET_COMPILE_ERROR;
+
+    if (function == NULL)
+        return INTERPRET_COMPILE_ERROR;
 
     jml_vm_push(OBJ_VAL(function));
     jml_obj_closure_t *closure = jml_obj_closure_new(function);
@@ -1490,24 +1520,46 @@ jml_vm_interpret(const char *source)
     jml_hashmap_set(&vm->globals,
         vm->path_string, NONE_VAL);
 
-#ifndef NAN
-#define NAN                         -(0.f/0.f)
-#endif
-
-#ifndef INFINITY
-#define INFINITY                    HUGE_VAL
-#endif
-    jml_vm_push(jml_string_intern("nan"));
-    jml_vm_push(jml_string_intern("inf"));
-
-    jml_hashmap_set(&vm->globals,
-        AS_STRING(jml_vm_peek(1)), NUM_VAL(NAN));
-
-    jml_hashmap_set(&vm->globals,
-        AS_STRING(jml_vm_peek(0)), NUM_VAL(INFINITY));
-
-    jml_vm_pop_two();
+    JML_INF_NAN();
 
     jml_vm_call_value(OBJ_VAL(closure), 0);
-    return jml_vm_run();
+    return jml_vm_run(NULL);
+}
+
+
+jml_value_t jml_vm_eval(const char *source)
+{
+#ifdef JML_EVAL
+    jml_obj_function_t *function = jml_compiler_compile(source, NULL);
+    
+    if (function == NULL)
+        goto err;
+
+    jml_vm_push(OBJ_VAL(function));
+    jml_obj_closure_t *closure = jml_obj_closure_new(function);
+
+    jml_vm_pop();
+    jml_vm_push(OBJ_VAL(closure));
+
+    jml_hashmap_set(&vm->globals,
+        vm->module_string, OBJ_VAL(vm->main_string));
+
+    jml_hashmap_set(&vm->globals,
+        vm->path_string, NONE_VAL);
+
+    JML_INF_NAN();
+
+    jml_vm_call_value(OBJ_VAL(closure), 0);
+
+    jml_value_t result = NONE_VAL;
+    if (jml_vm_run(&result) != INTERPRET_OK)
+        goto err;
+
+    return result;
+#else
+    goto err;
+#endif
+
+err:
+    return OBJ_VAL(vm->sentinel);
 }

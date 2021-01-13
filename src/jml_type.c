@@ -347,7 +347,7 @@ jml_obj_print(jml_value_t value)
 {
     switch (OBJ_TYPE(value)) {
         case OBJ_STRING:
-            printf("%s", AS_CSTRING(value));
+            printf("\"%s\"", AS_CSTRING(value));
             break;
 
         case OBJ_ARRAY: {
