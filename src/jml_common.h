@@ -23,6 +23,7 @@
 #define JML_NAN_TAGGING
 #undef  JML_DISASSEMBLE
 #undef  JML_TRACE_STACK
+#undef  JML_STEP_STACK
 #undef  JML_STRESS_GC
 #undef  JML_TRACE_GC
 #undef  JML_ROUND_GC
@@ -34,7 +35,8 @@
 
 #define JML_NAN_TAGGING
 #define JML_DISASSEMBLE
-#undef  JML_TRACE_STACK
+#define JML_TRACE_STACK
+#undef  JML_STEP_STACK
 #undef  JML_STRESS_GC
 #undef  JML_TRACE_GC
 #define JML_ROUND_GC

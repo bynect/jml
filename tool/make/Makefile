@@ -4,7 +4,7 @@ RM=rm -f
 
 CFLAGS=-Wall -Wextra -Werror -g
 LFLAGS=-rdynamic
-XSHARED=-shared -fPIC
+XSHARED=-shared -fpic
 
 ifneq (,$(filter $(strip $(CC)),g++ clang++))
 	CFLAGS+=-fpermissive

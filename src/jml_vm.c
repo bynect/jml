@@ -265,9 +265,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                     vm->init_string, &initializer)) {
 
                     if (IS_CFUNCTION(initializer)) {
-                        jml_vm_push(instance);
                         bool retval = jml_vm_call_value(initializer, arg_count + 1);
-                        jml_vm_pop();
                         jml_vm_push(instance);
                         return retval;
 
@@ -396,7 +394,7 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
         if (jml_hashmap_get(&module->globals, name, &value))
             return jml_vm_call_value(value, arg_count);
- 
+
 #ifndef JML_LAZY_IMPORT
         else {
             jml_vm_error("Undefined property '%s'.", name->chars);
@@ -421,7 +419,7 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 #endif
     }
 
-    jml_vm_error("Can't call %s", name->chars);
+    jml_vm_error("Can't call '%s'.", name->chars);
     return false;
 }
 
@@ -810,8 +808,10 @@ jml_vm_run(jml_value_t *last)
         }
         printf("\n");
 
+#ifdef JML_STEP_STACK
         jml_bytecode_instruction_disassemble(&frame->closure->function->bytecode,
-        (int)(frame->pc - frame->closure->function->bytecode.code));
+            (int)(frame->pc - frame->closure->function->bytecode.code));
+#endif
 
 #ifdef JML_COMPUTED_GOTO
         DISPATCH();
@@ -828,9 +828,10 @@ jml_vm_run(jml_value_t *last)
                 if (vm->frame_count - 1 == 0) {
                     if (last != NULL)
                         *last = jml_vm_pop();
-                } else
+                    END_OP();
+                }
 #endif
-                    jml_vm_pop();
+                jml_vm_pop();
                 END_OP();
             }
 
