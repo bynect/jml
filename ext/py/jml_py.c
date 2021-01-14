@@ -7,21 +7,13 @@
 static PyObject *
 jml_py_version(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    return Py_BuildValue("s", JML_VERSION_STRING);
-}
-
-
-static PyObject *
-jml_py_platform(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    return Py_BuildValue("s", JML_PLATFORM_STRING);
+    return Py_BuildValue("iii", JML_VERSION_MAJOR, JML_VERSION_MINOR, JML_VERSION_MICRO);
 }
 
 
 static PyMethodDef jml_py_methods[] = {
-    {"version",     (PyCFunction)jml_py_version,    METH_NOARGS,    "Returns the version of the jml interpreter."},
-    {"platform",    (PyCFunction)jml_py_platform,   METH_NOARGS,    "Returns the platform detected by jml."},
-    {NULL,          NULL,                           0,              NULL}
+    {"version", &jml_py_version,    METH_NOARGS,    "Returns a jml version tuple containing major, minor and micro."},
+    {NULL,      NULL,               0,              NULL}
 };
 
 
@@ -64,24 +56,51 @@ jml_py_vm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 
 static PyObject *
+jml_py_vm_eval(PyObject *self, PyObject *args)
+{
+    char *source = NULL;
+
+    if(!PyArg_ParseTuple(args, "s", &source))
+        return NULL;
+
+    jml_value_t value = jml_vm_eval(source);
+
+    if (!jml_obj_is_sentinel(value)) {
+        if (IS_NUM(value))
+            return PyFloat_FromDouble(AS_NUM(value));
+
+        if (IS_BOOL(value))
+            return AS_BOOL(value) ? Py_True : Py_False;
+
+        if (IS_OBJ(value)) {
+            char *repr = jml_value_stringify(value);
+            return _PyUnicode_FromASCII(repr, strlen(repr));
+        }
+
+        return Py_None;
+    }
+
+    PyErr_SetString(PyExc_Exception, "evaluation failed.");
+    return NULL;
+}
+
+
+static PyObject *
 jml_py_vm_interpret(PyObject *self, PyObject *args)
 {
     char *source = NULL;
 
-    if(!PyArg_ParseTuple(args, "s", &source)) {
+    if(!PyArg_ParseTuple(args, "s", &source))
         return NULL;
-    }
 
-    if (jml_vm_interpret(source) == INTERPRET_OK)
-        return Py_True;
-
-    return Py_False;
+    return PyLong_FromLong(jml_vm_interpret(source));
 }
 
 
 static PyMethodDef jml_py_vm_methods[] = {
-    {"interpret",   jml_py_vm_interpret, METH_VARARGS,  "Interprets the given source code.\n"
-                                                        "Returns True if successful, otherwise False."},
+    {"eval",        &jml_py_vm_eval,        METH_VARARGS,   "Evaluates the given source code."},
+    {"interpret",   &jml_py_vm_interpret,   METH_VARARGS,   "Interprets the given source code.\n"
+                                                            "Returns True if successful, otherwise False."},
     {NULL}
 };
 
@@ -124,6 +143,13 @@ PyInit_jml(void)
         Py_DECREF(module);
         return NULL;
     }
+
+    PyModule_AddStringConstant(module, "VERSION",       JML_VERSION_STRING);
+    PyModule_AddStringConstant(module, "PLATFORM",      JML_PLATFORM_STRING);
+
+    PyModule_AddIntConstant(module, "COMPILE_ERROR",    INTERPRET_COMPILE_ERROR);
+    PyModule_AddIntConstant(module, "RUNTIME_ERROR",    INTERPRET_RUNTIME_ERROR);
+    PyModule_AddIntConstant(module, "VM_OK",            INTERPRET_OK);
 
     return module;
 }
