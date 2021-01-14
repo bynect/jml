@@ -1,3 +1,13 @@
+#ifdef __GNUC__
+
+#define _XOPEN_SOURCE               500
+
+#elif defined _MSC_VER
+
+#define _USE_MATH_DEFINES
+
+#endif
+
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -188,3 +198,30 @@ MODULE_TABLE_HEAD module_table[] = {
     MATH_ENTRY(trunc),
     {NULL,                          NULL}
 };
+
+
+MODULE_FUNC_HEAD
+module_init(jml_obj_module_t *module)
+{
+#if defined __GNUC__ || defined _MSC_VER
+
+    jml_module_add_value(module, "e",       NUM_VAL(M_E));
+    jml_module_add_value(module, "log2e",   NUM_VAL(M_LOG2E));
+    jml_module_add_value(module, "log10e",  NUM_VAL(M_LOG10E));
+    jml_module_add_value(module, "ln2",     NUM_VAL(M_LN2));
+    jml_module_add_value(module, "ln10",    NUM_VAL(M_LN10));
+    jml_module_add_value(module, "pi",      NUM_VAL(M_PI));
+#endif
+
+#ifndef NAN
+#define NAN                         -(0.f/0.f)
+#endif
+    jml_module_add_value(module, "nan",     NUM_VAL(NAN));
+
+#ifndef INFINITY
+#define INFINITY                    HUGE_VAL
+#endif
+    jml_module_add_value(module, "inf",     NUM_VAL(INFINITY));
+
+    jml_module_add_value(module, "max",     NUM_VAL(MAXFLOAT));
+}

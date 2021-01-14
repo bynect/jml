@@ -1479,28 +1479,6 @@ jml_string_intern(const char *string)
 }
 
 
-#ifndef NAN
-#define NAN                         -(0.f/0.f)
-#endif
-
-#ifndef INFINITY
-#define INFINITY                    HUGE_VAL
-#endif
-
-
-#define JML_INF_NAN()                                   \
-    jml_vm_push(jml_string_intern("nan"));              \
-    jml_vm_push(jml_string_intern("inf"));              \
-                                                        \
-    jml_hashmap_set(&vm->globals,                       \
-        AS_STRING(jml_vm_peek(1)), NUM_VAL(NAN));       \
-                                                        \
-    jml_hashmap_set(&vm->globals,                       \
-        AS_STRING(jml_vm_peek(0)), NUM_VAL(INFINITY));  \
-                                                        \
-    jml_vm_pop_two()
-
-
 jml_interpret_result
 jml_vm_interpret(const char *source)
 {
@@ -1520,8 +1498,6 @@ jml_vm_interpret(const char *source)
 
     jml_hashmap_set(&vm->globals,
         vm->path_string, NONE_VAL);
-
-    JML_INF_NAN();
 
     jml_vm_call_value(OBJ_VAL(closure), 0);
     return jml_vm_run(NULL);
@@ -1547,8 +1523,6 @@ jml_value_t jml_vm_eval(const char *source)
 
     jml_hashmap_set(&vm->globals,
         vm->path_string, NONE_VAL);
-
-    JML_INF_NAN();
 
     jml_vm_call_value(OBJ_VAL(closure), 0);
 
