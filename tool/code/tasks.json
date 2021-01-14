@@ -21,7 +21,7 @@
                 "${workspaceFolder}/cli/*.c",
                 "-lm",
                 "-ldl",
-                "-Wl,--export-dynamic"
+                "-rdynamic"
             ],
             "problemMatcher": [
                 "$gcc"

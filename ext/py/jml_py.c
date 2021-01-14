@@ -4,6 +4,11 @@
 #include <jml.h>
 
 
+static PyObject *jml_py_error_compile;
+
+static PyObject *jml_py_error_runtime;
+
+
 static PyObject *
 jml_py_version(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -80,7 +85,7 @@ jml_py_vm_eval(PyObject *self, PyObject *args)
         return Py_None;
     }
 
-    PyErr_SetString(PyExc_Exception, "evaluation failed.");
+    PyErr_SetString(PyExc_Exception, "Source evaluation failed.");
     return NULL;
 }
 
@@ -88,19 +93,33 @@ jml_py_vm_eval(PyObject *self, PyObject *args)
 static PyObject *
 jml_py_vm_interpret(PyObject *self, PyObject *args)
 {
-    char *source = NULL;
+    char *source;
 
     if(!PyArg_ParseTuple(args, "s", &source))
         return NULL;
 
-    return PyLong_FromLong(jml_vm_interpret(source));
+    switch (jml_vm_interpret(source)) {
+        case INTERPRET_OK:
+            return Py_None;
+
+        case INTERPRET_COMPILE_ERROR:
+            PyErr_SetString(jml_py_error_compile, "Source compilation failed.");
+            break;
+
+        case INTERPRET_RUNTIME_ERROR:
+            PyErr_SetString(jml_py_error_runtime, "Source execution failed.");
+            break;
+    }
+
+    return NULL;
 }
 
 
 static PyMethodDef jml_py_vm_methods[] = {
     {"eval",        &jml_py_vm_eval,        METH_VARARGS,   "Evaluates the given source code."},
     {"interpret",   &jml_py_vm_interpret,   METH_VARARGS,   "Interprets the given source code.\n"
-                                                            "Returns True if successful, otherwise False."},
+                                                            "Raises CompileError if compilation fails or RuntimeError if interpretetion fails.\n"
+                                                            "Returns None on succes."},
     {NULL}
 };
 
@@ -133,23 +152,39 @@ PyInit_jml(void)
     if (PyType_Ready(&jml_py_vm_t) < 0)
         return NULL;
 
-    PyObject *module = PyModule_Create(&jml_py_module);
-    if (module == NULL) return NULL;
+    PyObject *mod = PyModule_Create(&jml_py_module);
+    if (mod == NULL) return NULL;
 
     Py_INCREF(&jml_py_vm_t);
 
-    if (PyModule_AddObject(module, "VM", (PyObject*)&jml_py_vm_t) < 0) {
+    if (PyModule_AddObject(mod, "VM", (PyObject*)&jml_py_vm_t) < 0) {
         Py_DECREF(&jml_py_vm_t);
-        Py_DECREF(module);
+        Py_DECREF(mod);
         return NULL;
     }
 
-    PyModule_AddStringConstant(module, "VERSION",       JML_VERSION_STRING);
-    PyModule_AddStringConstant(module, "PLATFORM",      JML_PLATFORM_STRING);
+    jml_py_error_compile = PyErr_NewException("jml.CompileError", NULL, NULL);
+    Py_XINCREF(jml_py_error_compile);
 
-    PyModule_AddIntConstant(module, "COMPILE_ERROR",    INTERPRET_COMPILE_ERROR);
-    PyModule_AddIntConstant(module, "RUNTIME_ERROR",    INTERPRET_RUNTIME_ERROR);
-    PyModule_AddIntConstant(module, "VM_OK",            INTERPRET_OK);
+    if (PyModule_AddObject(mod, "error", jml_py_error_compile) < 0) {
+        Py_XDECREF(jml_py_error_compile);
+        Py_CLEAR(jml_py_error_compile);
+        Py_DECREF(mod);
+        return NULL;
+    }
 
-    return module;
+    jml_py_error_runtime = PyErr_NewException("jml.RuntimeError", NULL, NULL);
+    Py_XINCREF(jml_py_error_runtime);
+
+    if (PyModule_AddObject(mod, "error", jml_py_error_runtime) < 0) {
+        Py_XDECREF(jml_py_error_runtime);
+        Py_CLEAR(jml_py_error_runtime);
+        Py_DECREF(mod);
+        return NULL;
+    }
+
+    PyModule_AddStringConstant(mod, "VERSION",  JML_VERSION_STRING);
+    PyModule_AddStringConstant(mod, "PLATFORM", JML_PLATFORM_STRING);
+
+    return mod;
 }

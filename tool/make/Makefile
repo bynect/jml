@@ -16,7 +16,7 @@ DEFINES=
 INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
 LIBS=-lm -ldl
 
-ifneq ($(NDEBUG),)
+ifdef NDEBUG
 	DEFINES+=-DJML_NDEBUG
 	CFLAGS+=-O2 -Wno-unused-result
 else
