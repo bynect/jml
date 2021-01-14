@@ -73,18 +73,12 @@ jml_parser_error_at(jml_token_t *token,
 }
 
 
-static void
-jml_parser_error(const char *message)
-{
-    jml_parser_error_at(&parser.previous, message);
-}
+#define jml_parser_error(message)                       \
+    jml_parser_error_at(&parser.previous, message)
 
 
-static void
-jml_parser_error_current(const char *message)
-{
-    jml_parser_error_at(&parser.current, message);
-}
+#define jml_parser_error_current(message)               \
+    jml_parser_error_at(&parser.current, message)
 
 
 static void

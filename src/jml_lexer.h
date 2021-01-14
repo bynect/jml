@@ -94,6 +94,7 @@ typedef struct {
     const char                     *start;
     const char                     *current;
     int                             line;
+    bool                            eof;
 } jml_lexer_t;
 
 

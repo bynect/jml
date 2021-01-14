@@ -12,6 +12,7 @@ jml_lexer_init(const char *source) {
     lexer.start     = source;
     lexer.current   = source;
     lexer.line      = 1;
+    lexer.eof       = false;
 }
 
 
@@ -294,11 +295,17 @@ jml_number_literal(void)
 jml_token_t
 jml_lexer_tokenize(void)
 {
-    jml_lexer_skip_char();
+    if (lexer.eof)          return jml_token_emit(TOKEN_EOF);
 
-    lexer.start =           lexer.current;
-    if (jml_is_eof())       return jml_token_emit(TOKEN_EOF);
-    char c      =           jml_lexer_advance();
+    jml_lexer_skip_char();
+    lexer.start     =       lexer.current;
+
+    if (jml_is_eof()) {
+        lexer.eof   =       true;
+        return jml_token_emit(TOKEN_LINE);
+    }
+
+    char c          =       jml_lexer_advance();
     if (jml_is_alpha(c))    return jml_identifier_literal();
     if (jml_is_digit(c))    return jml_number_literal();
 
