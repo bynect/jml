@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <jml.h>
 
@@ -10,7 +11,6 @@
 
 #if defined (JML_TRACE_GC) || (defined (JML_ROUND_GC))
 
-#include <stdio.h>
 #include <time.h>
 
 #endif
@@ -94,7 +94,7 @@ jml_free(void *ptr)
 {
     if (ptr == NULL)
         return;
-    
+
     jml_realloc(ptr, 0UL);
 }
 
@@ -111,7 +111,7 @@ jml_value_t
 jml_gc_exempt_pop(void)
 {
     vm->exempt--;
-    return *vm->exempt; 
+    return *vm->exempt;
 }
 
 

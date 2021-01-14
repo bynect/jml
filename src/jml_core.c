@@ -249,7 +249,7 @@ jml_core_string_fmt(int arg_count, jml_value_t *args)
     }
 
     int length = strlen(string) - 1;
-    
+
     jml_obj_string_t *formatted = jml_obj_string_copy(
         string, length);
 

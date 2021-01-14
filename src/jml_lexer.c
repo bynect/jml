@@ -233,7 +233,7 @@ jml_identifier_literal(void)
 {
     while (jml_is_alpha(jml_lexer_peek())
         || jml_is_digit(jml_lexer_peek()))
-        
+
         jml_lexer_advance();
 
     return jml_token_emit(jml_identifier_check());

@@ -102,18 +102,22 @@ jml_file_find(const char *filename, char *result)
             continue;
 
         if (dir->d_type == IS_DIR) {
+            if (chdir(dir->d_name) != 0)
+                break;
 
-            chdir( dir->d_name );
-            jml_file_find( filename, result );
-            chdir( ".." );
+            jml_file_find(filename, result);
+
+            if (chdir("..") != 0)
+                break;
+
         } else if (strcmp(dir->d_name, filename) == 0) {
-
             getcwd(result, JML_PATH_MAX);
             int length = strlen(result);
             snprintf(result + length, JML_PATH_MAX - length, "/%s", dir->d_name);
             break;
         }
     }
+
     closedir(dp);
     return (*result != 0);
 
@@ -125,14 +129,23 @@ bool
 jml_file_find_in(const char *path,
     const char *filename, char *result)
 {
+    bool res;
     char *tmp = getcwd(NULL, 0);
-    chdir(path);
-    
-    bool res = jml_file_find(filename, result);
 
-    chdir(tmp);
+    if (chdir(path) != 0) {
+        res = false;
+        goto done;
+    }
+
+    res = jml_file_find(filename, result);
+
+    if (chdir(tmp) != 0){
+        res = false;
+        goto done;
+    }
+
+done:
     jml_free(tmp);
-
     return res;
 }
 

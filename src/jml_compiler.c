@@ -1102,7 +1102,7 @@ jml_class_declaration(void)
 
     while (!jml_parser_check(TOKEN_RBRACE)
         && !jml_parser_check(TOKEN_EOF)) {
-        
+
         jml_parser_match_line();
         jml_method();
     }
@@ -1138,7 +1138,7 @@ jml_let_declaration(void)
         jml_expression();
     else
         jml_bytecode_emit_byte(OP_NONE);
-    
+
     jml_parser_newline();
     jml_variable_definition(global);
 }

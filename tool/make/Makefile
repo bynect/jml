@@ -2,7 +2,7 @@ CC=gcc
 AR=ar
 RM=rm -f
 
-CFLAGS=-Wall -Wextra -Werror -g
+CFLAGS=-Wall -Wextra -Werror
 LFLAGS=-rdynamic
 XSHARED=-shared -fpic
 
@@ -16,8 +16,11 @@ DEFINES=
 INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
 LIBS=-lm -ldl
 
-ifdef ($(NDEBUG))
+ifneq ($(NDEBUG),)
 	DEFINES+=-DJML_NDEBUG
+	CFLAGS+=-O2 -Wno-unused-result
+else
+	CFLAGS+=-g3
 endif
 
 CLI_D=cli
@@ -53,10 +56,12 @@ $(STD_D)/%.so: $(STD_D)/%.o
 	$(CC) $< -o $@ $(XSHARED)
 
 $(TARGET_BIN): $(SRC_O) $(CLI_O)
-	$(CC) $^ -o $@ $(CFLAGS) $(LFLAGS) $(DEFINES) $(INCLUDES) $(LIBS)
+	$(CC) $^ -o $@ $(CFLAGS) $(LFLAGS) $(INCLUDES) $(LIBS)
+	$(warning compiling executable)
 
 $(TARGET_LIB): $(SRC_O)
 	$(AR) rcs $@ $^
+	$(warning compiling library)
 
 $(TARGET_STD): $(STD_O)
 

@@ -36,7 +36,7 @@ jml_module_std_path(char *path)
     char *temp = getenv("JML_PATH");
     if (temp == NULL)
         temp = "std";
-    
+
     snprintf(path, JML_PATH_MAX, "%s", temp);
 }
 
@@ -310,7 +310,7 @@ jml_module_add_class(jml_obj_module_t *module, const char *name,
                 current->function,
                 module
             );
-            
+
             jml_vm_push(OBJ_VAL(method));
             method->klass_name = klass->name;
 

@@ -9,7 +9,7 @@
 static char *
 jml_cli_fread(const char *path)
 {
-    FILE* file = fopen(path, "rb");
+    FILE *file = fopen(path, "rb");
     if (file == NULL) {
         fprintf(stderr, "Could not open file '%s'.\n", path);
         exit(EXIT_FAILURE);
