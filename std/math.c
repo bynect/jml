@@ -219,5 +219,7 @@ module_init(jml_obj_module_t *module)
     jml_module_add_value(module, "nan",     NUM_VAL(NAN));
     jml_module_add_value(module, "inf",     NUM_VAL(INFINITY));
 
-    jml_module_add_value(module, "max",     NUM_VAL(MAXFLOAT));
+    jml_module_add_value(
+        module, "MAX_FLOAT", NUM_VAL(MAXFLOAT)
+    );
 }

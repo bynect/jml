@@ -9,7 +9,7 @@
 #include <jml_compiler.h>
 
 
-#if defined (JML_TRACE_GC) || (defined (JML_ROUND_GC))
+#if defined JML_TRACE_GC || defined JML_ROUND_GC
 
 #include <time.h>
 
