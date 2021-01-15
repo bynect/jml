@@ -7,7 +7,8 @@
 static jml_value_t
 jml_std_rand_rand(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(arg_count, 0);
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 0);
 
     if (exc != NULL)
         return OBJ_VAL(exc);
@@ -19,7 +20,8 @@ jml_std_rand_rand(int arg_count, JML_UNUSED(jml_value_t *args))
 static jml_value_t
 jml_std_rand_srand(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(arg_count, 1);
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 1);
 
     if (exc != NULL)
         goto err;

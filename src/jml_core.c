@@ -89,53 +89,6 @@ jml_core_exception_types(bool mult, int arg_count, ...)
 
 /*core functions*/
 static jml_value_t
-jml_core_clock(int arg_count, JML_UNUSED(jml_value_t *args))
-{
-    jml_obj_exception_t *exc = jml_core_exception_args(
-        arg_count, 0);
-
-    if (exc != NULL)
-        return OBJ_VAL(exc);
-
-    return NUM_VAL((double)clock() / CLOCKS_PER_SEC);
-}
-
-
-static jml_value_t
-jml_core_timestamp(int arg_count, JML_UNUSED(jml_value_t *args))
-{
-    jml_obj_exception_t *exc = jml_core_exception_args(
-        arg_count, 0);
-
-    if (exc != NULL)
-        return OBJ_VAL(exc);
-
-    return NUM_VAL((double)time(NULL));
-}
-
-
-static jml_value_t
-jml_core_localtime(int arg_count, JML_UNUSED(jml_value_t *args))
-{
-    jml_obj_exception_t *exc = jml_core_exception_args(
-        arg_count, 0);
-
-    if (exc != NULL)
-        return OBJ_VAL(exc);
-
-    time_t rawtime;
-    time(&rawtime);
-
-    struct tm *timeinfo;
-    timeinfo = localtime(&rawtime);
-
-    char *local = asctime(timeinfo);
-    return OBJ_VAL(jml_obj_string_take(
-        local, strlen(local)));
-}
-
-
-static jml_value_t
 jml_core_print(int arg_count, jml_value_t *args)
 {
     for (int i = 0; i < arg_count; ++i) {
@@ -273,13 +226,13 @@ jml_core_reverse(int arg_count, jml_value_t *args)
     if (IS_STRING(value)) {
         jml_obj_string_t *string_obj = AS_STRING(value);
 
-        char *str           = jml_strdup(string_obj->chars);
-        int length          = string_obj->length;
+        char *str               = jml_strdup(string_obj->chars);
+        int length              = string_obj->length;
 
         for (int i = 0; i < length / 2; ++i) {
-            char temp       = str[i];
-            str[i]          = str[length-1-i];
-            str[length-1-i] = temp;
+            char temp           = str[i];
+            str[i]              = str[length - 1 - i];
+            str[length - 1 - i] = temp;
         }
 
         return OBJ_VAL(jml_obj_string_take(
@@ -290,10 +243,11 @@ jml_core_reverse(int arg_count, jml_value_t *args)
         jml_obj_array_t *array  = AS_ARRAY(value);
 
         for (int i = 0; i < array->values.count / 2; ++i) {
-            jml_value_t temp    = array->values.values[i];
+            jml_value_t temp            = array->values.values[i];
             int pos = array->values.count - 1 - i;
-            array->values.values[i] = array->values.values[pos];
-            array->values.values[pos] = temp;
+
+            array->values.values[i]     = array->values.values[pos];
+            array->values.values[pos]   = temp;
         }
 
         return OBJ_VAL(array);
@@ -331,18 +285,18 @@ jml_core_size(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_char(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_core_exception_args(
         arg_count, 1);
 
     if (exc != NULL)
         return OBJ_VAL(exc);
 
-    jml_value_t value = args[0];
+    jml_value_t value   = args[0];
 
-    if(IS_NUM(value)) {
+    if (IS_NUM(value)) {
         char chr[2];
-        chr[0] = (char)AS_NUM(value);
-        chr[1] = '\0';
+        chr[0]          = (char)AS_NUM(value);
+        chr[1]          = '\0';
 
         return jml_string_intern(chr);
     }
@@ -431,9 +385,6 @@ jml_core_type(int arg_count, jml_value_t *args)
 
 /*core function registration*/
 jml_module_function core_functions[] = {
-    {"clock",                       &jml_core_clock},
-    {"time",                        &jml_core_timestamp},
-    {"localtime",                   &jml_core_localtime},
     {"print",                       &jml_core_print},
     {"printfmt",                    &jml_core_print_fmt},
     {"stringfmt",                   &jml_core_string_fmt},
