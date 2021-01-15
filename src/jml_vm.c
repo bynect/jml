@@ -170,7 +170,7 @@ jml_vm_free(jml_vm_t *vm_ptr)
         vm_ptr->allocated
     );
 
-    jml_realloc(vm_ptr, 0UL);
+    jml_free(vm_ptr);
 }
 
 

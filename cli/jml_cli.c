@@ -6,32 +6,33 @@
 #include <jml.h>
 
 
+#define print_error(message, ...)                       \
+    do {                                                \
+        fprintf(stderr, message, __VA_ARGS__);          \
+        exit(EXIT_FAILURE);                             \
+    } while (false)
+
+
 static char *
 jml_cli_fread(const char *path)
 {
     FILE *file = fopen(path, "rb");
-    if (file == NULL) {
-        fprintf(stderr, "Could not open file '%s'.\n", path);
-        exit(EXIT_FAILURE);
-    }
+    if (file == NULL)
+        print_error("Could not open file '%s'.\n", path);
 
     fseek(file, 0L, SEEK_END);
     size_t size = ftell(file);
     rewind(file);
 
     char *buffer = jml_realloc(NULL, size + 1);
-    if (buffer == NULL) {
-        fprintf(stderr, "Not enough memory to read '%s'.\n", path);
-        exit(EXIT_FAILURE);
-    }
+    if (buffer == NULL)
+        print_error("Not enough memory to read '%s'.\n", path);
 
-    size_t read = fread(buffer, sizeof(char), size, file);
-    if (read < size) {
-        fprintf(stderr, "Could not read file '%s'.\n", path);
-        exit(EXIT_FAILURE);
-    }
+    size_t bytes = fread(buffer, sizeof(char), size, file);
+    if (bytes < size)
+        print_error("Could not read file '%s'.\n", path);
 
-    buffer[read] = '\0';
+    buffer[bytes] = '\0';
 
     fclose(file);
     return buffer;
@@ -56,7 +57,7 @@ jml_cli_repl(void)
     signal(SIGINT, SIG_IGN);
 
     printf(
-        "interactive jml %s (on %s)\n",
+        "interactive jml -- v%s (on %s)\n",
         JML_VERSION_STRING,
         JML_PLATFORM_STRING
     );
@@ -81,7 +82,7 @@ jml_cli_repl(void)
             printf("\n");
         }
 #else
-    jml_vm_interpret(line);
+        jml_vm_interpret(line);
 #endif
     }
 }
@@ -91,19 +92,24 @@ int
 main(int argc, char **argv)
 {
     jml_vm_t *vm = jml_vm_new();
-
-    if (argc == 1)
-        jml_cli_repl();
-
-    else if (argc == 2)
-        jml_cli_run(argv[1]);
-
-    else {
-        printf("%s\n", "Usage: jml [file]");
+    if (vm == NULL)
         return EXIT_FAILURE;
+
+    switch (argc) {
+        case 1:
+            jml_cli_repl();
+            break;
+
+        case 2:
+            jml_cli_run(argv[1]);
+            break;
+
+        default:
+            print_error("Usage: %s [file].\n", argv[0]);
+            jml_vm_free(vm);
+            return EXIT_FAILURE;
     }
 
     jml_vm_free(vm);
-
     return EXIT_SUCCESS;
 }
