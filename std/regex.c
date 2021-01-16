@@ -42,7 +42,7 @@ static char                        *last_string;
             char buff[size];                            \
             regerror(result, last_rule, buff, size);    \
             exc = jml_obj_exception_new(                \
-                "RegexExc", buff);                      \
+                "RegexError", buff);                    \
             goto err;                                   \
         }                                               \
                                                         \

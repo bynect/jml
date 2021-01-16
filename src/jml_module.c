@@ -45,7 +45,7 @@ jml_obj_module_t *
 jml_module_open(jml_obj_string_t *module_name,
     char *path)
 {
-#ifdef JML_PLATFORM_NIX
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     char *module_str = jml_strdup(module_name->chars);
 
     char filename_so[JML_PATH_MAX];
@@ -129,7 +129,7 @@ jml_module_open(jml_obj_string_t *module_name,
 bool
 jml_module_close(jml_obj_module_t *module)
 {
-#ifdef JML_PLATFORM_NIX
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     if (module == NULL || module->handle == NULL)
         return false;
 
@@ -143,7 +143,7 @@ jml_obj_cfunction_t *
 jml_module_get_raw(jml_obj_module_t *module,
     const char *function_name, bool silent)
 {
-#ifdef JML_PLATFORM_NIX
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     jml_cfunction raw = dlsym(
         module->handle, function_name);
 
@@ -197,7 +197,7 @@ jml_module_register(jml_obj_module_t *module,
 bool
 jml_module_initialize(jml_obj_module_t *module)
 {
-#ifdef JML_PLATFORM_NIX
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     if (module->handle == NULL)
         return true;
 
@@ -246,7 +246,7 @@ jml_module_initialize(jml_obj_module_t *module)
 void
 jml_module_finalize(jml_obj_module_t *module)
 {
-#ifdef JML_PLATFORM_NIX
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     if (module == NULL
         && module->handle == NULL)
         return;

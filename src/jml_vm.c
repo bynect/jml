@@ -261,9 +261,9 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                     vm->init_string, &initializer)) {
 
                     if (IS_CFUNCTION(initializer)) {
-                        bool retval = jml_vm_call_value(initializer, arg_count + 1);
+                        bool result = jml_vm_call_value(initializer, arg_count + 1);
                         jml_vm_push(instance);
-                        return retval;
+                        return result;
 
                     } else
                         return jml_vm_call(AS_CLOSURE(initializer), arg_count);
