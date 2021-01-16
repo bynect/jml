@@ -149,16 +149,16 @@ jml_vm_free(jml_vm_t *vm_ptr)
     jml_hashmap_free(&vm_ptr->strings);
     jml_hashmap_free(&vm_ptr->modules);
 
+    vm_ptr->external        = NULL;
+
+    jml_gc_free_objs();
+
     vm_ptr->main_string     = NULL;
     vm_ptr->init_string     = NULL;
     vm_ptr->call_string     = NULL;
     vm_ptr->free_string     = NULL;
     vm_ptr->module_string   = NULL;
     vm_ptr->path_string     = NULL;
-
-    vm_ptr->external        = NULL;
-
-    jml_gc_free_objs();
 
     ASSERT(
         vm_ptr->allocated == 0,

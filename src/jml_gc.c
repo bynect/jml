@@ -261,11 +261,15 @@ jml_gc_free_object(jml_obj_t *object)
                 if (jml_hashmap_get(&instance->klass->methods,
                     vm->free_string, &destructor)) {
 
+                    jml_vm_push(OBJ_VAL(destructor));
                     jml_vm_push(OBJ_VAL(instance));
+
                     jml_vm_call_value(destructor, 1);
+                    jml_vm_pop();
                 }
             }
 
+            instance->extra = NULL;
             jml_hashmap_free(&instance->fields);
             FREE(jml_obj_instance_t, object);
             break;
@@ -311,19 +315,22 @@ jml_gc_free_object(jml_obj_t *object)
 void
 jml_gc_free_objs(void)
 {
-    jml_obj_t *object       = vm->objects;
+    jml_obj_t *object           = vm->objects;
 
     while (object != NULL) {
-        jml_obj_t *next     = object->next;
+        jml_obj_t *next         = object->next;
 
-        if (object != vm->sentinel)
+        if (object != vm->sentinel
+            && object != (jml_obj_t*)vm->free_string)
             jml_gc_free_object(object);
 
-        object              = next;
+        object                  = next;
     }
 
-    jml_realloc(vm->sentinel, 0UL);
-    jml_realloc(vm->gray_stack, 0UL);
+    jml_gc_free_object((jml_obj_t*)vm->free_string);
+
+    jml_free(vm->sentinel);
+    jml_free(vm->gray_stack);
 }
 
 

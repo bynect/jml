@@ -57,11 +57,11 @@ $(STD_D)/%.so: $(STD_D)/%.o
 
 $(TARGET_BIN): $(SRC_O) $(CLI_O)
 	$(CC) $^ -o $@ $(CFLAGS) $(LFLAGS) $(INCLUDES) $(LIBS)
-	$(warning compiling executable)
+	$(info compiling executable)
 
 $(TARGET_LIB): $(SRC_O)
 	$(AR) rcs $@ $^
-	$(warning compiling library)
+	$(info compiling library)
 
 $(TARGET_STD): $(STD_O)
 
