@@ -63,7 +63,7 @@ jml_cli_repl(void)
     );
 
     char line[2048];
-    for ( ;; ) {
+    while (true) {
         printf("> ");
 
         if (!fgets(line, sizeof(line), stdin)) {

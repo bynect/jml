@@ -102,7 +102,7 @@ jml_lexer_skip_char(void)
 {
     static bool commented = false;
 
-    for ( ;; ) {
+    while (true) {
         char c = jml_lexer_peek();
 
         if (commented && c != '?' && c != '\n') {

@@ -94,13 +94,10 @@ jml_vm_exception(jml_obj_exception_t *exc)
 jml_vm_t *
 jml_vm_new(void)
 {
-    jml_vm_t *vm_ptr = (jml_vm_t*)jml_realloc(NULL, sizeof(jml_vm_t));
-    memset(vm_ptr, 0, sizeof(jml_vm_t));
-
+    jml_vm_t *vm_ptr = jml_alloc(sizeof(jml_vm_t));
     vm = vm_ptr;
 
     jml_vm_init(vm_ptr);
-
     return vm_ptr;
 }
 
@@ -110,8 +107,7 @@ jml_vm_init(jml_vm_t *vm_ptr)
 {
     jml_vm_stack_reset(vm_ptr);
 
-    jml_obj_t *sentinel = (jml_obj_t*)jml_realloc(NULL, sizeof(jml_obj_t));
-    memset(sentinel, 0, sizeof(jml_obj_t));
+    jml_obj_t *sentinel = jml_alloc(sizeof(jml_obj_t));
 
     vm_ptr->sentinel        = sentinel;
     vm_ptr->objects         = vm_ptr->sentinel;
@@ -792,7 +788,7 @@ jml_vm_run(jml_value_t *last)
 #define EXEC_OP(op)                 case op:
 #define END_OP()                    break
 
-    for ( ;; ) {
+    while (true) {
         uint8_t instruction;
 #endif
 

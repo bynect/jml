@@ -131,10 +131,8 @@ jml_gc_mark_roots(void)
         jml_gc_mark_value(*slot);
     }
 
-    for (int i = 0; i < vm->frame_count; i++) {
-
+    for (int i = 0; i < vm->frame_count; i++)
         jml_gc_mark_obj((jml_obj_t*)vm->frames[i].closure);
-    }
 
     for (jml_obj_upvalue_t *upvalue = vm->open_upvalues;
         upvalue != NULL; upvalue = upvalue->next) {
@@ -169,8 +167,8 @@ jml_gc_mark_roots(void)
 void
 jml_gc_mark_obj(jml_obj_t *object)
 {
-    if (object == NULL) return;
-    if (object->marked) return;
+    if (object == NULL || object->marked)
+        return;
 
 #ifdef JML_TRACE_GC
     printf("[GC]  |%p marked %s|\n",
@@ -184,8 +182,6 @@ jml_gc_mark_obj(jml_obj_t *object)
         vm->gray_capacity = GROW_CAPACITY(vm->gray_capacity);
         vm->gray_stack = (jml_obj_t**)jml_realloc(vm->gray_stack,
             sizeof(jml_obj_t*) * vm->gray_capacity);
-
-        if (vm->gray_stack == NULL) exit(EXIT_FAILURE);
     }
     vm->gray_stack[vm->gray_count++] = object;
 }
@@ -194,7 +190,9 @@ jml_gc_mark_obj(jml_obj_t *object)
 void
 jml_gc_mark_value(jml_value_t value)
 {
-    if (!IS_OBJ(value)) return;
+    if (!IS_OBJ(value))
+        return;
+
     jml_gc_mark_obj(AS_OBJ(value));
 }
 
@@ -215,7 +213,7 @@ jml_gc_free_object(jml_obj_t *object)
     printf(
         "[MEM] |%p freed %s|\n",
         (void*)object,
-        jml_obj_stringify_type(object)
+        jml_obj_stringify_type(OBJ_VAL(object))
     );
 #endif
 
@@ -483,7 +481,7 @@ jml_gc_collect(void)
     size_t after = vm->allocated;
 
     printf(
-        "[GC]  |gc ended {current: %zd bytes, collected: %zd bytes, next: %zd bytes, elapsed:%.3lds}|\n",
+        "[GC]  |gc ended {current: %zd bytes, collected: %zd bytes, next: %zd bytes, elapsed: %.3lds}|\n",
         after, before - after, vm->next_gc, (long)elapsed
     );
 

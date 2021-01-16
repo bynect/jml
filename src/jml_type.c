@@ -16,7 +16,7 @@ static jml_obj_t *
 jml_obj_allocate(size_t size, jml_obj_type type)
 {
     jml_obj_t *object           = jml_reallocate(
-        NULL, 0UL, size);
+        NULL, 0, size);
 
     object->type                = type;
     object->marked              = false;
@@ -28,7 +28,7 @@ jml_obj_allocate(size_t size, jml_obj_type type)
         "[MEM] |%p allocate %zd (type %s)|\n",
         (void*)object,
         size,
-        jml_obj_stringify_type(object)
+        jml_obj_stringify_type(OBJ_VAL(object))
         );
 #endif
   return object;
@@ -175,6 +175,7 @@ jml_obj_instance_new(jml_obj_class_t *klass)
         jml_obj_instance_t, OBJ_INSTANCE);
 
     instance->klass              = klass;
+    instance->extra              = NULL;
 
     jml_hashmap_init(&instance->fields);
 

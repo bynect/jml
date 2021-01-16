@@ -86,7 +86,7 @@ jml_parser_advance(void)
 {
     parser.previous = parser.current;
 
-    for ( ;; ) {
+    while (true) {
         parser.current = jml_lexer_tokenize();
 
 #ifdef JML_PRINT_TOKEN
@@ -1097,12 +1097,11 @@ jml_class_declaration(void)
     while (!jml_parser_check(TOKEN_RBRACE)
         && !jml_parser_check(TOKEN_EOF)) {
 
-        jml_parser_match_line();
         jml_method();
     }
 
     jml_parser_consume(TOKEN_RBRACE, "Expect '}' after class body.");
-    jml_parser_match_line();
+    jml_parser_newline();
     jml_bytecode_emit_byte(OP_POP);
 
     if (class_compiler.w_superclass) {

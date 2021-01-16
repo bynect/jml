@@ -14,18 +14,17 @@ void
 jml_value_print(jml_value_t value)
 {
 #ifdef JML_NAN_TAGGING
-    if (IS_BOOL(value)) {
+    if (IS_BOOL(value))
         printf(AS_BOOL(value) ? "true" : "false");
 
-    } else if (IS_NONE(value)) {
+    else if (IS_NONE(value))
         printf("none");
 
-    } else if (IS_NUM(value)) {
+    else if (IS_NUM(value))
         printf("%g", AS_NUM(value));
 
-    } else if (IS_OBJ(value)) {
+    else if (IS_OBJ(value))
         jml_obj_print(value);
-    }
 #else
     switch (value.type) {
         case VAL_BOOL:
@@ -52,20 +51,19 @@ char *
 jml_value_stringify(jml_value_t value)
 {
 #ifdef JML_NAN_TAGGING
-    if (IS_BOOL(value)) {
+    if (IS_BOOL(value))
         return jml_strdup(AS_BOOL(value) ? "true" : "false");
 
-    } else if (IS_NONE(value)) {
+    else if (IS_NONE(value))
         return jml_strdup("none");
 
-    } else if (IS_NUM(value)) {
+    else if (IS_NUM(value)) {
         char str[13];
         sprintf(str, "%g", AS_NUM(value));
         return jml_strdup(str);
 
-    } else if (IS_OBJ(value)) {
+    } else if (IS_OBJ(value))
         return jml_obj_stringify(value);
-    }
 #else
     switch (value.type) {
         case VAL_BOOL:
@@ -92,18 +90,17 @@ char *
 jml_value_stringify_type(jml_value_t value)
 {
 #ifdef JML_NAN_TAGGING
-    if (IS_BOOL(value)) {
+    if (IS_BOOL(value))
         return "<type bool>";
 
-    } else if (IS_NONE(value)) {
+    else if (IS_NONE(value))
         return "<type none>";
 
-    } else if (IS_NUM(value)) {
+    else if (IS_NUM(value))
         return "<type number>";
 
-    } else if (IS_OBJ(value)) {
+    else if (IS_OBJ(value))
         return jml_obj_stringify_type(value);
-    }
 #else
     switch (value.type) {
         case VAL_BOOL:
@@ -167,8 +164,7 @@ jml_value_array_write(jml_value_array_t *array,
             array->values, old_capacity, array->capacity);
     }
 
-    array->values[array->count] = value;
-    array->count++;
+    array->values[array->count++] = value;
 }
 
 
@@ -205,22 +201,21 @@ jml_hashmap_find_entry(jml_hashmap_entry_t *entries,
     uint32_t index = key->hash & capacity;
     jml_hashmap_entry_t *tombstone = NULL;
 
-    for ( ;; ) {
+    while (true) {
         jml_hashmap_entry_t *entry = &entries[index];
 
         if (entry->key == NULL) {
             if (IS_NONE(entry->value)) {
                 return tombstone != NULL ? tombstone : entry;
-            } else {
-                if (tombstone == NULL) tombstone = entry;
-            }
-        } else if (entry->key == key) {
+            } else if (tombstone == NULL)
+                tombstone = entry;
+        } else if (entry->key == key)
             return entry;
-        }
 
         index = (index + 1) & capacity;
     }
 }
+
 
 static void
 jml_hashmap_adjust_capacity(jml_hashmap_t *map,
@@ -353,7 +348,7 @@ jml_hashmap_find(jml_hashmap_t *map, const char *chars,
     if (map->count == 0) return NULL;
     uint32_t index = hash & map->capacity;
 
-    for ( ;; ) {
+    while (true) {
         jml_hashmap_entry_t *entry= &map->entries[index];
 
         if (entry->key == NULL) {
