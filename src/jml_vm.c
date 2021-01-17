@@ -1410,31 +1410,40 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_ARRAY) {
                 int item_count      = READ_BYTE();
-                jml_value_t *values = vm->stack_top - item_count;
-
-                jml_vm_push(OBJ_VAL(jml_obj_array_new()));
+                jml_value_t *values = vm->stack_top -= item_count;
+                jml_gc_exempt_push(OBJ_VAL(jml_obj_array_new()));
 
                 for (int i = 0; i < item_count; ++i) {
-                    jml_obj_array_add(AS_ARRAY(jml_vm_peek(0)), values[i]);
+                    jml_obj_array_add(
+                        AS_ARRAY(jml_gc_exempt_peek(0)),
+                        values[i]
+                    );
                 }
+
+                jml_vm_push(jml_gc_exempt_pop());
                 END_OP();
             }
 
             EXEC_OP(OP_MAP) {
                 int item_count      = READ_BYTE();
-                jml_value_t *values = vm->stack_top - item_count;
-
-                jml_vm_push(OBJ_VAL(jml_obj_map_new()));
+                jml_value_t *values = vm->stack_top -= item_count;
+                jml_gc_exempt_push(OBJ_VAL(jml_obj_map_new()));
 
                 for (int i = 0; i < item_count; i += 2) {
-                    jml_vm_push(values[i]);
-                    jml_vm_push(values[i+1]);
+                    if (!IS_STRING(values[i])) {
+                        frame->pc = pc;
+                        jml_vm_error("Map key must be a string.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
 
-                    jml_hashmap_set(&AS_MAP(jml_vm_peek(2))->hashmap,
-                        AS_STRING(jml_vm_peek(1)) , jml_vm_peek(0));
-
-                    jml_vm_pop_two();
+                    jml_hashmap_set(
+                        &AS_MAP(jml_gc_exempt_peek(0))->hashmap,
+                        AS_STRING(values[i]),
+                        values[i + 1]
+                    );
                 }
+
+                jml_vm_push(jml_gc_exempt_pop());
                 END_OP();
             }
 
