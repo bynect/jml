@@ -750,6 +750,7 @@ jml_vm_run(jml_value_t *last)
         &&exec_OP_LESS,
         &&exec_OP_LESSEQ,
         &&exec_OP_NOTEQ,
+        &&exec_OP_CONTAIN,
         &&exec_OP_JUMP,
         &&exec_OP_JUMP_IF_FALSE,
         &&exec_OP_LOOP,
@@ -988,6 +989,28 @@ jml_vm_run(jml_value_t *last)
                 jml_vm_push(
                     BOOL_VAL(!jml_value_equal(a, b)));
 
+                END_OP();
+            }
+
+            EXEC_OP(OP_CONTAIN) {
+                jml_value_t box = jml_vm_pop();
+                jml_value_t val = jml_vm_pop();
+
+                if (IS_ARRAY(box)) {
+                    jml_obj_array_t *array = AS_ARRAY(box);
+                    for (int i = 0; i < array->values.count; ++i) {
+                        if (jml_value_equal(val, array->values.values[i])) {
+                            jml_vm_push(TRUE_VAL);
+                            END_OP();
+                        }
+                    }
+                } else {
+                    frame->pc = pc;
+                    jml_vm_error("Container must be iterable.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_vm_push(FALSE_VAL);
                 END_OP();
             }
 

@@ -600,6 +600,8 @@ jml_binary(JML_UNUSED(bool assignable))
         case TOKEN_LESSEQ:      jml_bytecode_emit_byte(OP_LESSEQ);      break;
         case TOKEN_NOTEQ:       jml_bytecode_emit_byte(OP_NOTEQ);       break;
 
+        case TOKEN_IN:          jml_bytecode_emit_byte(OP_CONTAIN);     break;
+
         default:                UNREACHABLE();
     }
 }
@@ -1081,7 +1083,7 @@ jml_parser_rule rules[] = {
     [TOKEN_WHILE]       = {NULL,        NULL,       PREC_NONE},
     [TOKEN_BREAK]       = {NULL,        NULL,       PREC_NONE},
     [TOKEN_SKIP]        = {NULL,        NULL,       PREC_NONE},
-    [TOKEN_IN]          = {NULL,        NULL,       PREC_NONE},
+    [TOKEN_IN]          = {NULL,        jml_binary, PREC_TERM},
     [TOKEN_WITH]        = {NULL,        NULL,       PREC_NONE},
     [TOKEN_IF]          = {NULL,        NULL,       PREC_NONE},
     [TOKEN_ELSE]        = {NULL,        NULL,       PREC_NONE},

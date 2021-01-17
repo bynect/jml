@@ -32,7 +32,7 @@
                 ptr = jml_realloc(ptr, size);           \
             } while (size <= dest_size);                \
         }                                               \
-    } while (false);
+    } while (false)
 
 
 void *jml_reallocate(void *ptr,

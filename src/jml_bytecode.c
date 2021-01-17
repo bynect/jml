@@ -233,6 +233,9 @@ jml_bytecode_instruction_disassemble(
         case OP_NOTEQ:
             return jml_bytecode_instruction_simple("OP_NOTEQ", offset);
 
+        case OP_CONTAIN:
+            return jml_bytecode_instruction_simple("OP_CONTAIN", offset);
+
         case OP_JUMP:
             return jml_bytecode_instruction_jump("OP_JUMP", 1, bytecode, offset);
 
