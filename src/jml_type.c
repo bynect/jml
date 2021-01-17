@@ -73,8 +73,7 @@ jml_obj_string_take(char *chars, size_t length)
 {
     uint32_t hash = jml_obj_string_hash(chars, length);
     jml_obj_string_t *interned = jml_hashmap_find(
-        &vm->strings,chars, length, hash
-    );
+        &vm->strings, chars, length, hash);
 
     if (interned != NULL) {
         FREE_ARRAY(char, chars, length + 1);

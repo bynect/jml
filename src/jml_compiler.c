@@ -668,12 +668,193 @@ jml_number(JML_UNUSED(bool assignable))
 }
 
 
+static uint8_t
+jml_string_encode(char *buffer, uint32_t value)
+{
+    char *bytes = buffer;
+
+    if (value <= 0x7f) {
+        *bytes = (char)(value & 0x7f);
+        return 1;
+    }
+
+    if (value <= 0x7ff) {
+        *bytes++ = (char)(0xc0 | ((value & 0x7c0) >> 6));
+        *bytes = (char)(0x80 | (value & 0x3f));
+        return 2;
+    }
+
+    if (value <= 0xffff) {
+        *bytes++ = (char)(0xe0 | ((value & 0xf000) >> 12));
+        *bytes++ = (char)(0x80 | ((value & 0xfc0) >> 6));
+        *bytes = (char)(0x80 | (value & 0x3f));
+        return 3;
+    }
+
+    if (value <= 0x10ffff) {
+        *bytes++ = (char)(0xf0 | ((value & 0x1c0000) >> 18));
+        *bytes++ = (char)(0x80 | ((value & 0x3f000) >> 12));
+        *bytes++ = (char)(0x80 | ((value & 0xfc0) >> 6));
+        *bytes = (char)(0x80 | (value & 0x3f));
+        return 4;
+    }
+
+    return 0;
+}
+
+
 static void
 jml_string(JML_UNUSED(bool assignable))
 {
+    const char *raw             = parser.previous.start + 1;
+    size_t length               = parser.previous.length - 2;
+
+    char *buffer                = ALLOCATE(char, length + 1);
+    size_t size                 = 0;
+
+    for (unsigned int i = 0; i < length; ) {
+        int c = raw[i];
+
+        if (c == '\\') {
+            if (i + 1 >= length) {
+                jml_parser_error_current("Invalid string escape sequence.");
+                break;
+            }
+
+            switch (raw[i + 1]) {
+                case '\'': {
+                    c = '\'';
+                    ++i;
+                    break;
+                }
+
+                case '"': {
+                    c = '"';
+                    ++i;
+                    break;
+                }
+
+                case '\\': {
+                    c = '\\';
+                    ++i;
+                    break;
+                }
+
+                case 'b': {
+                    c = '\b';
+                    ++i;
+                    break;
+                }
+
+                case 'n': {
+                    c = '\n';
+                    ++i;
+                    break;
+                }
+
+                case 'r': {
+                    c = '\r';
+                    ++i;
+                    break;
+                }
+
+                case 't': {
+                    c = '\t';
+                    ++i;
+                    break;
+                }
+
+                case 'x': {
+                    if (i + 3 >= length) {
+                        jml_parser_error_current("Invalid string escape sequence.");
+                        break;
+                    }
+
+                    if (!jml_is_hex(raw[i + 2]) || !jml_is_hex(raw[i + 3])) {
+                        jml_parser_error_current("Invalid string escape sequence.");
+                        break;
+                    }
+
+                    char hex[3] = {
+                        raw[i + 2],
+                        raw[i + 3],
+                        0
+                    };
+
+                    c = strtoul(hex, NULL, 16);
+                    buffer[size++] = c;
+                    i += 4;
+                    continue;
+                }
+
+                case 'u':  {
+                    if (i + 5 >= length) {
+                        jml_parser_error_current("Invalid string escape sequence.");
+                        break;
+                    }
+
+                    if (!jml_is_hex(raw[i + 2]) || !jml_is_hex(raw[i + 3])
+                        || !jml_is_hex(raw[i + 4]) || !jml_is_hex(raw[i + 5])) {
+                        jml_parser_error_current("Invalid string escape sequence.");
+                        break;
+                    }
+
+                    char hex[5] = {
+                        raw[i + 2],
+                        raw[i + 3],
+                        raw[i + 4],
+                        raw[i + 5],
+                        0
+                    };
+
+                    uint32_t value = strtoul(hex, NULL, 16);
+                    size += jml_string_encode(&buffer[size], value);
+                    i += 6;
+                    continue;
+                }
+
+                case 'U':  {
+                    if (i + 9 >= length) {
+                        jml_parser_error_current("Invalid string escape sequence.");
+                        break;
+                    }
+
+                    if (!jml_is_hex(raw[i + 2]) || !jml_is_hex(raw[i + 3])
+                        || !jml_is_hex(raw[i + 4]) || !jml_is_hex(raw[i + 5])
+                        || !jml_is_hex(raw[i + 6]) || !jml_is_hex(raw[i + 7])
+                        || !jml_is_hex(raw[i + 8]) || !jml_is_hex(raw[i + 9])) {
+                        jml_parser_error_current("Invalid string escape sequence.");
+                        break;
+                    }
+
+                    char hex[9] = {
+                        raw[i + 2],
+                        raw[i + 3],
+                        raw[i + 4],
+                        raw[i + 5],
+                        raw[i + 6],
+                        raw[i + 7],
+                        raw[i + 8],
+                        raw[i + 9],
+                        0
+                    };
+
+                    uint32_t value = strtoul(hex, NULL, 16);
+                    size += jml_string_encode(&buffer[size], value);
+                    i += 10;
+                    continue;
+                }
+            }
+        }
+
+        buffer[size] = c;
+        ++size, ++i;
+    }
+
+    buffer[size] = '\0';
+
     jml_bytecode_emit_const(
-        OBJ_VAL(jml_obj_string_copy(parser.previous.start + 1,
-            parser.previous.length - 2))
+        OBJ_VAL(jml_obj_string_take(buffer, size))
     );
 }
 
