@@ -89,8 +89,7 @@ jml_obj_string_t *
 jml_obj_string_copy(const char *chars, size_t length)
 {
     uint32_t hash               = jml_obj_string_hash(
-        chars, length
-    );
+        chars, length);
 
     jml_obj_string_t *interned  = jml_hashmap_find(
         &vm->strings,chars, length, hash
@@ -110,8 +109,7 @@ jml_obj_array_t *
 jml_obj_array_new(void)
 {
     jml_obj_array_t *array  = ALLOCATE_OBJ(
-        jml_obj_array_t, OBJ_ARRAY
-    );
+        jml_obj_array_t, OBJ_ARRAY);
 
     jml_value_array_t value_array;
     jml_value_array_init(&value_array);
@@ -139,8 +137,7 @@ jml_obj_map_t *
 jml_obj_map_new(void)
 {
     jml_obj_map_t *map  = ALLOCATE_OBJ(
-        jml_obj_map_t, OBJ_MAP
-    );
+        jml_obj_map_t, OBJ_MAP);
 
     jml_hashmap_t hashmap;
     jml_hashmap_init(&hashmap);

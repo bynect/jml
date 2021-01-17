@@ -383,6 +383,23 @@ jml_core_type(int arg_count, jml_value_t *args)
 }
 
 
+static jml_value_t
+jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
+{
+    jml_obj_exception_t *exc        = jml_core_exception_args(
+        arg_count, 0);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    jml_obj_map_t *map              = jml_obj_map_new();
+
+    jml_vm_push(OBJ_VAL(map));
+    jml_hashmap_add(&vm->globals, &map->hashmap);
+    return jml_vm_pop();
+}
+
+
 /*core function registration*/
 jml_module_function core_functions[] = {
     {"print",                       &jml_core_print},
@@ -394,6 +411,7 @@ jml_module_function core_functions[] = {
     {"instance",                    &jml_core_instance},
     {"subclass",                    &jml_core_subclass},
     {"type",                        &jml_core_type},
+    {"globals",                     &jml_core_globals},
     {NULL,                          NULL}
 };
 

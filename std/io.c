@@ -117,7 +117,7 @@ typedef struct {
 static jml_value_t
 jml_std_io_file_init(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_core_exception_args(
         arg_count - 1, 2);
 
     if (exc != NULL)
@@ -128,12 +128,12 @@ jml_std_io_file_init(int arg_count, jml_value_t *args)
         goto err;
     }
 
-    jml_obj_instance_t *self = AS_INSTANCE(args[0]);
-    const char *filename = AS_CSTRING(args[1]);
-    jml_obj_string_t *filemode = AS_STRING(args[2]);
-    file_mode_t mode;
+    jml_obj_instance_t  *self   = AS_INSTANCE(args[0]);
+    const char          *name   = AS_CSTRING(args[1]);
+    jml_obj_string_t    *mode   = AS_STRING(args[2]);
+    file_mode_t open_mode;
 
-    if ((mode = file_open_mode(filemode)) == INVALID) {
+    if ((open_mode = file_open_mode(mode)) == INVALID) {
         exc = jml_obj_exception_new(
             "ValueError",
             "Invalid file open mode."
@@ -141,7 +141,7 @@ jml_std_io_file_init(int arg_count, jml_value_t *args)
         goto err;
     }
 
-    if (file_isdir(filename)) {
+    if (file_isdir(name)) {
         exc = jml_obj_exception_new(
             "IOError",
             "Filename points to a directory."
@@ -149,7 +149,7 @@ jml_std_io_file_init(int arg_count, jml_value_t *args)
         goto err;
     }
 
-    FILE *handle = fopen(filename, filemode->chars);
+    FILE *handle = fopen(name, mode->chars);
 
     if (handle == NULL) {
         exc = jml_obj_exception_new(
@@ -162,9 +162,9 @@ jml_std_io_file_init(int arg_count, jml_value_t *args)
     file_internal_t *internal   = jml_alloc(
         sizeof(file_internal_t));
 
-    internal->name              = filename;
+    internal->name              = name;
     internal->handle            = handle;
-    internal->mode              = mode;
+    internal->mode              = open_mode;
     internal->open              = true;
 
     self->extra                 = internal;
@@ -221,8 +221,8 @@ jml_std_io_file_close(int arg_count, jml_value_t *args)
     internal->mode              = INVALID;
     internal->open              = false;
 
-    jml_hashmap_del(&self->fields, mode_string);
-    jml_hashmap_del(&self->fields, name_string);
+    jml_hashmap_set(&self->fields, mode_string, NONE_VAL);
+    jml_hashmap_set(&self->fields, name_string, NONE_VAL);
 
     return NONE_VAL;
 

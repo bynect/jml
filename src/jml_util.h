@@ -50,4 +50,53 @@ bool jml_file_find_in(const char *path,
 char *jml_file_read(const char *path);
 
 
+static inline bool
+jml_is_digit(char c)
+{
+    return (c >= '0' && c <= '9');
+}
+
+
+static inline bool
+jml_is_hex(char c)
+{
+    return (c >= 'a' && c <= 'f')
+        || (c >= 'A' && c <= 'F')
+        || (c >= '0' && c <= '9');
+}
+
+
+static inline bool
+jml_is_alpha(char c)
+{
+    return (c >= 'a' && c <= 'z')
+        || (c >= 'A' && c <= 'Z')
+        || (c == '_');
+}
+
+
+static inline bool
+jml_is_bracket(char c)
+{
+    return (c == '(' || c == ')')
+        || (c == '[' || c == ']')
+        || (c == '{' || c == '}');
+}
+
+
+static inline bool
+jml_is_control(char c)
+{
+    return (c == 127)
+        || (c >= 0 && c <= 31);
+}
+
+
+static inline bool
+jml_is_control(char c)
+{
+    return (c >= ' ' && c <= '~');
+}
+
+
 #endif /* JML_UTIL_H_ */

@@ -4,6 +4,7 @@
 
 #include <jml_compiler.h>
 #include <jml_gc.h>
+#include <jml_util.h>
 
 
 jml_parser_t            parser;

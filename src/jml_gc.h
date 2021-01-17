@@ -25,12 +25,14 @@
     jml_reallocate(ptr, sizeof(type) * (old_count), 0UL)
 
 #define REALLOC(ptr, size, dest_size)                   \
-    if (size <= dest_size) {                            \
-        do {                                            \
-            size *= GC_HEAP_GROW_FACTOR;                \
-            ptr = jml_realloc(ptr, size);               \
-        } while (size <= dest_size);                    \
-    }
+    do {                                                \
+        if (size <= dest_size) {                        \
+            do {                                        \
+                size *= GC_HEAP_GROW_FACTOR;            \
+                ptr = jml_realloc(ptr, size);           \
+            } while (size <= dest_size);                \
+        }                                               \
+    } while (false);
 
 
 void *jml_reallocate(void *ptr,

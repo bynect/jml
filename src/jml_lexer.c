@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include <jml_lexer.h>
+#include <jml_util.h>
 
 
 jml_lexer_t lexer;
