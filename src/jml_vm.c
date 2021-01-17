@@ -200,6 +200,29 @@ jml_vm_peek(int distance)
 }
 
 
+static inline bool
+jml_vm_global_get(jml_obj_string_t *name,
+    jml_value_t *value)
+{
+    return jml_hashmap_get(&vm->globals, name, value);
+}
+
+
+static inline bool
+jml_vm_global_set(jml_obj_string_t *name,
+    jml_value_t value)
+{
+    return jml_hashmap_set(&vm->globals, name, value);
+}
+
+
+static inline bool
+jml_vm_global_del(jml_obj_string_t *name)
+{
+    return jml_hashmap_del(&vm->globals, name);
+}
+
+
 static bool
 jml_vm_call(jml_obj_closure_t *closure,
     int arg_count)
@@ -305,7 +328,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 jml_value_t          result         = cfunction(arg_count,
                     vm->stack_top - arg_count);
 
-                vm->stack_top   -= arg_count + 1;
+                vm->stack_top -= arg_count + 1;
 
                 if (IS_EXCEPTION(result)) {
                     vm->external = cfunction_obj;
@@ -318,7 +341,8 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 }
             }
 
-            default: break;
+            default:
+                break;
         }
     }
 
@@ -601,12 +625,13 @@ jml_vm_module_import(jml_obj_string_t *name)
             vm->module_string, OBJ_VAL(module->name));
 
         if (!jml_module_initialize(module)) {
-            jml_vm_error("ImportExc: Import of '%s' failed.", module->name->chars);
+            jml_vm_error("ImportExc: Import of '%s' failed.",
+                module->name->chars);
             return false;
         }
 
         jml_hashmap_set(&vm->modules, name, jml_vm_peek(0));
-        jml_hashmap_set(&vm->globals, name, jml_vm_peek(0));
+        jml_vm_global_set(name, jml_vm_peek(0));
 
         jml_vm_pop();
     }
@@ -1172,8 +1197,8 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_SET_GLOBAL) {
                 jml_obj_string_t *name = READ_STRING();
-                if (jml_hashmap_set(&vm->globals, name, jml_vm_peek(0))) {
-                    jml_hashmap_del(&vm->globals, name);
+                if (jml_vm_global_set(name, jml_vm_peek(0))) {
+                    jml_vm_global_del(name);
                     frame->pc = pc;
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1184,7 +1209,7 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_GET_GLOBAL) {
                 jml_obj_string_t *name = READ_STRING();
                 jml_value_t value;
-                if (!jml_hashmap_get(&vm->globals, name, &value)) {
+                if (!jml_vm_global_get(name, &value)) {
                     frame->pc = pc;
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1195,7 +1220,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_DEF_GLOBAL) {
                 jml_obj_string_t *name = READ_STRING();
-                jml_hashmap_set(&vm->globals, name, jml_vm_peek(0));
+                jml_vm_global_set(name, jml_vm_peek(0));
                 jml_vm_pop();
                 END_OP();
             }
@@ -1281,7 +1306,7 @@ jml_vm_run(jml_value_t *last)
 
                 jml_value_t         value;
 
-                if (!jml_hashmap_get(&vm->globals, name, &value)) {
+                if (!jml_vm_global_get(name, &value)) {
                     frame->pc = pc;
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1330,7 +1355,7 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t         indexed;
                 jml_value_t         value;
 
-                if (!jml_hashmap_get(&vm->globals, name, &value)) {
+                if (!jml_vm_global_get(name, &value)) {
                     frame->pc = pc;
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1382,13 +1407,13 @@ jml_vm_run(jml_value_t *last)
                     return INTERPRET_RUNTIME_ERROR;
 
                 } else if (jml_string_equal(old_name, new_name)) {
-                    jml_hashmap_set(&vm->globals, old_name, value);
+                    jml_vm_global_set(old_name, value);
                     frame->pc = pc;
                     jml_vm_error("Can't swap variable to itself.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                jml_hashmap_set(&vm->globals, new_name, value);
+                jml_vm_global_set(new_name, value);
                 jml_vm_push(value);
                 END_OP();
             }
@@ -1521,11 +1546,8 @@ jml_vm_interpret(const char *source)
     jml_vm_pop();
     jml_vm_push(OBJ_VAL(closure));
 
-    jml_hashmap_set(&vm->globals,
-        vm->module_string, OBJ_VAL(vm->main_string));
-
-    jml_hashmap_set(&vm->globals,
-        vm->path_string, NONE_VAL);
+    jml_vm_global_set(vm->module_string, OBJ_VAL(vm->main_string));
+    jml_vm_global_set(vm->path_string, NONE_VAL);
 
     jml_vm_call_value(OBJ_VAL(closure), 0);
     return jml_vm_run(NULL);
@@ -1546,11 +1568,8 @@ jml_value_t jml_vm_eval(const char *source)
     jml_vm_pop();
     jml_vm_push(OBJ_VAL(closure));
 
-    jml_hashmap_set(&vm->globals,
-        vm->module_string, OBJ_VAL(vm->main_string));
-
-    jml_hashmap_set(&vm->globals,
-        vm->path_string, NONE_VAL);
+    jml_vm_global_set(vm->module_string, OBJ_VAL(vm->main_string));
+    jml_vm_global_set(vm->path_string, NONE_VAL);
 
     jml_vm_call_value(OBJ_VAL(closure), 0);
 

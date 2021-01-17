@@ -251,7 +251,7 @@ jml_compiler_init(jml_compiler_t *compiler,
     compiler->function      = NULL;
     compiler->type          = type;
 
-    compiler->in_module     = module == NULL ? false : true;
+    compiler->in_module     = module != NULL;
     compiler->module        = module;
 
     compiler->local_count = 0;
@@ -369,7 +369,8 @@ jml_parser_synchronize(void)
             case TOKEN_IMPORT:
                 return;
 
-            default: /*pass*/;
+            default:
+                break;
         }
         jml_parser_advance();
     }
@@ -1083,7 +1084,7 @@ jml_parser_rule rules[] = {
     [TOKEN_WHILE]       = {NULL,        NULL,       PREC_NONE},
     [TOKEN_BREAK]       = {NULL,        NULL,       PREC_NONE},
     [TOKEN_SKIP]        = {NULL,        NULL,       PREC_NONE},
-    [TOKEN_IN]          = {NULL,        jml_binary, PREC_TERM},
+    [TOKEN_IN]          = {NULL,        jml_binary, PREC_COMPARISON},
     [TOKEN_WITH]        = {NULL,        NULL,       PREC_NONE},
     [TOKEN_IF]          = {NULL,        NULL,       PREC_NONE},
     [TOKEN_ELSE]        = {NULL,        NULL,       PREC_NONE},
@@ -1220,8 +1221,9 @@ jml_method(void)
     if (parser.previous.length == 6 &&
         memcmp(parser.previous.start, "__init", 6) == 0) {
         type = FUNCTION_INITIALIZER;
+
     } else if (parser.previous.length == 6 &&
-        memcmp(parser.previous.start, "__call", 6) == 0) {
+        memcmp(parser.previous.start, "__", 2) == 0) {
         type = FUNCTION_DUNDER;
     }
 

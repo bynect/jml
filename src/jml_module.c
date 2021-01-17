@@ -42,8 +42,7 @@ jml_module_std_path(char *path)
 
 
 jml_obj_module_t *
-jml_module_open(jml_obj_string_t *module_name,
-    char *path)
+jml_module_open(jml_obj_string_t *module_name, char *path)
 {
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     char *module_str = jml_strdup(module_name->chars);

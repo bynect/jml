@@ -150,7 +150,8 @@ jml_lexer_skip_char(void)
                 jml_lexer_advance();
                 break;
 
-            default: return;
+            default:
+                return;
         }
     }
 }
