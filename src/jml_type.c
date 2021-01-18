@@ -335,7 +335,7 @@ jml_obj_function_print(jml_obj_function_t *function)
     if (function->klass_name != NULL)
         printf("%s.", function->klass_name->chars);
 
-    printf("/%d>", function->arity);
+    printf("%s/%d>", function->name->chars, function->arity);
 }
 
 

@@ -50,8 +50,7 @@ jml_value_t jml_vm_peek(int distance);
 
 void jml_vm_error(const char *format, ...);
 
-bool jml_vm_call_value(jml_value_t callee,
-    int arg_count);
+bool jml_vm_call_value(jml_value_t callee, int arg_count);
 
 void jml_cfunction_register(const char *name,
     jml_cfunction function, jml_obj_module_t *module);

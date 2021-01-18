@@ -1102,7 +1102,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_CLOSURE) {
                 jml_obj_function_t *function = AS_FUNCTION(READ_CONST());
-                jml_obj_closure_t *closure = jml_obj_closure_new(function);
+                jml_obj_closure_t   *closure = jml_obj_closure_new(function);
                 jml_vm_push(OBJ_VAL(closure));
 
                 for (int i = 0; i < closure->upvalue_count; ++i) {
