@@ -12,6 +12,10 @@ else
 	CFLAGS+=-std=c99
 endif
 
+ifneq (,$(filter $(strip $(CC)),clang clang++))
+	CFLAGS+=-Wno-typedef-redefinition
+endif
+
 DEFINES=
 INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
 LIBS=-lm -ldl
@@ -50,7 +54,7 @@ $(SRC_D)/%.o: $(SRC_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES)
 
 $(STD_D)/%.o: $(STD_D)/%.c
-	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) $(XSHARED)
+	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) -fpic
 
 $(STD_D)/%.so: $(STD_D)/%.o
 	$(CC) $< -o $@ $(XSHARED)
