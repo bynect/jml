@@ -1095,6 +1095,8 @@ static jml_parser_rule rules[] = {
     /*TOKEN_FN*/        {NULL,          NULL,           PREC_NONE},
     /*TOKEN_RETURN*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_IMPORT*/    {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_ASYNC*/     {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_AWAIT*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AND*/       {NULL,          &jml_and,       PREC_AND},
     /*TOKEN_NOT*/       {&jml_unary,    NULL,           PREC_NONE},
     /*TOKEN_OR*/        {NULL,          &jml_or,        PREC_OR},

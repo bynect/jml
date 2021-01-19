@@ -63,6 +63,8 @@ typedef enum {
     TOKEN_FN,
     TOKEN_RETURN,
     TOKEN_IMPORT,
+    TOKEN_ASYNC,
+    TOKEN_AWAIT,
     TOKEN_AND,
     TOKEN_NOT,
     TOKEN_OR,
