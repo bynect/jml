@@ -70,7 +70,7 @@ jml_core_exception_types(bool mult, int arg_count, ...)
             sprintf(temp, " and <type %s>", next);
 
         size_t dest_size = strlen(message) + strlen(temp);
-        REALLOC(message, size, dest_size);
+        REALLOC(char, message, size, dest_size);
         strcat(message, temp);
     }
 
@@ -80,7 +80,7 @@ jml_core_exception_types(bool mult, int arg_count, ...)
         "DiffTypes", message
     );
 
-    jml_realloc(message, 0UL);
+    jml_realloc(message, 0);
     va_end(types);
 
     return exc;
@@ -127,7 +127,7 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
         char *value_str         = jml_value_stringify(args[fmt_args + 1]);
 
         size_t dest_size        = strlen(string) + strlen(value_str) + strlen(token);
-        REALLOC(string, size, dest_size);
+        REALLOC(char, string, size, dest_size);
 
         strcat(string, token);
         strcat(string, value_str);
@@ -180,7 +180,7 @@ jml_core_string_fmt(int arg_count, jml_value_t *args)
         char *value_str         = jml_value_stringify(args[fmt_args + 1]);
 
         size_t dest_size        = strlen(string) + strlen(value_str) + strlen(token);
-        REALLOC(string, size, dest_size);
+        REALLOC(char, string, size, dest_size);
 
         strcat(string, token);
         strcat(string, value_str);

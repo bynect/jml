@@ -387,7 +387,7 @@ jml_obj_print(jml_value_t value)
             jml_value_print(entries[item_count].value);
             printf("}");
 
-            jml_realloc(entries, 0UL);
+            jml_realloc(entries, 0);
             break;
         }
 
@@ -457,16 +457,16 @@ jml_obj_function_stringify(jml_obj_function_t *function)
     sprintf(fn, "<fn ");
 
     if (function->module != NULL) {
-        REALLOC(fn, size, size + function->module->name->length);
+        REALLOC(char, fn, size, size + function->module->name->length);
         sprintf(fn, "%s.", function->module->name->chars);
     }
 
     if (function->klass_name != NULL) {
-        REALLOC(fn, size, size + function->klass_name->length);
+        REALLOC(char, fn, size, size + function->klass_name->length);
         sprintf(fn, "%s.", function->klass_name->chars);
     }
 
-    REALLOC(fn, size, size + function->name->length + 3);
+    REALLOC(char, fn, size, size + function->name->length + 3);
     sprintf(fn, "%s/%d>", function->name->chars,
         function->arity);
 
@@ -476,13 +476,14 @@ jml_obj_function_stringify(jml_obj_function_t *function)
 
 #define CLASS_NAME(buf, klass)                          \
     if (klass->module != NULL) {                        \
-        REALLOC(buf, size,                              \
+        REALLOC(char, buf, size,                        \
             size + klass->module->name->length);        \
         sprintf(buf, "%s.", klass->module->name->chars);\
     }                                                   \
                                                         \
-    REALLOC(buf, size, size + klass->name->length + 3); \
-    sprintf(buf, "%s", klass->name->chars);
+    REALLOC(char, buf, size,                            \
+        size + klass->name->length + 3);                \
+    sprintf(buf, "%s", klass->name->chars)
 
 
 static char *

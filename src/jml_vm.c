@@ -107,7 +107,7 @@ jml_vm_init(jml_vm_t *vm_ptr)
 {
     jml_vm_stack_reset(vm_ptr);
 
-    jml_obj_t *sentinel = jml_alloc(sizeof(jml_obj_t));
+    jml_obj_t *sentinel     = jml_alloc(sizeof(jml_obj_t));
 
     vm_ptr->sentinel        = sentinel;
     vm_ptr->objects         = vm_ptr->sentinel;

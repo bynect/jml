@@ -95,7 +95,7 @@ jml_free(void *ptr)
     if (ptr == NULL)
         return;
 
-    jml_realloc(ptr, 0UL);
+    jml_realloc(ptr, 0);
 }
 
 

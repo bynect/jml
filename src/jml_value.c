@@ -394,10 +394,8 @@ jml_hashmap_mark(jml_hashmap_t *map)
 jml_hashmap_entry_t *
 jml_hashmap_iterator(jml_hashmap_t *map)
 {
-    jml_hashmap_entry_t *entries = jml_realloc(NULL,
+    jml_hashmap_entry_t *entries = jml_alloc(
         map->count * sizeof(jml_hashmap_entry_t));
-
-    memset(entries, 0, map->count * sizeof(jml_hashmap_entry_t));
 
     int count = 0;
     for (int i = 0; i <= map->capacity; i++) {

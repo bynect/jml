@@ -7,7 +7,7 @@ LFLAGS=-rdynamic
 XSHARED=-shared -fpic
 
 ifneq (,$(filter $(strip $(CC)),g++ clang++))
-	CFLAGS+=-fpermissive
+	CFLAGS+=-fpermissive -Wno-write-strings
 else
 	CFLAGS+=-std=c99
 endif

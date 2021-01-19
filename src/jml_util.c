@@ -23,15 +23,19 @@
 char *
 jml_strsep(char **str, const char *sep)
 {
-    char *s = *str, *end;
-    if (!s) return NULL;
-    end = s + strcspn(s, sep);
+    char *ptr = *str, *end;
+    if (!ptr)
+        return NULL;
 
-    if (*end) *end++ = 0;
-    else end = 0;
+    end = ptr + strcspn(ptr, sep);
+
+    if (*end)
+        *end++ = 0;
+    else
+        end = 0;
 
     *str = end;
-    return s;
+    return ptr;
 }
 
 
@@ -68,8 +72,7 @@ jml_strdup(const char *str)
 
     if (!dest) return NULL;
 
-    return (char*)memcpy(dest, str,
-        length);
+    return memcpy(dest, str, length);
 }
 
 
@@ -154,17 +157,20 @@ char *
 jml_file_read(const char *path)
 {
     FILE *file = fopen(path, "rb");
-    if (file == NULL) return NULL;
+    if (file == NULL)
+        return NULL;
 
     fseek(file, 0L, SEEK_END);
     size_t size = ftell(file);
     rewind(file);
 
     char *buffer = jml_realloc(NULL, size + 1);
-    if (buffer == NULL) return NULL;
+    if (buffer == NULL)
+        return NULL;
 
     size_t read = fread(buffer, sizeof(char), size, file);
-    if (read < size) return NULL;
+    if (read < size)
+        return NULL;
 
     buffer[read] = '\0';
     fclose(file);

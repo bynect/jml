@@ -111,7 +111,7 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
     }
 
     err: {
-        jml_realloc(module_str, 0UL);
+        jml_realloc(module_str, 0);
         return NULL;
     }
 

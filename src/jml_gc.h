@@ -7,11 +7,12 @@
 
 #define GC_HEAP_GROW_FACTOR 1.5
 
+
 #define ALLOCATE(type, count)                           \
-    (type*)jml_reallocate(NULL, 0UL, sizeof(type) * (count))
+    (type*)jml_reallocate(NULL, 0, sizeof(type) * (count))
 
 #define FREE(type, ptr)                                 \
-    jml_reallocate(ptr, sizeof(type), 0UL)
+    jml_reallocate(ptr, sizeof(type), 0)
 
 #define GROW_CAPACITY(capacity)                         \
     ((capacity) < 8 ? 8 : (capacity) * 2)
@@ -22,14 +23,14 @@
         sizeof(type) * (new_count))
 
 #define FREE_ARRAY(type, ptr, old_count)                \
-    jml_reallocate(ptr, sizeof(type) * (old_count), 0UL)
+    jml_reallocate(ptr, sizeof(type) * (old_count), 0)
 
-#define REALLOC(ptr, size, dest_size)                   \
+#define REALLOC(type, ptr, size, dest_size)             \
     do {                                                \
         if (size <= dest_size) {                        \
             do {                                        \
                 size *= GC_HEAP_GROW_FACTOR;            \
-                ptr = jml_realloc(ptr, size);           \
+                ptr = (type*)jml_realloc(ptr, size);    \
             } while (size <= dest_size);                \
         }                                               \
     } while (false)
