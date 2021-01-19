@@ -154,7 +154,7 @@ jml_std_io_file_init(int arg_count, jml_value_t *args)
     if (handle == NULL) {
         exc = jml_obj_exception_new(
             "IOError",
-            "File opening failed."
+            "Opening File failed."
         );
         goto err;
     }
@@ -211,7 +211,7 @@ jml_std_io_file_close(int arg_count, jml_value_t *args)
     if (fclose(internal->handle) == EOF) {
         exc = jml_obj_exception_new(
             "IOError",
-            "File closing failed."
+            "Closing File failed."
         );
         goto err;
     }
@@ -280,7 +280,7 @@ jml_std_io_file_read(int arg_count, jml_value_t *args)
                 jml_free(buffer);
                 exc = jml_obj_exception_new(
                     "IOError",
-                    "Failed to read File."
+                    "Reading File failed."
                 );
                 goto err;
             }
@@ -358,7 +358,7 @@ jml_std_io_file_write(int arg_count, jml_value_t *args)
             if (bytes != 1) {
                 exc = jml_obj_exception_new(
                     "IOError",
-                    "Failed to write to File."
+                    "Writing to File failed."
                 );
                 goto err;
             }
@@ -411,7 +411,7 @@ jml_std_io_file_flush(int arg_count, jml_value_t *args)
     if (fflush(internal->handle) == EOF) {
         exc = jml_obj_exception_new(
             "IOError",
-            "File flushing failed."
+            "Flushing File failed."
         );
         goto err;
     }

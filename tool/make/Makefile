@@ -1,31 +1,6 @@
-CC=gcc
-AR=ar
-RM=rm -f
+#usage
+#make -f tool/make/Makefile all [options]
 
-CFLAGS=-Wall -Wextra -Werror
-LFLAGS=-rdynamic
-XSHARED=-shared -fpic
-
-ifneq (,$(filter $(strip $(CC)),g++ clang++))
-	CFLAGS+=-fpermissive -Wno-write-strings
-else
-	CFLAGS+=-std=c99
-endif
-
-ifneq (,$(filter $(strip $(CC)),clang clang++))
-	CFLAGS+=-Wno-typedef-redefinition
-endif
-
-DEFINES=
-INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
-LIBS=-lm -ldl
-
-ifdef NDEBUG
-	DEFINES+=-DJML_NDEBUG
-	CFLAGS+=-O2 -Wno-unused-result
-else
-	CFLAGS+=-g3
-endif
 
 CLI_D=cli
 SRC_D=src
@@ -42,6 +17,43 @@ STD_O=$(STD_C:.c=.o)
 TARGET_BIN=bin/jml
 TARGET_LIB=lib/libjml.a
 TARGET_STD=$(STD_C:.c=.so)
+
+
+CC=gcc
+AR=ar
+RM=rm -f
+
+CFLAGS=-Wall -Wextra -Werror
+LFLAGS=-rdynamic
+XSHARED=-shared -fpic
+
+DEFINES=
+INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
+LIBS=-lm -ldl
+
+
+ifneq (,$(filter $(strip $(CC)),g++ clang++))
+	CFLAGS+=-fpermissive -Wno-write-strings
+else
+	CFLAGS+=-std=c99
+endif
+
+ifneq (,$(filter $(strip $(CC)),clang clang++))
+	CFLAGS+=-Wno-typedef-redefinition
+endif
+
+ifdef NDEBUG
+	DEFINES+=-DJML_NDEBUG
+	CFLAGS+=-O2 -Wno-unused-result
+else
+	CFLAGS+=-g3
+endif
+
+ifdef READLINE
+	DEFINES+=-DJML_CLI_READLINE
+	LIBS+=-lreadline
+endif
+
 
 all:: $(TARGET_BIN) $(TARGET_LIB)
 

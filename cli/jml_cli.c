@@ -6,6 +6,14 @@
 #include <jml.h>
 
 
+#ifdef JML_CLI_READLINE
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#endif
+
+
 #define print_error(message, ...)                       \
     do {                                                \
         fprintf(stderr, message, __VA_ARGS__);          \
@@ -20,7 +28,7 @@ jml_cli_fread(const char *path)
     if (file == NULL)
         print_error("Could not open file '%s'.\n", path);
 
-    fseek(file, 0L, SEEK_END);
+    fseek(file, 0, SEEK_END);
     size_t size = ftell(file);
     rewind(file);
 
@@ -62,17 +70,26 @@ jml_cli_repl(void)
         JML_PLATFORM_STRING
     );
 
+#ifdef JML_CLI_READLINE
+    char *line;
+    while ((line = readline("~> ")) != NULL) {
+        if (strlen(line) > 0)
+            add_history(line);
+        else
+            continue;
+#else
     char line[2048];
     while (true) {
-        printf("> ");
+        printf("~> ");
 
-        if (!fgets(line, sizeof(line), stdin)) {
+        if (fgets(line, sizeof(line), stdin) == NULL) {
             printf("\n");
             break;
         }
 
-        if (strcmp(line, "\n") == 0)
+        if (*line == '\n')
             continue;
+#endif
 
 #ifdef JML_EVAL
         jml_value_t result = jml_vm_eval(line);
@@ -83,6 +100,10 @@ jml_cli_repl(void)
         }
 #else
         jml_vm_interpret(line);
+#endif
+
+#ifdef JML_CLI_READLINE
+        free(line);
 #endif
     }
 }

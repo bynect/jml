@@ -73,7 +73,7 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
         sprintf(filename_jml, "%s", buffer);
 
     else {
-        jml_vm_error("ImportExc: Module not found.");
+        jml_vm_error("ImportErr: Module not found.");
         goto err;
     }
 #else
@@ -85,20 +85,19 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
         void *handle = dlopen(filename_so, RTLD_NOW);
 
         if (handle == NULL) {
-            jml_vm_error("ImportExc: %s.", dlerror());
+            jml_vm_error("ImportErr: %s.", dlerror());
             goto err;
         }
 
         if (path != NULL)
             strcpy(path, filename_so);
 
-        jml_realloc(module_str, 0UL);
+        jml_realloc(module_str, 0);
 
         return jml_obj_module_new(
             module_name, handle);
 
     } else if (jml_file_exist(filename_jml)) {
-        /*TODO*/
         if (path != NULL)
             strcpy(path, filename_jml);
 
@@ -106,7 +105,7 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
         goto err;
 
     } else {
-        jml_vm_error("ImportExc: Module not found.");
+        jml_vm_error("ImportErr: Module not found.");
         goto err;
     }
 
@@ -149,7 +148,7 @@ jml_module_get_raw(jml_obj_module_t *module,
     char *result = dlerror();
     if (result || raw == NULL) {
         if (!silent)
-            jml_vm_error("ImportExc: %s.", result);
+            jml_vm_error("ImportErr: %s.", result);
 
         return NULL;
     }
