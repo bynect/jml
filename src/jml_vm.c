@@ -683,6 +683,10 @@ jml_vm_run(jml_value_t *last)
     jml_call_frame_t *frame = &vm->frames[vm->frame_count - 1];
     register uint8_t *pc = frame->pc;
 
+#ifndef JML_EVAL
+    (void) last;
+#endif
+
 #define READ_BYTE()                 (*pc++)
 #define READ_SHORT()                (pc += 2, (uint16_t)((pc[-2] << 8) | pc[-1]))
 #define READ_STRING()               AS_STRING(READ_CONST())
@@ -1579,6 +1583,7 @@ jml_value_t jml_vm_eval(const char *source)
 
     return result;
 #else
+    (void) source;
     goto err;
 #endif
 

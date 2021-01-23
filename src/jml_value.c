@@ -86,7 +86,7 @@ jml_value_stringify(jml_value_t value)
 }
 
 
-char *
+const char *
 jml_value_stringify_type(jml_value_t value)
 {
 #ifdef JML_NAN_TAGGING

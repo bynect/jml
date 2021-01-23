@@ -57,7 +57,7 @@ jml_obj_string_allocate(char *chars,
 static uint32_t
 jml_obj_string_hash(const char *key, size_t length)
 {
-    uint32_t hash = 2166136261U;
+    uint32_t hash = 2166136261u;
 
     for (int i = 0; i < (int)length; i++) {
         hash ^= key[i];
@@ -234,11 +234,11 @@ jml_obj_function_new(void)
     jml_obj_function_t *function = ALLOCATE_OBJ(
         jml_obj_function_t, OBJ_FUNCTION);
 
-    function->arity         = 0;
-    function->upvalue_count = 0;
-    function->name          = NULL;
-    function->klass_name    = NULL;
-    function->module        = NULL;
+    function->arity                 = 0;
+    function->upvalue_count         = 0;
+    function->name                  = NULL;
+    function->klass_name            = NULL;
+    function->module                = NULL;
 
     jml_bytecode_init(&function->bytecode);
 
@@ -576,7 +576,7 @@ jml_obj_stringify(jml_value_t value)
 }
 
 
-char *
+const char *
 jml_obj_stringify_type(jml_value_t value)
 {
     switch (OBJ_TYPE(value)) {
