@@ -44,7 +44,7 @@ endif
 
 ifdef NDEBUG
 	DEFINES+=-DJML_NDEBUG
-	CFLAGS+=-O2 -Wno-unused-result
+	CFLAGS+=-O3 -Wno-unused-result
 else
 	CFLAGS+=-g3
 endif

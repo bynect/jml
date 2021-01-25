@@ -82,10 +82,8 @@ jml_cli_repl(void)
     while (true) {
         printf("~> ");
 
-        if (fgets(line, sizeof(line), stdin) == NULL) {
-            printf("\n");
+        if (fgets(line, sizeof(line), stdin) == NULL)
             break;
-        }
 
         if (*line == '\n')
             continue;
@@ -119,6 +117,7 @@ main(int argc, char **argv)
     switch (argc) {
         case 1:
             jml_cli_repl();
+            putchar('\n');
             break;
 
         case 2:
