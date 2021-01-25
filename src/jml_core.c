@@ -17,7 +17,7 @@
 jml_obj_exception_t *
 jml_core_exception_args(int arg_count, int expected_arg)
 {
-    char message[38];
+    char message[50];
 
     sprintf(message, "Expected '%d' arguments but got '%d'.",
         expected_arg, arg_count);
@@ -377,9 +377,9 @@ jml_core_type(int arg_count, jml_value_t *args)
     if (exc != NULL)
         return OBJ_VAL(exc);
 
-    char *string = jml_value_stringify_type(args[0]);
-
-    return jml_string_intern(string);
+    return jml_string_intern(
+        jml_value_stringify_type(args[0])
+    );
 }
 
 

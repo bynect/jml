@@ -17,13 +17,82 @@
 jml_vm_t *vm;
 
 
-static void
-jml_vm_stack_reset(jml_vm_t *vm_ptr)
+jml_vm_t *
+jml_vm_new(void)
 {
-    vm_ptr->stack_top       = vm_ptr->stack;
-    vm_ptr->frame_count     = 0;
-    vm_ptr->open_upvalues   = NULL;
-    vm_ptr->exempt          = vm_ptr->exempt_stack;
+    jml_vm_t *_vm = jml_alloc(sizeof(jml_vm_t));
+    vm = _vm;
+
+    jml_vm_init(_vm);
+    return _vm;
+}
+
+
+void
+jml_vm_init(jml_vm_t *vm)
+{
+    jml_vm_reset(vm);
+
+    jml_obj_t *sentinel     = jml_alloc(sizeof(jml_obj_t));
+
+    vm->sentinel            = sentinel;
+    vm->objects             = vm->sentinel;
+    vm->external            = NULL;
+
+    vm->allocated           = 0;
+    vm->next_gc             = 1024 * 1024 * 4;
+
+    vm->gray_count          = 0;
+    vm->gray_capacity       = 0;
+    vm->gray_stack          = NULL;
+
+    jml_hashmap_init(&vm->globals);
+    jml_hashmap_init(&vm->strings);
+    jml_hashmap_init(&vm->modules);
+
+    vm->main_string         = NULL;
+    vm->init_string         = NULL;
+    vm->call_string         = NULL;
+    vm->free_string         = NULL;
+    vm->module_string       = NULL;
+    vm->path_string         = NULL;
+
+    vm->main_string         = jml_obj_string_copy("__main", 6);
+    vm->init_string         = jml_obj_string_copy("__init", 6);
+    vm->call_string         = jml_obj_string_copy("__call", 6);
+    vm->free_string         = jml_obj_string_copy("__free", 6);
+    vm->module_string       = jml_obj_string_copy("__module", 8);
+    vm->path_string         = jml_obj_string_copy("__path", 6);
+
+    jml_core_register();
+}
+
+
+void
+jml_vm_free(jml_vm_t *vm)
+{
+    jml_hashmap_free(&vm->globals);
+    jml_hashmap_free(&vm->strings);
+    jml_hashmap_free(&vm->modules);
+
+    vm->external            = NULL;
+
+    jml_gc_free_objs();
+
+    vm->main_string         = NULL;
+    vm->init_string         = NULL;
+    vm->call_string         = NULL;
+    vm->free_string         = NULL;
+    vm->module_string       = NULL;
+    vm->path_string         = NULL;
+
+    ASSERT(
+        vm->allocated == 0,
+        "[VM]  |%zd bytes not freed|\n",
+        vm->allocated
+    );
+
+    jml_free(vm);
 }
 
 
@@ -76,7 +145,7 @@ jml_vm_error(const char *format, ...)
             fprintf(stderr, "__main\n");
     }
 
-    jml_vm_stack_reset(vm);
+    jml_vm_reset(vm);
 }
 
 
@@ -91,82 +160,13 @@ jml_vm_exception(jml_obj_exception_t *exc)
 }
 
 
-jml_vm_t *
-jml_vm_new(void)
-{
-    jml_vm_t *vm_ptr = jml_alloc(sizeof(jml_vm_t));
-    vm = vm_ptr;
-
-    jml_vm_init(vm_ptr);
-    return vm_ptr;
-}
-
-
 void
-jml_vm_init(jml_vm_t *vm_ptr)
+jml_vm_reset(jml_vm_t *vm)
 {
-    jml_vm_stack_reset(vm_ptr);
-
-    jml_obj_t *sentinel     = jml_alloc(sizeof(jml_obj_t));
-
-    vm_ptr->sentinel        = sentinel;
-    vm_ptr->objects         = vm_ptr->sentinel;
-    vm_ptr->external        = NULL;
-
-    vm_ptr->allocated       = 0;
-    vm_ptr->next_gc         = 1024 * 1024 * 4;
-
-    vm_ptr->gray_count      = 0;
-    vm_ptr->gray_capacity   = 0;
-    vm_ptr->gray_stack      = NULL;
-
-    jml_hashmap_init(&vm_ptr->globals);
-    jml_hashmap_init(&vm_ptr->strings);
-    jml_hashmap_init(&vm_ptr->modules);
-
-    vm_ptr->main_string     = NULL;
-    vm_ptr->init_string     = NULL;
-    vm_ptr->call_string     = NULL;
-    vm_ptr->free_string     = NULL;
-    vm_ptr->module_string   = NULL;
-    vm_ptr->path_string     = NULL;
-
-    vm_ptr->main_string     = jml_obj_string_copy("__main", 6);
-    vm_ptr->init_string     = jml_obj_string_copy("__init", 6);
-    vm_ptr->call_string     = jml_obj_string_copy("__call", 6);
-    vm_ptr->free_string     = jml_obj_string_copy("__free", 6);
-    vm_ptr->module_string   = jml_obj_string_copy("__module", 8);
-    vm_ptr->path_string     = jml_obj_string_copy("__path", 6);
-
-    jml_core_register();
-}
-
-
-void
-jml_vm_free(jml_vm_t *vm_ptr)
-{
-    jml_hashmap_free(&vm_ptr->globals);
-    jml_hashmap_free(&vm_ptr->strings);
-    jml_hashmap_free(&vm_ptr->modules);
-
-    vm_ptr->external        = NULL;
-
-    jml_gc_free_objs();
-
-    vm_ptr->main_string     = NULL;
-    vm_ptr->init_string     = NULL;
-    vm_ptr->call_string     = NULL;
-    vm_ptr->free_string     = NULL;
-    vm_ptr->module_string   = NULL;
-    vm_ptr->path_string     = NULL;
-
-    ASSERT(
-        vm_ptr->allocated == 0,
-        "[VM]  |%zd bytes not freed|\n",
-        vm_ptr->allocated
-    );
-
-    jml_free(vm_ptr);
+    vm->stack_top       = vm->stack;
+    vm->frame_count     = 0;
+    vm->open_upvalues   = NULL;
+    vm->exempt          = vm->exempt_stack;
 }
 
 
@@ -190,6 +190,16 @@ void
 jml_vm_pop_two(void)
 {
     vm->stack_top -= 2;
+}
+
+
+void
+jml_vm_rot(void)
+{
+    jml_value_t a       = jml_vm_pop();
+    jml_value_t b       = jml_vm_pop();
+    jml_vm_push(a);
+    jml_vm_push(b);
 }
 
 
@@ -867,10 +877,7 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_ROT) {
-                jml_value_t a       = jml_vm_pop();
-                jml_value_t b       = jml_vm_pop();
-                jml_vm_push(a);
-                jml_vm_push(b);
+                jml_vm_rot();
                 END_OP();
             }
 

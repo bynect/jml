@@ -40,11 +40,15 @@ struct jml_vm {
 
 void jml_vm_init(jml_vm_t *vm);
 
+void jml_vm_reset(jml_vm_t *vm);
+
 void jml_vm_push(jml_value_t value);
 
 jml_value_t jml_vm_pop();
 
 void jml_vm_pop_two(void);
+
+void jml_vm_rot(void);
 
 jml_value_t jml_vm_peek(int distance);
 

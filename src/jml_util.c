@@ -133,7 +133,7 @@ jml_file_find_in(const char *path,
     const char *filename, char *result)
 {
     bool res;
-    char *tmp = getcwd(NULL, 0);
+    char *temp = getcwd(NULL, 0);
 
     if (chdir(path) != 0) {
         res = false;
@@ -142,13 +142,13 @@ jml_file_find_in(const char *path,
 
     res = jml_file_find(filename, result);
 
-    if (chdir(tmp) != 0){
+    if (chdir(temp) != 0){
         res = false;
         goto done;
     }
 
 done:
-    jml_free(tmp);
+    jml_free(temp);
     return res;
 }
 
