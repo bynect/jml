@@ -716,7 +716,7 @@ jml_string(JML_UNUSED(bool assignable))
     size_t size                 = 0;
 
     for (unsigned int i = 0; i < length; ) {
-        int c = raw[i];
+        uint32_t c = raw[i];
 
         if (c == '\\') {
             if (i + 1 >= length) {
@@ -785,7 +785,13 @@ jml_string(JML_UNUSED(bool assignable))
                     };
 
                     c = strtoul(hex, NULL, 16);
-                    buffer[size++] = c;
+                    if (c > 0)
+                        buffer[size++] = c;
+                    else {
+                        buffer[size++] = '\\';
+                        buffer[size++] = '0';
+                    }
+
                     i += 4;
                     continue;
                 }

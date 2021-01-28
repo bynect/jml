@@ -21,11 +21,13 @@ jml_strsfx(const char *suf,
 }
 
 
-#ifdef JML_PLATFORM_NIX
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 
 #include <limits.h>
 #include <unistd.h>
 #include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #define JML_PATH_MAX                PATH_MAX
 
@@ -36,9 +38,38 @@ jml_file_exist(const char *filename)
     return access(filename, F_OK) != -1;
 }
 
-#elif JML_PLATFORM_WIN
+
+static inline bool
+jml_file_isdir(const char *path)
+{
+    struct stat path_stat;
+    if (stat(path, &path_stat) < 0)
+        return false;
+
+    return S_ISDIR(path_stat.st_mode);
+}
+
+
+#elif defined JML_PLATFORM_WIN
 
 #define JML_PATH_MAX                260
+
+
+static inline bool
+jml_file_exist(const char *filename)
+{
+    (void) filename;
+    return false;
+}
+
+
+static inline bool
+jml_file_isdir(const char *path)
+{
+    (void) path;
+    return false;
+}
+
 
 #endif
 

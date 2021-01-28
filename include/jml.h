@@ -185,4 +185,8 @@ char *jml_strcat(char *dest, char *src);
 #endif
 
 
+/*EXTRA*/
+#include <jml_util.h>
+
+
 #endif /* JML_H_ */

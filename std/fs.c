@@ -28,11 +28,11 @@ typedef enum {
     WRITE_READ_BIN,
     APPEND_READ,
     APPEND_READ_BIN
-} file_mode_t;
+} jml_file_mode_t;
 
 
-static file_mode_t
-file_open_mode(jml_obj_string_t *string)
+static jml_file_mode_t
+jml_std_fs_file_open_mode(jml_obj_string_t *string)
 {
     if (string->length < 1 || string->length > 3)
         return INVALID;
@@ -88,29 +88,16 @@ file_open_mode(jml_obj_string_t *string)
 }
 
 
-static inline bool
-file_isdir(const char *path)
-{
-#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
-    struct stat path_stat;
-    if (stat(path, &path_stat) < 0)
-        return false;
-
-    return S_ISDIR(path_stat.st_mode);
-#endif
-}
-
-
 typedef struct {
     const char                     *name;
     FILE                           *handle;
-    file_mode_t                     mode;
+    jml_file_mode_t                 mode;
     bool                            open;
-} file_internal_t;
+} jml_std_fs_file_t;
 
 
 static jml_value_t
-jml_std_io_file_init(int arg_count, jml_value_t *args)
+jml_std_fs_file_init(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc    = jml_core_exception_args(
         arg_count - 1, 2);
@@ -126,9 +113,9 @@ jml_std_io_file_init(int arg_count, jml_value_t *args)
     jml_obj_instance_t  *self   = AS_INSTANCE(args[0]);
     const char          *name   = AS_CSTRING(args[1]);
     jml_obj_string_t    *mode   = AS_STRING(args[2]);
-    file_mode_t open_mode;
+    jml_file_mode_t open_mode;
 
-    if ((open_mode = file_open_mode(mode)) == INVALID) {
+    if ((open_mode = jml_std_fs_file_open_mode(mode)) == INVALID) {
         exc = jml_obj_exception_new(
             "ValueError",
             "Invalid file open mode."
@@ -136,7 +123,7 @@ jml_std_io_file_init(int arg_count, jml_value_t *args)
         goto err;
     }
 
-    if (file_isdir(name)) {
+    if (jml_file_isdir(name)) {
         exc = jml_obj_exception_new(
             "IOError",
             "Filename points to a directory."
@@ -154,8 +141,7 @@ jml_std_io_file_init(int arg_count, jml_value_t *args)
         goto err;
     }
 
-    file_internal_t *internal   = jml_alloc(
-        sizeof(file_internal_t));
+    jml_std_fs_file_t *internal = jml_alloc(sizeof(jml_std_fs_file_t));
 
     internal->name              = name;
     internal->handle            = handle;
@@ -185,7 +171,7 @@ err:
 
 
 static jml_value_t
-jml_std_io_file_close(int arg_count, jml_value_t *args)
+jml_std_fs_file_close(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count - 1, 0);
@@ -194,7 +180,7 @@ jml_std_io_file_close(int arg_count, jml_value_t *args)
         goto err;
 
     jml_obj_instance_t *self = AS_INSTANCE(args[0]);
-    file_internal_t *internal;
+    jml_std_fs_file_t *internal;
 
     if ((internal = self->extra) == NULL) {
         exc = jml_obj_exception_new(
@@ -245,7 +231,7 @@ err:
 
 
 static jml_value_t
-jml_std_io_file_read(int arg_count, jml_value_t *args)
+jml_std_fs_file_read(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count - 1, 0);
@@ -254,7 +240,7 @@ jml_std_io_file_read(int arg_count, jml_value_t *args)
         goto err;
 
     jml_obj_instance_t *self = AS_INSTANCE(args[0]);
-    file_internal_t *internal;
+    jml_std_fs_file_t *internal;
 
     if ((internal = self->extra) == NULL) {
         exc = jml_obj_exception_new(
@@ -319,7 +305,7 @@ err:
 
 
 static jml_value_t
-jml_std_io_file_write(int arg_count, jml_value_t *args)
+jml_std_fs_file_write(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count - 1, 1);
@@ -336,7 +322,7 @@ jml_std_io_file_write(int arg_count, jml_value_t *args)
 
     jml_obj_instance_t *self = AS_INSTANCE(args[1]);
     jml_obj_string_t *string = AS_STRING(args[0]);
-    file_internal_t *internal;
+    jml_std_fs_file_t *internal;
 
     if ((internal = self->extra) == NULL) {
         exc = jml_obj_exception_new(
@@ -394,7 +380,7 @@ err:
 
 
 static jml_value_t
-jml_std_io_file_flush(int arg_count, jml_value_t *args)
+jml_std_fs_file_flush(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_core_exception_args(
         arg_count - 1, 0);
@@ -403,7 +389,7 @@ jml_std_io_file_flush(int arg_count, jml_value_t *args)
         goto err;
 
     jml_obj_instance_t *self = AS_INSTANCE(args[0]);
-    file_internal_t *internal;
+    jml_std_fs_file_t *internal;
 
     if ((internal = self->extra) == NULL) {
         exc = jml_obj_exception_new(
@@ -437,14 +423,12 @@ err:
 
 
 static jml_value_t
-jml_std_io_file_free(int arg_count, jml_value_t *args)
+jml_std_fs_file_free(int arg_count, jml_value_t *args)
 {
-    jml_obj_instance_t *self = AS_INSTANCE(args[0]);
+    jml_obj_instance_t *self = AS_INSTANCE(args[arg_count - 1]);
 
     if (self->extra != NULL) {
-        jml_std_io_file_close(arg_count, args);
-
-        jml_obj_instance_t *self = AS_INSTANCE(args[0]);
+        jml_std_fs_file_close(arg_count, args);
         jml_free(self->extra);
         self->extra = NULL;
     }
@@ -455,18 +439,96 @@ jml_std_io_file_free(int arg_count, jml_value_t *args)
 
 /*class table*/
 MODULE_TABLE_HEAD file_table[] = {
-    {"__init",                      &jml_std_io_file_init},
-    {"close",                       &jml_std_io_file_close},
-    {"read",                        &jml_std_io_file_read},
-    {"write",                       &jml_std_io_file_write},
-    {"flush",                       &jml_std_io_file_flush},
-    {"__free",                      &jml_std_io_file_free},
+    {"__init",                      &jml_std_fs_file_init},
+    {"close",                       &jml_std_fs_file_close},
+    {"read",                        &jml_std_fs_file_read},
+    {"write",                       &jml_std_fs_file_write},
+    {"flush",                       &jml_std_fs_file_flush},
+    {"__free",                      &jml_std_fs_file_free},
     {NULL,                          NULL}
 };
 
 
+static jml_value_t
+jml_std_fs_remove(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        goto err;
+
+    if (!IS_STRING(args[0])) {
+        exc = jml_core_exception_types(
+            false, 1, "string");
+        goto err;
+    }
+
+    if (jml_file_exist(AS_CSTRING(args[0]))) {
+        if (remove(AS_CSTRING(args[0])) != 0) {
+            exc = jml_obj_exception_new(
+                "IOError",
+                "Removing File failed."
+            );
+            goto err;
+        }
+        return NONE_VAL;
+
+    } else {
+        exc = jml_obj_exception_new(
+            "IOError",
+            "File doesn't exist."
+        );
+        goto err;
+    }
+
+err:
+    return OBJ_VAL(exc);
+}
+
+
+static jml_value_t
+jml_std_fs_rename(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 2);
+
+    if (exc != NULL)
+        goto err;
+
+    if (!IS_STRING(args[0]) || !IS_STRING(args[1])) {
+        exc = jml_core_exception_types(
+            false, 2, "string");
+        goto err;
+    }
+
+    if (jml_file_exist(AS_CSTRING(args[0]))) {
+        if (rename(AS_CSTRING(args[0]),AS_CSTRING(args[1])) != 0) {
+            exc = jml_obj_exception_new(
+                "IOError",
+                "Renaming File failed."
+            );
+            goto err;
+        }
+        return NONE_VAL;
+
+    } else {
+        exc = jml_obj_exception_new(
+            "IOError",
+            "File doesn't exist."
+        );
+        goto err;
+    }
+
+err:
+    return OBJ_VAL(exc);
+}
+
+
 /*module table*/
 MODULE_TABLE_HEAD module_table[] = {
+    {"remove",                      &jml_std_fs_remove},
+    {"rename",                      &jml_std_fs_rename},
     {NULL,                          NULL}
 };
 
@@ -474,5 +536,8 @@ MODULE_TABLE_HEAD module_table[] = {
 MODULE_FUNC_HEAD
 module_init(jml_obj_module_t *module)
 {
-    jml_module_add_class(module, "File", file_table, true);
+    jml_module_add_value(module, "FOPEN_MAX", NUM_VAL(FOPEN_MAX));
+    jml_module_add_value(module, "FILENAME_MAX", NUM_VAL(FILENAME_MAX));
+
+    jml_module_add_class(module, "File", file_table, false);
 }
