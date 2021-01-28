@@ -270,12 +270,21 @@ jml_core_size(int arg_count, jml_value_t *args)
 
     jml_value_t value = args[0];
 
-    if (IS_STRING(value))
-        return NUM_VAL(AS_STRING(value)->length);
+    if (!IS_OBJ(value))
+        goto err;
 
-    if (IS_ARRAY(value))
-        return NUM_VAL(AS_ARRAY(value)->values.count);
+    switch (AS_OBJ(value)->type) {
+        case OBJ_STRING:
+            return NUM_VAL(AS_STRING(value)->length);
 
+        case OBJ_ARRAY:
+            return NUM_VAL(AS_ARRAY(value)->values.count);
+
+        default:
+            goto err;
+    }
+
+err:
     return OBJ_VAL(
         jml_core_exception_implemented(value)
     );
@@ -400,6 +409,54 @@ jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
 }
 
 
+static jml_value_t
+jml_core_attr(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc        = jml_core_exception_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    jml_value_t value = args[0];
+
+    if (!IS_OBJ(value))
+        goto err;
+
+    switch (AS_OBJ(value)->type) {
+        case OBJ_MODULE: {
+            jml_obj_map_t *map      = jml_obj_map_new();
+            jml_vm_push(OBJ_VAL(map));
+            jml_hashmap_add(&AS_MODULE(value)->globals, &map->hashmap);
+            return jml_vm_pop();
+        }
+
+        case OBJ_CLASS: {
+            jml_obj_map_t *map      = jml_obj_map_new();
+            jml_vm_push(OBJ_VAL(map));
+            jml_hashmap_add(&AS_CLASS(value)->methods, &map->hashmap);
+            return jml_vm_pop();
+        }
+
+        case OBJ_INSTANCE: {
+            jml_obj_map_t *map      = jml_obj_map_new();
+            jml_vm_push(OBJ_VAL(map));
+            jml_hashmap_add(&AS_INSTANCE(value)->fields, &map->hashmap);
+            jml_hashmap_add(&AS_INSTANCE(value)->klass->methods, &map->hashmap);
+            return jml_vm_pop();
+        }
+
+        default:
+            goto err;
+    }
+
+err:
+    return OBJ_VAL(
+        jml_core_exception_implemented(value)
+    );
+}
+
+
 /*core function registration*/
 jml_module_function core_functions[] = {
     {"print",                       &jml_core_print},
@@ -412,6 +469,7 @@ jml_module_function core_functions[] = {
     {"subclass",                    &jml_core_subclass},
     {"type",                        &jml_core_type},
     {"globals",                     &jml_core_globals},
+    {"attr",                        &jml_core_attr},
     {NULL,                          NULL}
 };
 

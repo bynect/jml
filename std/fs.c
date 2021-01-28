@@ -14,11 +14,6 @@
 #endif
 
 
-static jml_obj_string_t *mode_string;
-
-static jml_obj_string_t *name_string;
-
-
 typedef enum {
     INVALID,
     READ,
@@ -170,8 +165,17 @@ jml_std_io_file_init(int arg_count, jml_value_t *args)
     self->extra                 = internal;
     fseek(internal->handle, 0, SEEK_SET);
 
+    jml_obj_string_t *mode_string = jml_obj_string_copy("mode", 4);
+    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
+
+    jml_gc_exempt_push(OBJ_VAL(mode_string));
+    jml_gc_exempt_push(OBJ_VAL(name_string));
+
     jml_hashmap_set(&self->fields, mode_string, args[2]);
     jml_hashmap_set(&self->fields, name_string, args[1]);
+
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
 
     return NONE_VAL;
 
@@ -221,8 +225,17 @@ jml_std_io_file_close(int arg_count, jml_value_t *args)
     internal->mode              = INVALID;
     internal->open              = false;
 
+    jml_obj_string_t *mode_string = jml_obj_string_copy("mode", 4);
+    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
+
+    jml_gc_exempt_push(OBJ_VAL(mode_string));
+    jml_gc_exempt_push(OBJ_VAL(name_string));
+
     jml_hashmap_set(&self->fields, mode_string, NONE_VAL);
     jml_hashmap_set(&self->fields, name_string, NONE_VAL);
+
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
 
     return NONE_VAL;
 
@@ -461,8 +474,5 @@ MODULE_TABLE_HEAD module_table[] = {
 MODULE_FUNC_HEAD
 module_init(jml_obj_module_t *module)
 {
-    mode_string = jml_obj_string_copy("mode", 4);
-    name_string = jml_obj_string_copy("name", 4);
-
     jml_module_add_class(module, "File", file_table, true);
 }
