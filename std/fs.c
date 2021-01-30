@@ -117,8 +117,8 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
 
     if ((open_mode = jml_std_fs_file_open_mode(mode)) == INVALID) {
         exc = jml_obj_exception_new(
-            "ValueError",
-            "Invalid file open mode."
+            "IOError",
+            "Invalid File open mode."
         );
         goto err;
     }
@@ -503,7 +503,7 @@ jml_std_fs_rename(int arg_count, jml_value_t *args)
     }
 
     if (jml_file_exist(AS_CSTRING(args[0]))) {
-        if (rename(AS_CSTRING(args[0]),AS_CSTRING(args[1])) != 0) {
+        if (rename(AS_CSTRING(args[0]), AS_CSTRING(args[1])) != 0) {
             exc = jml_obj_exception_new(
                 "IOError",
                 "Renaming File failed."

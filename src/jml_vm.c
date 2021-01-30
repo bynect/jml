@@ -818,7 +818,9 @@ jml_vm_run(jml_value_t *last)
         &&exec_OP_SUPER,
         &&exec_OP_ARRAY,
         &&exec_OP_MAP,
-        &&exec_OP_IMPORT_GLOBAL
+        &&exec_OP_IMPORT_GLOBAL,
+        &&exec_OP_IMPORT_LOCAL,
+        &&exec_OP_IMPORT_WILDCARD
     };
 
     DISPATCH();
@@ -1488,6 +1490,32 @@ jml_vm_run(jml_value_t *last)
                 if (!jml_vm_module_import(READ_STRING())) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
+                END_OP();
+            }
+
+            EXEC_OP(OP_IMPORT_LOCAL) {
+                /*TODO*/
+                END_OP();
+            }
+
+            EXEC_OP(OP_IMPORT_WILDCARD) {
+                jml_obj_string_t *name = READ_STRING();
+
+                frame->pc = pc;
+                if (!jml_vm_module_import(name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_value_t module;
+                if (!jml_vm_global_get(name, &module)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_hashmap_add(
+                    &AS_MODULE(module)->globals, &vm->globals
+                );
+
+                jml_vm_global_del(name);
                 END_OP();
             }
 

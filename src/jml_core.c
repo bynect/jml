@@ -17,7 +17,7 @@
 jml_obj_exception_t *
 jml_core_exception_args(int arg_count, int expected_arg)
 {
-    char message[50];
+    char message[64];
 
     sprintf(message, "Expected '%d' arguments but got '%d'.",
         expected_arg, arg_count);
@@ -37,7 +37,7 @@ jml_core_exception_args(int arg_count, int expected_arg)
 jml_obj_exception_t *
 jml_core_exception_implemented(jml_value_t value)
 {
-    char message[26];
+    char message[64];
 
     sprintf(message,  "Not implemented for %s.",
         jml_value_stringify_type(value));
@@ -63,7 +63,7 @@ jml_core_exception_types(bool mult, int arg_count, ...)
     for (int i = 1; i < arg_count; ++i) {
 
         char *next = va_arg(types, char*);
-        char temp[32];
+        char temp[64];
         if (mult)
             sprintf(temp, " or <type %s>", next);
         else
@@ -96,6 +96,7 @@ jml_core_print(int arg_count, jml_value_t *args)
             printf("%s", AS_CSTRING(args[i]));
         else
             jml_value_print(args[i]);
+
         printf("\n");
     }
 

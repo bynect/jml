@@ -1366,15 +1366,20 @@ jml_import_statement(void)
     jml_parser_consume(TOKEN_NAME, "Expect identifier after 'import'.");
     uint8_t name = jml_identifier_const(&parser.previous);
 
-    jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, name);
+    if (jml_parser_match(TOKEN_DOT)) {
+        jml_parser_consume(TOKEN_STAR, "Expect '*' after wildcard import.");
+        jml_bytecode_emit_bytes(OP_IMPORT_WILDCARD, name);
+    } else {
+        jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, name);
 
-    if (jml_parser_match(TOKEN_ARROW)) {
-        jml_parser_match_line();
-        jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
-        uint8_t new_name = jml_identifier_const(&parser.previous);
+        if (jml_parser_match(TOKEN_ARROW)) {
+            jml_parser_match_line();
+            jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
+            uint8_t new_name = jml_identifier_const(&parser.previous);
 
-        jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, name);
-        jml_bytecode_emit_byte(new_name);
+            jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, name);
+            jml_bytecode_emit_byte(new_name);
+        }
     }
 }
 

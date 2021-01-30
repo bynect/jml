@@ -338,6 +338,12 @@ jml_bytecode_instruction_disassemble(
         case OP_IMPORT_GLOBAL:
             return jml_bytecode_instruction_const("OP_IMPORT_GLOBAL", bytecode, offset);
 
+        case OP_IMPORT_LOCAL:
+            return jml_bytecode_instruction_const("OP_IMPORT_LOCAL", bytecode, offset);
+
+        case OP_IMPORT_WILDCARD:
+            return jml_bytecode_instruction_const("OP_IMPORT_WILDCARD", bytecode, offset);
+
         default:
             printf("unknown opcode %d\n", instruction);
             return offset + 1;
