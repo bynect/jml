@@ -233,6 +233,14 @@ jml_vm_global_del(jml_obj_string_t *name)
 }
 
 
+static inline bool
+jml_vm_global_pop(jml_obj_string_t *name,
+    jml_value_t *value)
+{
+    return jml_hashmap_pop(&vm->globals, name, value);
+}
+
+
 static bool
 jml_vm_call(jml_obj_closure_t *closure,
     int arg_count)
@@ -1411,10 +1419,8 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_string_t *old_name  = READ_STRING();
                 jml_obj_string_t *new_name  = READ_STRING();
 
-                jml_value_t value = jml_hashmap_pop(
-                    &vm->globals, old_name);
-
-                if (jml_obj_is_sentinel(value)) {
+                jml_value_t value;
+                if (!jml_vm_global_pop(old_name, &value)) {
                     frame->pc = pc;
                     jml_vm_error("Undefined variable '%s'.", old_name->chars);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1507,15 +1513,13 @@ jml_vm_run(jml_value_t *last)
                 }
 
                 jml_value_t module;
-                if (!jml_vm_global_get(name, &module)) {
+                if (!jml_vm_global_pop(name, &module)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
                 jml_hashmap_add(
                     &AS_MODULE(module)->globals, &vm->globals
                 );
-
-                jml_vm_global_del(name);
                 END_OP();
             }
 

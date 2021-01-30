@@ -289,9 +289,9 @@ jml_hashmap_set(jml_hashmap_t *map,
 }
 
 
-jml_value_t
+bool
 jml_hashmap_pop(jml_hashmap_t *map,
-    jml_obj_string_t *key)
+    jml_obj_string_t *key, jml_value_t *value)
 {
     if (map->count == 0)
         return OBJ_VAL(vm->sentinel);
@@ -301,14 +301,14 @@ jml_hashmap_pop(jml_hashmap_t *map,
     );
 
     if (entry->key == NULL)
-        return OBJ_VAL(vm->sentinel);
+        return false;
 
-    jml_value_t temp = entry->value;
+    *value = entry->value;
 
     entry->key = NULL;
     entry->value = TRUE_VAL;
 
-    return temp;
+    return true;
 }
 
 

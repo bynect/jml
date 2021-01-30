@@ -339,6 +339,28 @@ jml_obj_function_print(jml_obj_function_t *function)
 }
 
 
+static void
+jml_obj_cfunction_print(jml_obj_cfunction_t *function)
+{
+    printf("<builtin fn");
+
+    if (function->name == NULL) {
+        printf(">");
+        return;
+    }
+
+    printf(" ");
+
+    if (function->module != NULL)
+        printf("%s.", function->module->name->chars);
+
+    if (function->klass_name != NULL)
+        printf("%s.", function->klass_name->chars);
+
+    printf("%s>", function->name->chars);
+}
+
+
 void
 jml_obj_print(jml_value_t value)
 {
@@ -434,7 +456,7 @@ jml_obj_print(jml_value_t value)
             break;
 
         case OBJ_CFUNCTION:
-            printf("<builtin fn>");
+            jml_obj_cfunction_print(AS_CFUNCTION(value));
             break;
 
         case OBJ_EXCEPTION:
@@ -471,6 +493,35 @@ jml_obj_function_stringify(jml_obj_function_t *function)
         function->arity);
 
     return fn;
+}
+
+
+static char *
+jml_obj_cfunction_stringify(jml_obj_cfunction_t *function)
+{
+    if (function->name == NULL) {
+        return jml_strdup("<builtin fn>");
+    }
+
+    size_t size = function->name->length * GC_HEAP_GROW_FACTOR;
+    char *cfn = jml_realloc(NULL, size);
+
+    sprintf(cfn, "<builtin fn ");
+
+    if (function->module != NULL) {
+        REALLOC(char, cfn, size, size + function->module->name->length);
+        sprintf(cfn, "%s.", function->module->name->chars);
+    }
+
+    if (function->klass_name != NULL) {
+        REALLOC(char, cfn, size, size + function->klass_name->length);
+        sprintf(cfn, "%s.", function->klass_name->chars);
+    }
+
+    REALLOC(char, cfn, size, size + function->name->length + 3);
+    sprintf(cfn, "%s>", function->name->chars);
+
+    return cfn;
 }
 
 
@@ -535,41 +586,51 @@ jml_obj_stringify(jml_value_t value)
         }
 
         case OBJ_CLASS:
-            return jml_obj_class_stringify(AS_CLASS(value));
+            return jml_obj_class_stringify(
+                AS_CLASS(value));
 
         case OBJ_INSTANCE:
-            return jml_obj_instance_stringify(AS_INSTANCE(value));
+            return jml_obj_instance_stringify(
+                AS_INSTANCE(value));
 
         case OBJ_METHOD:
-            return jml_obj_function_stringify(AS_METHOD(value)->method->function);
+            return jml_obj_function_stringify(
+                AS_METHOD(value)->method->function);
 
         case OBJ_FUNCTION:
-            return jml_obj_function_stringify(AS_FUNCTION(value));
+            return jml_obj_function_stringify(
+                AS_FUNCTION(value));
 
         case OBJ_CLOSURE:
-            return jml_obj_function_stringify(AS_CLOSURE(value)->function);
+            return jml_obj_function_stringify(
+                AS_CLOSURE(value)->function);
 
         case OBJ_UPVALUE:
             return jml_strdup("<upvalue>");
 
         case OBJ_CFUNCTION:
-            return jml_strdup("<builtin fn>");
+            return jml_obj_cfunction_stringify(
+                AS_CFUNCTION(value));
 
         case OBJ_EXCEPTION: {
             jml_obj_exception_t *exc = AS_EXCEPTION(value);
-            char message[18];
+            size_t size = exc->name->length + 32;
 
             if (exc->module != NULL) {
+                char message[size + exc->module->name->length];
                 sprintf(message, "<exception %s.%s>",
                     exc->module->name->chars,
                     exc->name->chars
                 );
+
+                return jml_strdup(message);
             } else {
+                char message[size];
                 sprintf(message, "<exception %s>",
                     exc->name->chars);
-            }
 
-            return jml_strdup(message);
+                return jml_strdup(message);
+            }
         }
     }
     return NULL;
