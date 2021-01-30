@@ -5,7 +5,6 @@
 
 #include <jml.h>
 
-
 #ifdef JML_CLI_READLINE
 
 #include <readline/readline.h>
@@ -102,8 +101,12 @@ jml_cli_repl(void)
 
 #ifdef JML_CLI_READLINE
         free(line);
-#endif
     }
+
+    rl_clear_history();
+#else
+    }
+#endif
 }
 
 

@@ -250,13 +250,13 @@ jml_obj_cfunction_t *
 jml_obj_cfunction_new(jml_obj_string_t *name,
     jml_cfunction function, jml_obj_module_t *module)
 {
-    jml_obj_cfunction_t *cfunction = ALLOCATE_OBJ(
+    jml_obj_cfunction_t *cfunction  = ALLOCATE_OBJ(
         jml_obj_cfunction_t, OBJ_CFUNCTION);
 
-    cfunction->name         = name;
-    cfunction->function     = function;
-    cfunction->klass_name   = NULL;
-    cfunction->module       = module;
+    cfunction->name                 = name;
+    cfunction->function             = function;
+    cfunction->klass_name           = NULL;
+    cfunction->module               = module;
 
     return cfunction;
 }
