@@ -99,23 +99,6 @@ jml_value_t jml_gc_exempt_pop(void);
 jml_value_t jml_gc_exempt_peek(int distance);
 
 
-/*UTILITY*/
-void *jml_realloc(void *ptr, size_t new_size);
-
-void *jml_alloc(size_t size);
-
-void jml_free(void *ptr);
-
-
-char *jml_strsep(char **str, const char *sep);
-
-char *jml_strtok(char *str, const char *delim, char **save);
-
-char *jml_strdup(const char *str);
-
-char *jml_strcat(char *dest, char *src);
-
-
 /*MACRO*/
 #ifdef __GNUC__
 
@@ -188,7 +171,14 @@ char *jml_strcat(char *dest, char *src);
 #endif
 
 
-/*EXTRA*/
+/*UTILITY*/
+void *jml_realloc(void *ptr, size_t new_size);
+
+void *jml_alloc(size_t size);
+
+void jml_free(void *ptr);
+
+
 #include <jml_util.h>
 
 

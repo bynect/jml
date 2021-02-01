@@ -7,11 +7,14 @@
 #include <jml_gc.h>
 
 
-#ifdef JML_PLATFORM_NIX
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <dirent.h>
+#include <limits.h>
+#include <unistd.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #elif JML_PLATFORM_WIN
 
@@ -153,6 +156,36 @@ jml_file_find_in(const char *path,
 done:
     jml_free(temp);
     return res;
+}
+
+
+bool
+jml_file_exist(const char *filename)
+{
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
+
+    return access(filename, F_OK) != -1;
+#elif JML_PLATFORM_WIN
+    (void) filename;
+    return false;
+#endif
+}
+
+
+bool
+jml_file_isdir(const char *path)
+{
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
+
+    struct stat path_stat;
+    if (stat(path, &path_stat) < 0)
+        return false;
+
+    return S_ISDIR(path_stat.st_mode);
+#elif JML_PLATFORM_WIN
+    (void) path;
+    return false;
+#endif
 }
 
 

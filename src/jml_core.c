@@ -115,6 +115,7 @@ jml_core_format(int arg_count, jml_value_t *args)
     char             *fmt_str   = jml_strdup(fmt_obj->chars);
     int32_t           fmt_args  = 0;
     int32_t           fmt_extra = 0;
+    int32_t           fmt_err   = 0;
 
     size_t            size      = (fmt_obj->length + 1) + (arg_count - 1) * 16;
     size_t            dest_size = size;
@@ -144,14 +145,15 @@ jml_core_format(int arg_count, jml_value_t *args)
 
     jml_free(fmt_str);
 
-    if (fmt_extra != 0 || fmt_args + 1 <= arg_count) {
+    fmt_err = fmt_obj->chars[fmt_obj->length - 1] == '}' ? fmt_args : fmt_args - 1;
+
+    if (fmt_extra != 0 || fmt_err + 1 < arg_count) {
         jml_free(buffer);
         return OBJ_VAL(
             jml_obj_exception_format(
                 "FmtError",
                 "Expected '%d' format arguments but got '%d'.",
-                fmt_obj->chars[fmt_obj->length - 1] == '}' ? fmt_args : fmt_args - 1,
-                arg_count - 1
+                fmt_err, arg_count - 1
             )
         );
     }
