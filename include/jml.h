@@ -109,7 +109,7 @@ void jml_free(void *ptr);
 
 char *jml_strsep(char **str, const char *sep);
 
-char *jml_strtok(char *input, const char *delimiter);
+char *jml_strtok(char *str, const char *delim, char **save);
 
 char *jml_strdup(const char *str);
 

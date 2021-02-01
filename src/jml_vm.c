@@ -117,11 +117,9 @@ jml_vm_error(const char *format, ...)
 
         size_t instruction = frame->pc - function->bytecode.code - 1;
 
-        fprintf(stderr, "[line %d] in ",
+        fprintf(stderr, "[line %d] in function ",
             function->bytecode.lines[instruction]
         );
-
-        fprintf(stderr, "function ");
 
         if (function->name != NULL) {
             if (function->module != NULL)
@@ -130,7 +128,8 @@ jml_vm_error(const char *format, ...)
             if (function->klass_name != NULL)
                 fprintf(stderr, "%s.", function->klass_name->chars);
 
-            fprintf(stderr, "%s()\n", function->name->chars);
+            fprintf(stderr, "%s/%d", function->name->chars,
+                function->arity);
 
         } else if (vm->external != NULL) {
             if (vm->external->module != NULL)
@@ -139,8 +138,7 @@ jml_vm_error(const char *format, ...)
             if (vm->external->klass_name != NULL)
                 fprintf(stderr, "%s.", vm->external->klass_name->chars);
 
-            fprintf(stderr, "%s()\n", vm->external->name->chars);
-
+            fprintf(stderr, "%s\n", vm->external->name->chars);
         } else
             fprintf(stderr, "__main\n");
     }
@@ -167,6 +165,8 @@ jml_vm_reset(jml_vm_t *vm)
     vm->frame_count     = 0;
     vm->open_upvalues   = NULL;
     vm->exempt          = vm->exempt_stack;
+
+    vm->external        = NULL;
 }
 
 

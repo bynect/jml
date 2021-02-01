@@ -38,13 +38,10 @@ jml_core_exception_args(int arg_count, int expected_arg)
 jml_obj_exception_t *
 jml_core_exception_implemented(jml_value_t value)
 {
-    char message[64];
-
-    sprintf(message,  "Not implemented for %s.",
-        jml_value_stringify_type(value));
-
-    return jml_obj_exception_new(
-        "NotImplemented", message
+    return jml_obj_exception_format(
+        "NotImplemented",
+        "Not implemented for %s.",
+        jml_value_stringify_type(value)
     );
 }
 
@@ -55,14 +52,15 @@ jml_core_exception_types(bool mult, int arg_count, ...)
     va_list types;
     va_start(types, arg_count);
 
-    size_t size = (arg_count + 1) * 32;
-    char *message = jml_realloc(NULL, size);
+    size_t size                 = (arg_count + 1) * 32;
+    size_t dest_size            = size;
+    char *message               = jml_realloc(NULL, size);
+    char *head                  = message;
 
     char *next = va_arg(types, char*);
     sprintf(message, "Expected arguments of <type %s>", next);
 
     for (int i = 1; i < arg_count; ++i) {
-
         char *next = va_arg(types, char*);
         char temp[64];
         if (mult)
@@ -70,12 +68,14 @@ jml_core_exception_types(bool mult, int arg_count, ...)
         else
             sprintf(temp, " and <type %s>", next);
 
-        size_t dest_size = strlen(message) + strlen(temp);
+        dest_size += strlen(temp);
         REALLOC(char, message, size, dest_size);
-        strcat(message, temp);
+
+        head = jml_strcat(head, temp);
     }
 
-    strcat(message, ".");
+    *head++ = '.';
+    *head   = '\0';
 
     jml_obj_exception_t *exc = jml_obj_exception_new(
         "DiffTypes", message
@@ -117,7 +117,6 @@ jml_core_format(int arg_count, jml_value_t *args)
     int32_t           fmt_extra = 0;
 
     size_t            size      = (fmt_obj->length + 1) + (arg_count - 1) * 16;
-    size_t            src_size  = 0;
     size_t            dest_size = size;
 
     char             *buffer    = jml_alloc(size);
@@ -130,9 +129,8 @@ jml_core_format(int arg_count, jml_value_t *args)
         else {
             char *value_str     = jml_value_stringify(args[fmt_args + 1]);
 
-            src_size = dest_size;
             dest_size += strlen(value_str) + strlen(token);
-            REALLOC(char, buffer, src_size, dest_size);
+            REALLOC(char, buffer, size, dest_size);
 
             char *temp = jml_strcat(buffer, token);
             jml_strcat(temp, value_str);
