@@ -108,3 +108,12 @@ jml_string_len(const char *str, size_t size)
 
     return len;
 }
+
+
+jml_value_t
+jml_string_intern(const char *string)
+{
+    return OBJ_VAL(
+        jml_obj_string_copy(string, strlen(string))
+    );
+}

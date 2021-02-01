@@ -14,7 +14,5 @@ const char *jml_string_decode(const char *str, uint32_t *val);
 
 uint8_t jml_string_charbytes(const char *str, uint32_t i);
 
-size_t jml_string_len(const char *str, size_t size);
-
 
 #endif /* JML_STRING_H_ */

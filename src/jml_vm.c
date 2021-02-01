@@ -652,6 +652,8 @@ jml_vm_module_import(jml_obj_string_t *name)
         jml_vm_global_set(name, jml_vm_peek(0));
 
         jml_vm_pop();
+    } else {
+        jml_vm_global_set(name, value);
     }
 
     return true;
@@ -1563,15 +1565,6 @@ jml_cfunction_register(const char *name,
     );
 
     jml_vm_pop_two();
-}
-
-
-jml_value_t
-jml_string_intern(const char *string)
-{
-    return OBJ_VAL(
-        jml_obj_string_copy(string, strlen(string))
-    );
 }
 
 

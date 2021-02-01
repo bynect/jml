@@ -73,7 +73,7 @@ jml_is_control(char c)
 
 
 static inline bool
-jml_is_print(char c)
+jml_is_printable(char c)
 {
     return (c >= ' ' && c <= '~');
 }

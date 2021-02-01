@@ -90,8 +90,6 @@ jml_interpret_result jml_vm_interpret(const char *source);
 jml_value_t jml_vm_eval(const char *source);
 
 
-jml_value_t jml_string_intern(const char *string);
-
 void jml_gc_exempt_push(jml_value_t value);
 
 jml_value_t jml_gc_exempt_pop(void);
@@ -177,6 +175,11 @@ void *jml_realloc(void *ptr, size_t new_size);
 void *jml_alloc(size_t size);
 
 void jml_free(void *ptr);
+
+
+jml_value_t jml_string_intern(const char *string);
+
+size_t jml_string_len(const char *str, size_t size);
 
 
 #include <jml_util.h>
