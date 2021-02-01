@@ -40,26 +40,29 @@ jml_strsep(char **str, const char *sep)
 
 
 char *
-jml_strtok(char *input,
-    const char *delimiter)
+jml_strtok(char *str, const char *delim,
+    char **save)
 {
-    static char *string;
-    if (input != NULL)
-        string = input;
-    if (string == NULL)
-        return string;
-
-    char *end = strstr(string, delimiter);
-    if (end == NULL) {
-        char *temp = string;
-        string = NULL;
-        return temp;
+    if (str == NULL) {
+        if (*save == NULL)
+            return NULL;
+        str = *save;
     }
 
-    char *temp = string;
+    if (*str == '\0') {
+        *save = str;
+        return NULL;
+    }
+
+    char *end = strstr(str, delim);
+    if (end == NULL) {
+        *save = end;
+        return str;
+    }
+
     *end = '\0';
-    string = end + strlen(delimiter);
-    return temp;
+    *save = end + strlen(delim);
+    return str;
 }
 
 

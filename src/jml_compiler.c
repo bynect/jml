@@ -5,6 +5,7 @@
 #include <jml_compiler.h>
 #include <jml_gc.h>
 #include <jml_util.h>
+#include <jml_string.h>
 
 
 jml_parser_t            parser;
@@ -1332,8 +1333,11 @@ jml_import_statement(void)
     uint8_t name = jml_identifier_const(&parser.previous);
 
     if (jml_parser_match(TOKEN_DOT)) {
-        jml_parser_consume(TOKEN_STAR, "Expect '*' after wildcard import.");
-        jml_bytecode_emit_bytes(OP_IMPORT_WILDCARD, name);
+        if (current->type == FUNCTION_MAIN) {
+            jml_parser_consume(TOKEN_STAR, "Expect '*' after wildcard import.");
+            jml_bytecode_emit_bytes(OP_IMPORT_WILDCARD, name);
+        } else
+            jml_parser_error("Can wildcard import only from top-level code.");
     } else {
         jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, name);
 

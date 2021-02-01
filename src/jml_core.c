@@ -99,6 +99,70 @@ jml_core_exception_value(const char *value)
 
 /*core functions*/
 static jml_value_t
+jml_core_format(int arg_count, jml_value_t *args)
+{
+    if (arg_count == 0)
+        return OBJ_VAL(
+            jml_obj_exception_new("FmtError", "Expected format string.")
+        );
+
+    if (!IS_STRING(args[0]))
+        return OBJ_VAL(
+            jml_obj_exception_new("FmtError", "Expected format string.")
+        );
+
+    jml_obj_string_t *fmt_obj   = AS_STRING(args[0]);
+    char             *fmt_str   = jml_strdup(fmt_obj->chars);
+    int32_t           fmt_args  = 0;
+    int32_t           fmt_extra = 0;
+
+    size_t            size      = (fmt_obj->length + 1) + (arg_count - 1) * 16;
+    size_t            src_size  = 0;
+    size_t            dest_size = size;
+
+    char             *buffer    = jml_alloc(size);
+    char             *save      = NULL;
+    char             *token     = jml_strtok(fmt_str, "{}", &save);
+
+    while (token != NULL) {
+        if (fmt_args + 1 >= arg_count)
+            ++fmt_extra;
+        else {
+            char *value_str     = jml_value_stringify(args[fmt_args + 1]);
+
+            src_size = dest_size;
+            dest_size += strlen(value_str) + strlen(token);
+            REALLOC(char, buffer, src_size, dest_size);
+
+            char *temp = jml_strcat(buffer, token);
+            jml_strcat(temp, value_str);
+
+            jml_free(value_str);
+        }
+
+        ++fmt_args;
+        token = jml_strtok(NULL, "{}", &save);
+    }
+
+    jml_free(fmt_str);
+
+    if (fmt_extra != 0 || fmt_args + 1 <= arg_count) {
+        jml_free(buffer);
+        return OBJ_VAL(
+            jml_obj_exception_format(
+                "FmtError",
+                "Expected '%d' format arguments but got '%d'.",
+                fmt_obj->chars[fmt_obj->length - 1] == '}' ? fmt_args : fmt_args - 1,
+                arg_count - 1
+            )
+        );
+    }
+
+    return OBJ_VAL(jml_obj_string_take(buffer, dest_size));
+}
+
+
+static jml_value_t
 jml_core_print(int arg_count, jml_value_t *args)
 {
     for (int i = 0; i < arg_count; ++i) {
@@ -117,109 +181,19 @@ jml_core_print(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_print_fmt(int arg_count, jml_value_t *args)
 {
-    jml_value_t fmt_value       = args[0];
-
-    if (!IS_STRING(fmt_value)) {
-        return OBJ_VAL(
-            jml_core_exception_types(false, 1, "string")
-        );
+    if (arg_count == 0) {
+        printf("\n");
+        return NONE_VAL;
     }
 
-    jml_obj_string_t *fmt_obj   = AS_STRING(fmt_value);
-    char             *fmt_str   = jml_strdup(fmt_obj->chars);
-    int               fmt_args  = 0;
+    jml_value_t fmt = jml_core_format(arg_count, args);
 
-    size_t size                 = fmt_obj->length + 16 * arg_count;
-    char *string                = jml_alloc(size);
-
-    char *token                 = jml_strtok(fmt_str, "{}");
-    while (token != NULL) {
-
-        char *value_str         = jml_value_stringify(args[fmt_args + 1]);
-
-        size_t dest_size        = strlen(string) + strlen(value_str) + strlen(token);
-        REALLOC(char, string, size, dest_size);
-
-        strcat(string, token);
-        strcat(string, value_str);
-
-        jml_free(value_str);
-        token = jml_strtok(NULL, "{}");
-        ++fmt_args;
+    if (IS_STRING(fmt)) {
+        printf("%s\n", AS_CSTRING(fmt));
+        return NONE_VAL;
     }
 
-    jml_free(token);
-    jml_free(fmt_str);
-
-    jml_obj_exception_t *exc = jml_core_exception_args(
-        arg_count, fmt_args);
-
-    if (exc != NULL) {
-        jml_free(string);
-        return OBJ_VAL(exc);
-    } else {
-        int length = strlen(string) - 1;
-        printf("%.*s\n", length, string);
-        jml_free(string);
-    }
-
-    return NONE_VAL;
-}
-
-
-static jml_value_t
-jml_core_string_fmt(int arg_count, jml_value_t *args)
-{
-    jml_value_t fmt_value       = args[0];
-
-    if (!IS_STRING(fmt_value)) {
-        return OBJ_VAL(
-            jml_core_exception_types(false, 1, "string")
-        );
-    }
-
-    jml_obj_string_t *fmt_obj   = AS_STRING(fmt_value);
-    char             *fmt_str   = jml_strdup(fmt_obj->chars);
-    int               fmt_args  = 0;
-
-    size_t size                 = fmt_obj->length + 16 * arg_count;
-    char *string                = jml_alloc(size);
-
-    char *token                 = jml_strtok(fmt_str, "{}");
-    while (token != NULL) {
-
-        char *value_str         = jml_value_stringify(args[fmt_args + 1]);
-
-        size_t dest_size        = strlen(string) + strlen(value_str) + strlen(token);
-        REALLOC(char, string, size, dest_size);
-
-        strcat(string, token);
-        strcat(string, value_str);
-
-        jml_free(value_str);
-        token = jml_strtok(NULL, "{}");
-        ++fmt_args;
-    }
-
-    jml_free(token);
-    jml_free(fmt_str);
-
-    jml_obj_exception_t *exc = jml_core_exception_args(
-        arg_count, fmt_args);
-
-    if (exc != NULL) {
-        jml_free(string);
-        return OBJ_VAL(exc);
-    }
-
-    int length = strlen(string) - 1;
-
-    jml_obj_string_t *formatted = jml_obj_string_copy(
-        string, length);
-
-    jml_free(string);
-
-    return OBJ_VAL(formatted);
+    return fmt;
 }
 
 
@@ -490,9 +464,9 @@ err:
 
 /*core function registration*/
 jml_module_function core_functions[] = {
+    {"format",                      &jml_core_format},
     {"print",                       &jml_core_print},
     {"printfmt",                    &jml_core_print_fmt},
-    {"stringfmt",                   &jml_core_string_fmt},
     {"char",                        &jml_core_char},
     {"reverse",                     &jml_core_reverse},
     {"size",                        &jml_core_size},
