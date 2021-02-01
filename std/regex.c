@@ -39,10 +39,10 @@ static char                        *last_string;
     do {                                                \
         regerr: {                                       \
             size_t size = 2048;                         \
-            char buff[size];                            \
-            regerror(result, last_rule, buff, size);    \
+            char buffer[size];                          \
+            regerror(result, last_rule, buffer, size);  \
             exc = jml_obj_exception_new(                \
-                "RegexError", buff);                    \
+                "RegexError", buffer);                  \
             goto err;                                   \
         }                                               \
                                                         \

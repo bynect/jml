@@ -671,41 +671,6 @@ jml_number(JML_UNUSED(bool assignable))
 }
 
 
-static uint8_t
-jml_string_encode(char *buffer, uint32_t value)
-{
-    char *bytes = buffer;
-
-    if (value <= 0x7f) {
-        *bytes = (char)(value & 0x7f);
-        return 1;
-    }
-
-    if (value <= 0x7ff) {
-        *bytes++ = (char)(0xc0 | ((value & 0x7c0) >> 6));
-        *bytes = (char)(0x80 | (value & 0x3f));
-        return 2;
-    }
-
-    if (value <= 0xffff) {
-        *bytes++ = (char)(0xe0 | ((value & 0xf000) >> 12));
-        *bytes++ = (char)(0x80 | ((value & 0xfc0) >> 6));
-        *bytes = (char)(0x80 | (value & 0x3f));
-        return 3;
-    }
-
-    if (value <= 0x10ffff) {
-        *bytes++ = (char)(0xf0 | ((value & 0x1c0000) >> 18));
-        *bytes++ = (char)(0x80 | ((value & 0x3f000) >> 12));
-        *bytes++ = (char)(0x80 | ((value & 0xfc0) >> 6));
-        *bytes = (char)(0x80 | (value & 0x3f));
-        return 4;
-    }
-
-    return 0;
-}
-
-
 static void
 jml_string(JML_UNUSED(bool assignable))
 {

@@ -116,10 +116,7 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
     jml_file_mode_t open_mode;
 
     if ((open_mode = jml_std_fs_file_open_mode(mode)) == INVALID) {
-        exc = jml_obj_exception_new(
-            "IOError",
-            "Invalid File open mode."
-        );
+        exc = jml_core_exception_value("File open mode.");
         goto err;
     }
 

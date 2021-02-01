@@ -67,6 +67,9 @@ jml_obj_exception_t *jml_core_exception_implemented(
 jml_obj_exception_t *jml_core_exception_types(
     bool mult, int arg_count, ...);
 
+jml_obj_exception_t *jml_core_exception_value(
+    const char *value);
+
 
 typedef enum {
     INTERPRET_OK,

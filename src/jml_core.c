@@ -11,6 +11,7 @@
 #include <jml_value.h>
 #include <jml_util.h>
 #include <jml_gc.h>
+#include <jml_string.h>
 
 
 /*helper functions*/
@@ -84,6 +85,15 @@ jml_core_exception_types(bool mult, int arg_count, ...)
     va_end(types);
 
     return exc;
+}
+
+
+jml_obj_exception_t *
+jml_core_exception_value(const char *value)
+{
+    return jml_obj_exception_format(
+        "ValueError", "Invalid '%s'.", value
+    );
 }
 
 
@@ -304,15 +314,35 @@ jml_core_char(int arg_count, jml_value_t *args)
     jml_value_t value   = args[0];
 
     if (IS_NUM(value)) {
-        char chr[2];
-        chr[0]          = (char)AS_NUM(value);
-        chr[1]          = '\0';
+        char c[5] = { 0 };
+        if (jml_string_encode(c, (uint32_t)AS_NUM(value)))
+            return jml_string_intern(c);
 
-        return jml_string_intern(chr);
+        return OBJ_VAL(
+            jml_core_exception_value("unicode codepoint")
+        );
+    }
+
+    if (IS_STRING(value)) {
+        jml_obj_string_t *string = AS_STRING(value);
+
+        if (jml_string_len(string->chars, string->length) != 1) {
+            return OBJ_VAL(
+                jml_core_exception_value("string length")
+            );
+        }
+
+        uint32_t code = 0;
+        if (jml_string_decode(string->chars, &code))
+            return NUM_VAL(code);
+
+        return OBJ_VAL(
+            jml_core_exception_value("unicode codepoint")
+        );
     }
 
     return OBJ_VAL(
-        jml_core_exception_types(false, 1, "number")
+        jml_core_exception_implemented(value)
     );
 }
 

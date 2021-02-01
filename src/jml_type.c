@@ -525,29 +525,30 @@ jml_obj_cfunction_stringify(jml_obj_cfunction_t *function)
 }
 
 
-#define CLASS_NAME(buf, klass)                          \
+#define CLASS_NAME(buffer, klass)                       \
     if (klass->module != NULL) {                        \
-        REALLOC(char, buf, size,                        \
+        REALLOC(char, buffer, size,                     \
             size + klass->module->name->length);        \
-        sprintf(buf, "%s.", klass->module->name->chars);\
+        sprintf(buffer, "%s.",                          \
+            klass->module->name->chars);                \
     }                                                   \
                                                         \
-    REALLOC(char, buf, size,                            \
+    REALLOC(char, buffer, size,                         \
         size + klass->name->length + 3);                \
-    sprintf(buf, "%s", klass->name->chars)
+    sprintf(buffer, "%s", klass->name->chars)
 
 
 static char *
 jml_obj_class_stringify(jml_obj_class_t *klass)
 {
     size_t size = klass->name->length * GC_HEAP_GROW_FACTOR;
-    char *buf = jml_realloc(NULL, size);
+    char *buffer = jml_realloc(NULL, size);
 
-    sprintf(buf, "<class ");
+    sprintf(buffer, "<class ");
 
-    CLASS_NAME(buf, klass);
+    CLASS_NAME(buffer, klass);
 
-    return buf;
+    return buffer;
 }
 
 
@@ -555,13 +556,13 @@ static char *
 jml_obj_instance_stringify(jml_obj_instance_t *instance)
 {
     size_t size = instance->klass->name->length * GC_HEAP_GROW_FACTOR;
-    char *buf = jml_realloc(NULL, size);
+    char *buffer = jml_realloc(NULL, size);
 
-    sprintf(buf, "<instance of ");
+    sprintf(buffer, "<instance of ");
 
-    CLASS_NAME(buf, instance->klass);
+    CLASS_NAME(buffer, instance->klass);
 
-    return buf;
+    return buffer;
 }
 
 
