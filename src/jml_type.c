@@ -615,23 +615,23 @@ jml_obj_stringify(jml_value_t value)
 
         case OBJ_EXCEPTION: {
             jml_obj_exception_t *exc = AS_EXCEPTION(value);
+#ifdef JML_PLATFORM_WIN
+            char message[4096];
+#else
             size_t size = exc->name->length + 32;
+            char message[size + exc->module != NULL ? exc->module->name->length : 0];
+#endif
 
             if (exc->module != NULL) {
-                char message[size + exc->module->name->length];
                 sprintf(message, "<exception %s.%s>",
                     exc->module->name->chars,
                     exc->name->chars
                 );
-
-                return jml_strdup(message);
             } else {
-                char message[size];
                 sprintf(message, "<exception %s>",
                     exc->name->chars);
-
-                return jml_strdup(message);
             }
+            return jml_strdup(message);
         }
     }
     return NULL;

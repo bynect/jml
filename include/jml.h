@@ -1,11 +1,110 @@
 #ifndef JML_H_
 #define JML_H_
 
+
 /*INFO*/
 #define JML_VERSION_MAJOR           0
 #define JML_VERSION_MINOR           1
 #define JML_VERSION_MICRO           0
 #define JML_VERSION_STRING          "0.1.0"
+
+
+#if defined _WIN64 || defined WIN64
+
+#define JML_PLATFORM_WIN
+
+#define JML_PLATFORM_STRING         "win64"
+#define JML_PLATFORM                7
+
+#elif defined _WIN32 || defined WIN32
+
+#define JML_PLATFORM_WIN
+
+#define JML_PLATFORM_STRING         "win32"
+#define JML_PLATFORM                6
+
+#elif defined __APPLE__ && defined TARGET_OS_MAC || defined __MACH__
+
+#define JML_PLATFORM_MAC
+
+#define JML_PLATFORM_STRING         "macos"
+#define JML_PLATFORM                5
+
+#elif defined __linux__ || defined __linux
+
+#define JML_PLATFORM_NIX
+
+#define JML_PLATFORM_STRING         "linux"
+#define JML_PLATFORM                4
+
+#elif defined BSD
+
+#define JML_PLATFORM_NIX
+
+#define JML_PLATFORM_STRING         "bsd"
+#define JML_PLATFORM                3
+
+#elif defined _POSIX_VERSION
+
+#define JML_PLATFORM_NIX
+
+#define JML_PLATFORM_STRING         "posix"
+#define JML_PLATFORM                2
+
+#elif defined __unix__
+
+#define JML_PLATFORM_NIX
+
+#define JML_PLATFORM_STRING         "unix"
+#define JML_PLATFORM                1
+
+#else
+
+#define JML_PLATFORM_UNK
+
+#define JML_PLATFORM_STRING         "other"
+#define JML_PLATFORM                0
+
+#endif
+
+
+/*MACRO*/
+#ifdef __GNUC__
+
+#define JML_COMPUTED_GOTO
+#define JML_UNUSED(arg)             __attribute__((unused)) arg
+
+#else
+
+#define JML_UNUSED(arg)             arg
+
+#endif
+
+
+#ifdef __cplusplus
+
+#define JML_NOMANGLE                extern "C"
+
+#else
+
+#define JML_NOMANGLE
+
+#endif
+
+
+#ifdef JML_PLATFORM_WIN
+
+#define JML_API                     __declspec(dllexport) JML_NOMANGLE
+
+#else
+
+#define JML_API                     JML_NOMANGLE
+
+#endif
+
+
+#define MODULE_TABLE_HEAD           JML_API jml_module_function
+#define MODULE_FUNC_HEAD            JML_API void
 
 
 /*API*/
@@ -82,104 +181,6 @@ void jml_gc_exempt_push(jml_value_t value);
 jml_value_t jml_gc_exempt_pop(void);
 
 jml_value_t jml_gc_exempt_peek(int distance);
-
-
-/*MACRO*/
-#ifdef __GNUC__
-
-#define JML_COMPUTED_GOTO
-#define JML_UNUSED(arg)             __attribute__((unused)) arg
-
-#else
-
-#define JML_UNUSED(arg)             arg
-
-#endif
-
-
-#ifdef __cplusplus
-
-#define JML_NOMANGLE                extern "C"
-
-#else
-
-#define JML_NOMANGLE
-
-#endif
-
-
-#if defined _WIN64 || defined WIN64
-
-#define JML_PLATFORM_WIN
-
-#define JML_PLATFORM_STRING         "win64"
-#define JML_PLATFORM                7
-
-#elif defined _WIN32 || defined WIN32
-
-#define JML_PLATFORM_WIN
-
-#define JML_PLATFORM_STRING         "win32"
-#define JML_PLATFORM                6
-
-#elif defined __APPLE__ && defined TARGET_OS_MAC || defined __MACH__
-
-#define JML_PLATFORM_MAC
-
-#define JML_PLATFORM_STRING         "macos"
-#define JML_PLATFORM                5
-
-#elif defined __linux__ || defined __linux
-
-#define JML_PLATFORM_NIX
-
-#define JML_PLATFORM_STRING         "linux"
-#define JML_PLATFORM                4
-
-#elif defined BSD
-
-#define JML_PLATFORM_NIX
-
-#define JML_PLATFORM_STRING         "bsd"
-#define JML_PLATFORM                3
-
-#elif defined _POSIX_VERSION
-
-#define JML_PLATFORM_NIX
-
-#define JML_PLATFORM_STRING         "posix"
-#define JML_PLATFORM                2
-
-#elif defined __unix__
-
-#define JML_PLATFORM_NIX
-
-#define JML_PLATFORM_STRING         "unix"
-#define JML_PLATFORM                1
-
-#else
-
-#define JML_PLATFORM_UNK
-
-#define JML_PLATFORM_STRING         "other"
-#define JML_PLATFORM                0
-
-#endif
-
-
-#ifdef JML_PLATFORM_WIN
-
-#define MODULE_TABLE_HEAD           __declspec(dllexport) JML_NOMANGLE jml_module_function
-#define MODULE_FUNC_HEAD            __declspec(dllexport) JML_NOMANGLE void
-#define JML_API                     __declspec(dllexport)
-
-#else
-
-#define MODULE_TABLE_HEAD           JML_NOMANGLE jml_module_function
-#define MODULE_FUNC_HEAD            JML_NOMANGLE void
-#define JML_API
-
-#endif
 
 
 /*UTILITY*/
