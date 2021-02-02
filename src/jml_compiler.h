@@ -9,6 +9,7 @@
 
 
 typedef struct {
+    jml_lexer_t                     lexer;
     jml_token_t                     current;
     jml_token_t                     previous;
     bool                            w_error;

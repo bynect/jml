@@ -5,114 +5,109 @@
 #include <jml_util.h>
 
 
-jml_lexer_t lexer;
-
-
 void
-jml_lexer_init(const char *source) {
-    lexer.start     = source;
-    lexer.current   = source;
-    lexer.line      = 1;
-    lexer.eof       = false;
+jml_lexer_init(const char *source, jml_lexer_t *lexer)
+{
+    lexer->start    = source;
+    lexer->current  = source;
+    lexer->line     = 1;
+    lexer->eof      = false;
+    lexer->comment  = false;
 }
 
 
 static inline bool
-jml_is_eof(void)
+jml_is_eof(jml_lexer_t *lexer)
 {
-    return *lexer.current == '\0';
+    return *lexer->current == '\0';
 }
 
 
 static inline char
-jml_lexer_peek(void)
+jml_lexer_peek(jml_lexer_t *lexer)
 {
-    return *lexer.current;
+    return *lexer->current;
 }
 
 
 static inline char
-jml_lexer_peek_next(void)
+jml_lexer_peek_next(jml_lexer_t *lexer)
 {
-    if (jml_is_eof()) return '\0';
-    return lexer.current[1];
+    if (jml_is_eof(lexer)) return '\0';
+    return lexer->current[1];
 }
 
 
 static inline char
-jml_lexer_peek_previous(void)
+jml_lexer_peek_previous(jml_lexer_t *lexer)
 {
-    return lexer.current[-1];
+    return lexer->current[-1];
 }
 
 
 static inline char
-jml_lexer_advance(void)
+jml_lexer_advance(jml_lexer_t *lexer)
 {
-    lexer.current++;
-    return lexer.current[-1];
+    lexer->current++;
+    return lexer->current[-1];
 }
 
 
 static inline void
-jml_lexer_newline(void)
+jml_lexer_newline(jml_lexer_t *lexer)
 {
-    lexer.line++;
+    lexer->line++;
 }
 
 
 static bool
-jml_lexer_match(char expected)
+jml_lexer_match(char expected, jml_lexer_t *lexer)
 {
-    if (jml_is_eof())               return false;
-    if (*lexer.current != expected) return false;
+    if (jml_is_eof(lexer))              return false;
+    if (*lexer->current != expected)    return false;
 
-    lexer.current++;
+    lexer->current++;
     return true;
 }
 
 
 static jml_token_t
-jml_token_emit(jml_token_type type)
+jml_token_emit(jml_token_type type, jml_lexer_t *lexer)
 {
     jml_token_t token;
     token.type   = type;
-    token.start  = lexer.start;
-    token.length = lexer.current - lexer.start;
-    token.line   = lexer.line;
+    token.start  = lexer->start;
+    token.length = lexer->current - lexer->start;
+    token.line   = lexer->line;
 
     return token;
 }
 
 
 static jml_token_t
-jml_token_emit_error(const char *message)
+jml_token_emit_error(const char *message, jml_lexer_t *lexer)
 {
     jml_token_t token;
     token.type   = TOKEN_ERROR;
     token.start  = message;
     token.length = strlen(message);
-    token.line   = lexer.line;
+    token.line   = lexer->line;
 
     return token;
 }
 
 
 static void
-jml_lexer_skip_char(void)
+jml_lexer_skip_char(jml_lexer_t *lexer)
 {
-    static bool commented = false;
-
     while (true) {
-        char c = jml_lexer_peek();
+        char c = jml_lexer_peek(lexer);
 
-        if (commented && c != '?' && c != '\n') {
-            if (jml_is_eof()) {
-                commented = !commented;
+        if (lexer->comment && c != '?' && c != '\n') {
+            if (jml_is_eof(lexer))
                 return;
-            }
 
-            jml_lexer_advance();
+            jml_lexer_advance(lexer);
             continue;
         }
 
@@ -120,34 +115,35 @@ jml_lexer_skip_char(void)
             case  ' ':
             case '\t':
             case '\r':
-                jml_lexer_advance();
+                jml_lexer_advance(lexer);
                 break;
 
             case '\n':
-                jml_lexer_newline();
-                if (commented) {
-                    jml_lexer_advance();
+                jml_lexer_newline(lexer);
+                if (lexer->comment) {
+                    jml_lexer_advance(lexer);
                     break;
                 } else
                     return;
 
             case '\\':
-                jml_lexer_advance();
+                jml_lexer_advance(lexer);
                 break;
 
             case  '!':
-                if (jml_lexer_peek_next() == '=') return;
-                while (jml_lexer_peek() != '\n' && !jml_is_eof()) jml_lexer_advance();
+                if (jml_lexer_peek_next(lexer) == '=') return;
+                while (jml_lexer_peek(lexer) != '\n' && !jml_is_eof(lexer))
+                    jml_lexer_advance(lexer);
 
-                if (jml_lexer_peek() == '\n') {
-                    jml_lexer_newline();
-                    jml_lexer_advance();
+                if (jml_lexer_peek(lexer) == '\n') {
+                    jml_lexer_newline(lexer);
+                    jml_lexer_advance(lexer);
                 }
                 break;
 
             case '?':
-                commented = !commented;
-                jml_lexer_advance();
+                lexer->comment = !lexer->comment;
+                jml_lexer_advance(lexer);
                 break;
 
             default:
@@ -158,11 +154,11 @@ jml_lexer_skip_char(void)
 
 
 static jml_token_type
-jml_keyword_match(int start, int length,
-    const char *rest, jml_token_type type)
+jml_keyword_match(int start, int length, const char *rest,
+    jml_token_type type, jml_lexer_t *lexer)
 {
-    if ((lexer.current - lexer.start) == (length + start)
-        && memcmp(lexer.start + start, rest, length) == 0) {
+    if ((lexer->current - lexer->start) == (length + start)
+        && memcmp(lexer->start + start, rest, length) == 0) {
         return type;
     }
 
@@ -171,78 +167,78 @@ jml_keyword_match(int start, int length,
 
 
 static jml_token_type
-jml_identifier_check(void)
+jml_identifier_check(jml_lexer_t *lexer)
 {
-    switch (lexer.start[0]) {
+    switch (lexer->start[0]) {
         case 'a':
-            if (lexer.current - lexer.start > 1) {
-                switch (lexer.start[1]) {
-                    case 's': return jml_keyword_match(2, 3, "ync", TOKEN_ASYNC);
-                    case 'n': return jml_keyword_match(2, 1, "d",   TOKEN_AND);
-                    case 'w': return jml_keyword_match(2, 3, "ait", TOKEN_AWAIT);
+            if (lexer->current - lexer->start > 1) {
+                switch (lexer->start[1]) {
+                    case 's': return jml_keyword_match(2, 3, "ync", TOKEN_ASYNC, lexer);
+                    case 'n': return jml_keyword_match(2, 1, "d",   TOKEN_AND, lexer);
+                    case 'w': return jml_keyword_match(2, 3, "ait", TOKEN_AWAIT, lexer);
                 }
             }
             break;
 
-        case 'b': return jml_keyword_match(1, 4, "reak", TOKEN_BREAK);
+        case 'b': return jml_keyword_match(1, 4, "reak", TOKEN_BREAK, lexer);
 
-        case 'c': return jml_keyword_match(1, 4, "lass", TOKEN_CLASS);
+        case 'c': return jml_keyword_match(1, 4, "lass", TOKEN_CLASS, lexer);
 
-        case 'e': return jml_keyword_match(1, 3, "lse",  TOKEN_ELSE);
+        case 'e': return jml_keyword_match(1, 3, "lse",  TOKEN_ELSE, lexer);
 
         case 'f':
-            if (lexer.current - lexer.start > 1) {
-                switch (lexer.start[1]) {
-                    case 'a': return jml_keyword_match(2, 3, "lse", TOKEN_FALSE);
-                    case 'n': return jml_keyword_match(2, 0, "",    TOKEN_FN);
-                    case 'o': return jml_keyword_match(2, 1, "r",   TOKEN_FOR);
+            if (lexer->current - lexer->start > 1) {
+                switch (lexer->start[1]) {
+                    case 'a': return jml_keyword_match(2, 3, "lse", TOKEN_FALSE, lexer);
+                    case 'n': return jml_keyword_match(2, 0, "",    TOKEN_FN, lexer);
+                    case 'o': return jml_keyword_match(2, 1, "r",   TOKEN_FOR, lexer);
                 }
             }
             break;
 
         case 'i':
-            if (lexer.current - lexer.start > 1) {
-                switch (lexer.start[1]) {
-                    case 'f': return jml_keyword_match(2, 0, "",     TOKEN_IF);
-                    case 'n': return jml_keyword_match(2, 0, "",     TOKEN_IN);
-                    case 'm': return jml_keyword_match(2, 4, "port", TOKEN_IMPORT);
+            if (lexer->current - lexer->start > 1) {
+                switch (lexer->start[1]) {
+                    case 'f': return jml_keyword_match(2, 0, "",     TOKEN_IF, lexer);
+                    case 'n': return jml_keyword_match(2, 0, "",     TOKEN_IN, lexer);
+                    case 'm': return jml_keyword_match(2, 4, "port", TOKEN_IMPORT, lexer);
                 }
             }
             break;
 
         case 'n':
-            if (lexer.current - lexer.start > 1
-                && lexer.start[1] == 'o') {
-                switch (lexer.start[2]) {
-                    case 'n': return jml_keyword_match(3, 1, "e", TOKEN_NONE);
-                    case 't': return jml_keyword_match(3, 0, "",  TOKEN_NOT);
+            if (lexer->current - lexer->start > 1
+                && lexer->start[1] == 'o') {
+                switch (lexer->start[2]) {
+                    case 'n': return jml_keyword_match(3, 1, "e", TOKEN_NONE, lexer);
+                    case 't': return jml_keyword_match(3, 0, "",  TOKEN_NOT, lexer);
                 }
             }
             break;
 
-        case 'o': return jml_keyword_match(1, 1, "r",       TOKEN_OR);
+        case 'o': return jml_keyword_match(1, 1, "r",       TOKEN_OR, lexer);
 
-        case 'l': return jml_keyword_match(1, 2, "et",      TOKEN_LET);
+        case 'l': return jml_keyword_match(1, 2, "et",      TOKEN_LET, lexer);
 
-        case 'r': return jml_keyword_match(1, 5, "eturn",   TOKEN_RETURN);
+        case 'r': return jml_keyword_match(1, 5, "eturn",   TOKEN_RETURN, lexer);
 
         case 's':
-            if (lexer.current - lexer.start > 1) {
-                switch (lexer.start[1]) {
-                    case 'e': return jml_keyword_match(2, 2, "lf",  TOKEN_SELF);
-                    case 'k': return jml_keyword_match(2, 2, "ip",  TOKEN_SKIP);
-                    case 'u': return jml_keyword_match(2, 3, "per", TOKEN_SUPER);
+            if (lexer->current - lexer->start > 1) {
+                switch (lexer->start[1]) {
+                    case 'e': return jml_keyword_match(2, 2, "lf",  TOKEN_SELF, lexer);
+                    case 'k': return jml_keyword_match(2, 2, "ip",  TOKEN_SKIP, lexer);
+                    case 'u': return jml_keyword_match(2, 3, "per", TOKEN_SUPER, lexer);
                 }
             }
             break;
 
-        case 't': return jml_keyword_match(1, 3, "rue", TOKEN_TRUE);
+        case 't': return jml_keyword_match(1, 3, "rue", TOKEN_TRUE, lexer);
 
         case 'w':
-            if (lexer.current - lexer.start > 1) {
-                switch (lexer.start[1]) {
-                    case 'i': return jml_keyword_match(2, 2, "th",  TOKEN_WITH);
-                    case 'h': return jml_keyword_match(2, 3, "ile", TOKEN_WHILE);
+            if (lexer->current - lexer->start > 1) {
+                switch (lexer->start[1]) {
+                    case 'i': return jml_keyword_match(2, 2, "th",  TOKEN_WITH, lexer);
+                    case 'h': return jml_keyword_match(2, 3, "ile", TOKEN_WHILE, lexer);
                 }
             }
             break;
@@ -252,134 +248,142 @@ jml_identifier_check(void)
 
 
 static jml_token_t
-jml_identifier_literal(void)
+jml_identifier_literal(jml_lexer_t *lexer)
 {
-    while (jml_is_alpha(jml_lexer_peek())
-        || jml_is_digit(jml_lexer_peek()))
+    while (jml_is_alpha(jml_lexer_peek(lexer))
+        || jml_is_digit(jml_lexer_peek(lexer)))
 
-        jml_lexer_advance();
+        jml_lexer_advance(lexer);
 
-    return jml_token_emit(jml_identifier_check());
+    return jml_token_emit(jml_identifier_check(lexer), lexer);
 }
 
 
 static jml_token_t
-jml_string_literal(const char delimiter)
+jml_string_literal(const char delimiter, jml_lexer_t *lexer)
 {
-    while (jml_lexer_peek() != delimiter) {
-        char c =        jml_lexer_peek();
-        if  (c == '\n') jml_lexer_newline();
+    while (jml_lexer_peek(lexer) != delimiter) {
+        char c =        jml_lexer_peek(lexer);
+        if  (c == '\n') jml_lexer_newline(lexer);
 
-        if  (jml_is_eof())
-            return jml_token_emit_error("Unterminated string.");
+        if  (jml_is_eof(lexer))
+            return jml_token_emit_error("Unterminated string.", lexer);
 
-        jml_lexer_advance();
+        jml_lexer_advance(lexer);
     }
 
-    jml_lexer_advance();
-    return jml_token_emit(TOKEN_STRING);
+    jml_lexer_advance(lexer);
+    return jml_token_emit(TOKEN_STRING, lexer);
 }
 
 
 static jml_token_t
-jml_number_literal(void)
+jml_number_literal(jml_lexer_t *lexer)
 {
-    if (jml_lexer_peek_previous() == '0'
-        && jml_lexer_peek() == 'x') {
+    if (jml_lexer_peek_previous(lexer) == '0'
+        && jml_lexer_peek(lexer) == 'x') {
 
-        jml_lexer_advance();
-        if (!jml_is_hex(jml_lexer_peek()))
-            return jml_token_emit_error("Unterminated hex literal.");
+        jml_lexer_advance(lexer);
+        if (!jml_is_hex(jml_lexer_peek(lexer)))
+            return jml_token_emit_error("Unterminated hex literal.", lexer);
 
-        while (jml_is_hex(jml_lexer_peek())) jml_lexer_advance();
+        while (jml_is_hex(jml_lexer_peek(lexer)))
+            jml_lexer_advance(lexer);
 
-        if ((jml_lexer_peek() == '.')
-            && jml_is_hex(jml_lexer_peek_next())) {
+        if ((jml_lexer_peek(lexer) == '.')
+            && jml_is_hex(jml_lexer_peek_next(lexer))) {
 
-            jml_lexer_advance();
-            while (jml_is_hex(jml_lexer_peek())) jml_lexer_advance();
+            jml_lexer_advance(lexer);
+            while (jml_is_hex(jml_lexer_peek(lexer)))
+                jml_lexer_advance(lexer);
         }
     } else {
-        while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
+        while (jml_is_digit(jml_lexer_peek(lexer)))
+            jml_lexer_advance(lexer);
 
-        if ((jml_lexer_peek() == '.')
-            && jml_is_digit(jml_lexer_peek_next())) {
+        if ((jml_lexer_peek(lexer) == '.')
+            && jml_is_digit(jml_lexer_peek_next(lexer))) {
 
-            jml_lexer_advance();
-            while (jml_is_digit(jml_lexer_peek())) jml_lexer_advance();
+            jml_lexer_advance(lexer);
+            while (jml_is_digit(jml_lexer_peek(lexer)))
+                jml_lexer_advance(lexer);
         }
     }
 
-    return jml_token_emit(TOKEN_NUMBER);
+    return jml_token_emit(TOKEN_NUMBER, lexer);
 }
 
 
 jml_token_t
-jml_lexer_tokenize(void)
+jml_lexer_tokenize(jml_lexer_t *lexer)
 {
-    if (lexer.eof)          return jml_token_emit(TOKEN_EOF);
+    if (lexer->eof)         return jml_token_emit(TOKEN_EOF, lexer);
 
-    jml_lexer_skip_char();
-    lexer.start     =       lexer.current;
+    jml_lexer_skip_char(lexer);
+    lexer->start    =       lexer->current;
 
-    if (jml_is_eof()) {
-        lexer.eof   =       true;
-        return jml_token_emit(TOKEN_LINE);
+    if (jml_is_eof(lexer)) {
+        lexer->eof  =       true;
+
+        if (lexer->comment)
+            return jml_token_emit_error("Unterminated comment.", lexer);
+        else
+            return jml_token_emit(TOKEN_LINE, lexer);
     }
 
-    char c          =       jml_lexer_advance();
-    if (jml_is_alpha(c))    return jml_identifier_literal();
-    if (jml_is_digit(c))    return jml_number_literal();
+    char c          =       jml_lexer_advance(lexer);
+    if (jml_is_alpha(c))    return jml_identifier_literal(lexer);
+    if (jml_is_digit(c))    return jml_number_literal(lexer);
 
     switch (c) {
-        case  ')':  return  jml_token_emit(TOKEN_RPAREN);
-        case  '(':  return  jml_token_emit(TOKEN_LPAREN);
-        case  ']':  return  jml_token_emit(TOKEN_RSQARE);
-        case  '[':  return  jml_token_emit(TOKEN_LSQARE);
-        case  '}':  return  jml_token_emit(TOKEN_RBRACE);
-        case  '{':  return  jml_token_emit(TOKEN_LBRACE);
+        case  ')':  return  jml_token_emit(TOKEN_RPAREN, lexer);
+        case  '(':  return  jml_token_emit(TOKEN_LPAREN, lexer);
+        case  ']':  return  jml_token_emit(TOKEN_RSQARE, lexer);
+        case  '[':  return  jml_token_emit(TOKEN_LSQARE, lexer);
+        case  '}':  return  jml_token_emit(TOKEN_RBRACE, lexer);
+        case  '{':  return  jml_token_emit(TOKEN_LBRACE, lexer);
 
-        case  ':':  return  jml_token_emit(TOKEN_COLON);
-        case  ';':  return  jml_token_emit(TOKEN_SEMI);
-        case  ',':  return  jml_token_emit(TOKEN_COMMA);
-        case  '.':  return  jml_token_emit(TOKEN_DOT);
+        case  ':':  return  jml_token_emit(TOKEN_COLON, lexer);
+        case  ';':  return  jml_token_emit(TOKEN_SEMI, lexer);
+        case  ',':  return  jml_token_emit(TOKEN_COMMA, lexer);
+        case  '.':  return  jml_token_emit(TOKEN_DOT, lexer);
 
-        case  '+':  return  jml_token_emit(TOKEN_PLUS);
-        case  '*':  return  jml_token_emit(jml_lexer_match('*')
-                        ? TOKEN_STARSTAR : TOKEN_STAR);
+        case  '+':  return  jml_token_emit(TOKEN_PLUS, lexer);
+        case  '*':  return  jml_token_emit(jml_lexer_match('*', lexer)
+                        ? TOKEN_STARSTAR : TOKEN_STAR, lexer);
 
-        case  '/':  return  jml_token_emit(TOKEN_SLASH);
-        case  '%':  return  jml_token_emit(TOKEN_PERCENT);
+        case  '/':  return  jml_token_emit(TOKEN_SLASH, lexer);
+        case  '%':  return  jml_token_emit(TOKEN_PERCENT, lexer);
 
-        case  '-':  return  jml_token_emit(jml_lexer_match('>')
-                        ? TOKEN_ARROW : TOKEN_MINUS);
+        case  '-':  return  jml_token_emit(jml_lexer_match('>', lexer)
+                        ? TOKEN_ARROW : TOKEN_MINUS, lexer);
 
-        case  '=':  return  jml_token_emit(jml_lexer_match('=')
-                        ? TOKEN_EQEQUAL : TOKEN_EQUAL);
+        case  '=':  return  jml_token_emit(jml_lexer_match('=', lexer)
+                        ? TOKEN_EQEQUAL : TOKEN_EQUAL, lexer);
 
-        case  '<':  return  jml_token_emit(jml_lexer_match('=')
-                        ? TOKEN_LESSEQ : TOKEN_LESS);
+        case  '<':  return  jml_token_emit(jml_lexer_match('=', lexer)
+                        ? TOKEN_LESSEQ : TOKEN_LESS, lexer);
 
-        case  '>':  return  jml_token_emit(jml_lexer_match('=')
-                        ? TOKEN_GREATEREQ : TOKEN_GREATER);
+        case  '>':  return  jml_token_emit(jml_lexer_match('=', lexer)
+                        ? TOKEN_GREATEREQ : TOKEN_GREATER, lexer);
 
-        case  '!':  return  jml_token_emit(jml_lexer_match('=')
-                        ? TOKEN_NOTEQ : TOKEN_BANG);
+        case  '!':  return  jml_token_emit(jml_lexer_match('=', lexer)
+                        ? TOKEN_NOTEQ : TOKEN_BANG, lexer);
 
-        case '\'':  return  jml_string_literal('\'');
-        case  '"':  return  jml_string_literal('"');
+        case '\'':  return  jml_string_literal('\'', lexer);
+        case  '"':  return  jml_string_literal('"', lexer);
 
-        case '\n':  return  jml_token_emit(TOKEN_LINE);
+        case '\n':  return  jml_token_emit(TOKEN_LINE, lexer);
 
-        case  '@':  return  jml_token_emit(TOKEN_AT);
-        case  '|':  return  jml_token_emit(TOKEN_PIPE);
-        case  '~':  return  jml_token_emit(TOKEN_TILDE);
-        case  '&':  return  jml_token_emit(TOKEN_AMP);
-        case  '^':  return  jml_token_emit(TOKEN_CARET);
-        case  '?':  return  jml_token_emit(TOKEN_QUEST);
-        case  '#':  return  jml_token_emit(TOKEN_HASH);
+        case  '@':  return  jml_token_emit(TOKEN_AT, lexer);
+        case  '|':  return  jml_token_emit(TOKEN_PIPE, lexer);
+        case  '~':  return  jml_token_emit(TOKEN_TILDE, lexer);
+        case  '&':  return  jml_token_emit(TOKEN_AMP, lexer);
+        case  '^':  return  jml_token_emit(TOKEN_CARET, lexer);
+        case  '?':  return  jml_token_emit(TOKEN_QUEST, lexer);
+        case  '#':  return  jml_token_emit(TOKEN_HASH, lexer);
     }
-    return jml_token_emit_error("Unexpected character.");
+    return jml_token_emit_error("Unexpected character.", lexer);
 }
 
 

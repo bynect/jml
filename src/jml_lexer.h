@@ -97,12 +97,13 @@ typedef struct {
     const char                     *current;
     int                             line;
     bool                            eof;
+    bool                            comment;
 } jml_lexer_t;
 
 
-void jml_lexer_init(const char *source);
+void jml_lexer_init(const char *source, jml_lexer_t *lexer);
 
-jml_token_t jml_lexer_tokenize(void);
+jml_token_t jml_lexer_tokenize(jml_lexer_t *lexer);
 
 void jml_token_type_print(jml_token_type type);
 

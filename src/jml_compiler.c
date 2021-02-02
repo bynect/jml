@@ -89,7 +89,7 @@ jml_parser_advance(void)
     parser.previous = parser.current;
 
     while (true) {
-        parser.current = jml_lexer_tokenize();
+        parser.current = jml_lexer_tokenize(&parser.lexer);
 
 #ifdef JML_PRINT_TOKEN
         jml_token_type_print(parser.current.type);
@@ -878,8 +878,8 @@ jml_map(JML_UNUSED(bool assignable))
             jml_parser_match_line();
             jml_expression();
 
-            if (item_count == 255) {
-                jml_parser_error("Can't have more than 255 items in map.");
+            if (item_count == 254) {
+                jml_parser_error("Can't have more than 254 items in map.");
             }
 
             jml_parser_match_line();
@@ -1534,7 +1534,7 @@ jml_obj_function_t *
 jml_compiler_compile(const char *source,
     jml_obj_module_t *module)
 {
-    jml_lexer_init(source);
+    jml_lexer_init(source, &parser.lexer);
     jml_compiler_t compiler;
     jml_compiler_init(&compiler, FUNCTION_MAIN, module);
 
