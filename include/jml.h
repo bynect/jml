@@ -45,19 +45,6 @@ bool jml_module_add_class(jml_obj_module_t *module,
     const char *name, jml_module_function *table, bool inheritable);
 
 
-#ifdef __cplusplus
-
-#define MODULE_TABLE_HEAD           extern "C" jml_module_function
-#define MODULE_FUNC_HEAD            extern "C" void
-
-#else
-
-#define MODULE_TABLE_HEAD           jml_module_function
-#define MODULE_FUNC_HEAD            void
-
-#endif
-
-
 jml_obj_exception_t *jml_core_exception_args(
     int arg_count, int expected_arg);
 
@@ -106,6 +93,17 @@ jml_value_t jml_gc_exempt_peek(int distance);
 #else
 
 #define JML_UNUSED(arg)             arg
+
+#endif
+
+
+#ifdef __cplusplus
+
+#define JML_NOMANGLE                extern "C"
+
+#else
+
+#define JML_NOMANGLE
 
 #endif
 
@@ -165,6 +163,21 @@ jml_value_t jml_gc_exempt_peek(int distance);
 
 #define JML_PLATFORM_STRING         "other"
 #define JML_PLATFORM                0
+
+#endif
+
+
+#ifdef JML_PLATFORM_WIN
+
+#define MODULE_TABLE_HEAD           __declspec(dllexport) JML_NOMANGLE jml_module_function
+#define MODULE_FUNC_HEAD            __declspec(dllexport) JML_NOMANGLE void
+#define JML_API                     __declspec(dllexport)
+
+#else
+
+#define MODULE_TABLE_HEAD           JML_NOMANGLE jml_module_function
+#define MODULE_FUNC_HEAD            JML_NOMANGLE void
+#define JML_API
 
 #endif
 

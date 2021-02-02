@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include <jml.h>
@@ -16,9 +17,14 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#elif JML_PLATFORM_WIN
+#elif defined JML_PLATFORM_WIN
 
 #include <windows.h>
+#include <direct.h>
+#include <io.h>
+
+#define getcwd(...)                 _getcwd(__VA_ARGS__)
+#define chdir(...)                  _chdir(__VA_ARGS__)
 
 #endif
 
@@ -95,13 +101,15 @@ jml_strcat(char *dest, char *src)
 bool
 jml_file_find(const char *filename, char *result)
 {
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 #ifdef DT_DIR
 #define IS_DIR                      DT_DIR
 #else
 #define IS_DIR                      4
 #endif
     DIR *dp    = opendir(".");
-    if (dp == NULL) return false;
+    if (dp == NULL)
+        return false;
 
     struct dirent *dir;
     while ((dir = readdir(dp))) {
@@ -131,6 +139,38 @@ jml_file_find(const char *filename, char *result)
     return (*result != 0);
 
 #undef IS_DIR
+#else
+    char wildcard[] = ".\\*";
+    WIN32_FIND_DATA fd;
+    HANDLE handle = FindFirstFile(wildcard, &fd);
+
+    if (handle == INVALID_HANDLE_VALUE)
+        return false;
+
+    do {
+        if (strcmp(fd.cFileName, ".") == 0
+            || strcmp(fd.cFileName, "..") == 0)
+            continue;
+
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            if (chdir(fd.cFileName) != 0)
+                break;
+
+            jml_file_find(filename, result);
+
+            if (chdir("..") != 0)
+                break;
+        } else if (_stricmp(fd.cFileName, filename) == 0) {
+            getcwd(result, JML_PATH_MAX);
+            int length = strlen(result);
+            snprintf(result + length, JML_PATH_MAX - length, "\\%s", fd.cFileName);
+            break;
+        }
+    } while (FindNextFile(handle, &fd));
+
+    FindClose(handle);
+    return true;
+#endif
 }
 
 
@@ -165,7 +205,7 @@ jml_file_exist(const char *filename)
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 
     return access(filename, F_OK) != -1;
-#elif JML_PLATFORM_WIN
+#else
     (void) filename;
     return false;
 #endif
@@ -182,7 +222,7 @@ jml_file_isdir(const char *path)
         return false;
 
     return S_ISDIR(path_stat.st_mode);
-#elif JML_PLATFORM_WIN
+#else
     (void) path;
     return false;
 #endif
