@@ -2,13 +2,13 @@
 #make -f tool/make/Makefile all [options]
 
 
-CLI_D=cli
+CLI_D=ext/cli
 SRC_D=src
 STD_D=std
 
-CLI_C=$(shell find $(CLI_D) -name '*.c')
-SRC_C=$(shell find $(SRC_D) -name '*.c')
-STD_C=$(shell find $(STD_D) -name '*.c')
+CLI_C:=$(shell find $(CLI_D) -name '*.c')
+SRC_C:=$(shell find $(SRC_D) -name '*.c')
+STD_C:=$(shell find $(STD_D) -name '*.c')
 
 CLI_O=$(CLI_C:.c=.o)
 SRC_O=$(SRC_C:.c=.o)

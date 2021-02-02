@@ -120,7 +120,7 @@ main(int argc, char **argv)
     switch (argc) {
         case 1:
             jml_cli_repl();
-            putchar('\n');
+            printf("\n");
             break;
 
         case 2:
@@ -128,7 +128,7 @@ main(int argc, char **argv)
             break;
 
         default:
-            print_error("Usage: %s [file].\n", argv[0]);
+            print_error("usage: %s [file]\n", argv[0]);
             jml_vm_free(vm);
             return EXIT_FAILURE;
     }
