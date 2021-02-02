@@ -37,7 +37,7 @@ jml_module_std_path(char *path)
     if (temp == NULL)
         temp = "std";
 
-    snprintf(path, JML_PATH_MAX, "%s", temp);
+    snprintf(path, JML_PATH_MAX - 16, "%s", temp);
 }
 
 
@@ -49,18 +49,13 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
     char filename_so[JML_PATH_MAX];
     char filename_jml[JML_PATH_MAX];
 
-#ifdef JML_RECURSIVE_SEARCH
-
-    char std_path[JML_PATH_MAX];
+    char std_path[JML_PATH_MAX - 16];
     jml_module_std_path(std_path);
 
+#ifdef JML_RECURSIVE_SEARCH
     char temp_so[256];
     char temp_jml[256];
     char buffer[JML_PATH_MAX] = { 0 };
-
-    if (strchr(module_str, '.') != NULL) {
-        /*TODO*/
-    }
 
     sprintf(temp_so, "%s.%s", module_str, SHARED_LIB_EXT);
     sprintf(temp_jml, "%s.jml", module_str);
@@ -76,8 +71,15 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
         goto err;
     }
 #else
-    sprintf(filename_so, "./%s.%s", module_str, SHARED_LIB_EXT);
-    sprintf(filename_jml, "./%s.jml", module_str);
+    snprintf(
+        filename_so, JML_PATH_MAX, "%s%c%s.%s",
+        std_path, PATH_SEPARATOR, module_str, SHARED_LIB_EXT
+    );
+
+    snprintf(
+        filename_jml, JML_PATH_MAX, "%s%c%s.jml",
+        std_path, PATH_SEPARATOR, module_str
+    );
 #endif
 
     if (jml_file_exist(filename_so)) {
@@ -288,12 +290,12 @@ jml_module_initialize(jml_obj_module_t *module)
     }
 
 #ifndef JML_LAZY_IMPORT
-    jml_module_function **table = (jml_module_function **)GetProcAddress(
+    jml_module_function *table = (jml_module_function *)GetProcAddress(
         module->handle, "module_table"
     );
 
     jml_module_function *current;
-    if (table != NULL && (current = *table) != NULL) {
+    if ((current = table) != NULL) {
         while (current->name != NULL
             && current->function != NULL) {
 

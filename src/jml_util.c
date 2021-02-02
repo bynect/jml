@@ -200,13 +200,19 @@ done:
 
 
 bool
-jml_file_exist(const char *filename)
+jml_file_exist(const char *path)
 {
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 
-    return access(filename, F_OK) != -1;
+    return access(path, F_OK) != -1;
+#elif defined JML_PLATFORM_WIN
+
+    DWORD attr = GetFileAttributes(path);
+
+    return ((attr != INVALID_FILE_ATTRIBUTES)
+        && !(attr & FILE_ATTRIBUTE_DIRECTORY));
 #else
-    (void) filename;
+    (void) path;
     return false;
 #endif
 }
@@ -222,6 +228,12 @@ jml_file_isdir(const char *path)
         return false;
 
     return S_ISDIR(path_stat.st_mode);
+#elif defined JML_PLATFORM_WIN
+
+    DWORD attr = GetFileAttributes(path);
+
+    return ((attr != INVALID_FILE_ATTRIBUTES)
+        && (attr & FILE_ATTRIBUTE_DIRECTORY));
 #else
     (void) path;
     return false;

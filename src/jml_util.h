@@ -82,10 +82,12 @@ jml_is_printable(char c)
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 
 #define JML_PATH_MAX                4096
+#define PATH_SEPARATOR              '/'
 
 #elif defined JML_PLATFORM_WIN
 
 #define JML_PATH_MAX                260
+#define PATH_SEPARATOR              '\\'
 
 #endif
 
@@ -95,7 +97,7 @@ bool jml_file_find(const char *filename, char *result);
 bool jml_file_find_in(const char *path,
     const char *filename, char *result);
 
-bool jml_file_exist(const char *filename);
+bool jml_file_exist(const char *path);
 
 bool jml_file_isdir(const char *path);
 
