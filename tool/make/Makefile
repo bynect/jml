@@ -16,6 +16,7 @@ STD_O=$(STD_C:.c=.o)
 
 TARGET_BIN=bin/jml
 TARGET_LIB=lib/libjml.a
+TARGET_SO=$(TARGET_LIB:.a=.so)
 TARGET_STD=$(STD_C:.c=.so)
 
 
@@ -55,15 +56,16 @@ ifdef READLINE
 endif
 
 
-all:: $(TARGET_BIN) $(TARGET_LIB)
+all:: $(TARGET_BIN) $(TARGET_LIB) $(TARGET_SO)
 
 all:: $(TARGET_STD)
+
 
 $(CLI_D)/%.o: $(CLI_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES)
 
 $(SRC_D)/%.o: $(SRC_D)/%.c
-	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES)
+	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) -fpic
 
 $(STD_D)/%.o: $(STD_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) -fpic
@@ -77,9 +79,14 @@ $(TARGET_BIN): $(SRC_O) $(CLI_O)
 
 $(TARGET_LIB): $(SRC_O)
 	$(AR) rcs $@ $^
-	$(info compiling library)
+	$(info compiling static library)
+
+$(TARGET_SO): $(SRC_O)
+	$(CC) $^ -o $@ $(XSHARED)
+	$(info compiling shared library)
 
 $(TARGET_STD): $(STD_O)
+
 
 rmobj:
 	$(RM) $(CLI_O) $(SRC_O) $(STD_O)
@@ -88,7 +95,7 @@ rmbin:
 	$(RM) $(TARGET_BIN)
 
 rmlib:
-	$(RM) $(TARGET_LIB)
+	$(RM) $(TARGET_LIB) $(TARGET_SO)
 
 rmstd:
 	$(RM) $(TARGET_STD)

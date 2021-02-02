@@ -34,8 +34,7 @@ def jml_setup():
                     "-Wextra",
                     "-Werror",
                     "-Wno-unused-parameter",
-                    "-std=c99",
-                    "-rdynamic"
+                    "-std=c99"
                 ],
                 sources = [
                     "ext/py/jml_py.c",
@@ -48,7 +47,8 @@ def jml_setup():
                     "src/jml_type.c",
                     "src/jml_util.c",
                     "src/jml_value.c",
-                    "src/jml_vm.c"
+                    "src/jml_vm.c",
+                    "src/jml_string.c"
                 ],
             )
         ]
