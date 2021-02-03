@@ -88,15 +88,19 @@ $(TARGET_SO): $(SRC_O)
 $(TARGET_STD): $(STD_O)
 
 
+.PHONY: rmobj
 rmobj:
 	$(RM) $(CLI_O) $(SRC_O) $(STD_O)
 
+.PHONY: rmbin
 rmbin:
 	$(RM) $(TARGET_BIN)
 
+.PHONY: rmlib
 rmlib:
 	$(RM) $(TARGET_LIB) $(TARGET_SO)
 
+.PHONY: rmstd
 rmstd:
 	$(RM) $(TARGET_STD)
 

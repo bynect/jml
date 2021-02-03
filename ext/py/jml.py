@@ -3,9 +3,12 @@
 
 
 from distutils.core import setup, Extension
+from pathlib import Path
+from subprocess import run, CalledProcessError
+import os
 
 
-def jml_setup():
+def jml_setup() -> None:
     setup(
         name = "jml",
         version = "0.1.0",
@@ -19,15 +22,13 @@ def jml_setup():
                     ("JML_NDEBUG", None)
                 ],
                 include_dirs = [
-                    "src",
                     "include"
                 ],
                 library_dirs = [
                     "lib"
                 ],
                 libraries = [
-                    "m",
-                    "dl"
+                    "jml"
                 ],
                 extra_compile_args = [
                     "-Wall",
@@ -37,23 +38,22 @@ def jml_setup():
                     "-std=c99"
                 ],
                 sources = [
-                    "ext/py/jml_py.c",
-                    "src/jml_bytecode.c",
-                    "src/jml_compiler.c",
-                    "src/jml_core.c",
-                    "src/jml_gc.c",
-                    "src/jml_lexer.c",
-                    "src/jml_module.c",
-                    "src/jml_type.c",
-                    "src/jml_util.c",
-                    "src/jml_value.c",
-                    "src/jml_vm.c",
-                    "src/jml_string.c"
+                    "ext/py/jml_py.c"
                 ],
             )
         ]
     )
 
 
+def jml_dll() -> None:
+    if os.name == 'posix':
+        if not Path("lib/libjml.so").exists():
+            try:
+                run(["make", "-f", "tool/make/Makefile", "all"])
+            except CalledProcessError:
+                print("Shared library creation failed")
+
+
 if __name__ == "__main__":
+    jml_dll()
     jml_setup()
