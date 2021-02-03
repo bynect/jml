@@ -21,11 +21,19 @@
 #define SHARED_LIB_EXT              "so"
 #endif
 
+#define SHARED_LOAD(...)            dlopen(__VA_ARGS__)
+#define SHARED_FREE(...)            dlclose(__VA_ARGS__)
+#define SHARED_SYM(...)             dlsym(__VA_ARGS__)
+
 #elif defined JML_PLATFORM_WIN
 
 #include <windows.h>
 
 #define SHARED_LIB_EXT              "dll"
+
+#define SHARED_LOAD(...)            LoadLibrary(__VA_ARGS__)
+#define SHARED_FREE(...)            FreeLibrary(__VA_ARGS__)
+#define SHARED_SYM(...)             GetProcAddress(__VA_ARGS__)
 
 #endif
 
@@ -84,7 +92,7 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
 
     if (jml_file_exist(filename_so)) {
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
-        void *handle = dlopen(filename_so, RTLD_NOW);
+        jml_module_handle_t handle = SHARED_LOAD(filename_so, RTLD_NOW);
 
         if (handle == NULL) {
             jml_vm_error("ImportErr: %s.", dlerror());
@@ -100,7 +108,7 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
             module_name, handle);
 
 #elif defined JML_PLATFORM_WIN
-        HINSTANCE handle = LoadLibrary(filename_so);
+        jml_module_handle_t handle = SHARED_LOAD(filename_so);
 
         if (handle == NULL) {
             jml_vm_error("ImportErr: Loading error.");
@@ -143,19 +151,11 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
 bool
 jml_module_close(jml_obj_module_t *module)
 {
-#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     if (module == NULL || module->handle == NULL)
         return false;
 
-    dlclose(module->handle);
+    SHARED_FREE(module->handle);
     return true;
-#else
-    if (module == NULL || module->handle == NULL)
-        return false;
-
-    FreeLibrary(module->handle);
-    return true;
-#endif
 }
 
 
@@ -163,10 +163,10 @@ jml_obj_cfunction_t *
 jml_module_get_raw(jml_obj_module_t *module,
     const char *function_name, bool silent)
 {
-#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
-    jml_cfunction raw = dlsym(
+    jml_cfunction raw = (jml_cfunction)SHARED_SYM(
         module->handle, function_name);
 
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     char *result = dlerror();
     if (result || raw == NULL) {
         if (!silent)
@@ -174,25 +174,14 @@ jml_module_get_raw(jml_obj_module_t *module,
 
         return NULL;
     }
-
-    jml_vm_push(jml_string_intern(function_name));
-
-    jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
-        AS_STRING(jml_vm_peek(0)), raw, module);
-
-    jml_vm_pop();
-
-    return cfunction;
 #else
-    jml_cfunction raw = (jml_cfunction)GetProcAddress(
-        module->handle, function_name);
-
     if (raw == NULL) {
         if (!silent)
-            jml_vm_error("ImportErr: Loading error.");
+            jml_vm_error("ImportErr: Could not load dll.");
 
         return NULL;
     }
+#endif
 
     jml_vm_push(jml_string_intern(function_name));
 
@@ -202,7 +191,6 @@ jml_module_get_raw(jml_obj_module_t *module,
     jml_vm_pop();
 
     return cfunction;
-#endif
 }
 
 
@@ -236,11 +224,10 @@ jml_module_register(jml_obj_module_t *module,
 bool
 jml_module_initialize(jml_obj_module_t *module)
 {
-#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     if (module->handle == NULL)
         return true;
 
-    jml_mfunction initializer = dlsym(
+    jml_mfunction initializer = (jml_mfunction)SHARED_SYM(
         module->handle, "module_init"
     );
 
@@ -249,9 +236,8 @@ jml_module_initialize(jml_obj_module_t *module)
     }
 
 #ifndef JML_LAZY_IMPORT
-    jml_module_function *table = dlsym(
-        module->handle, "module_table"
-    );
+    jml_module_function *table = (jml_module_function*)SHARED_SYM(
+        module->handle, "module_table");
 
     jml_module_function *current;
     if ((current = table) != NULL) {
@@ -276,62 +262,17 @@ jml_module_initialize(jml_obj_module_t *module)
     }
 #endif
     return true;
-#elif defined JML_PLATFORM_WIN
-
-    if (module->handle == NULL)
-        return true;
-
-    jml_mfunction initializer = (jml_mfunction)GetProcAddress(
-        module->handle, "module_init"
-    );
-
-    if (initializer != NULL) {
-        initializer(module);
-    }
-
-#ifndef JML_LAZY_IMPORT
-    jml_module_function *table = (jml_module_function *)GetProcAddress(
-        module->handle, "module_table"
-    );
-
-    jml_module_function *current;
-    if ((current = table) != NULL) {
-        while (current->name != NULL
-            && current->function != NULL) {
-
-            jml_vm_push(jml_string_intern(current->name));
-
-            jml_vm_push(OBJ_VAL(
-                jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
-                    current->function, module)
-            ));
-
-            jml_hashmap_set(&module->globals,
-                AS_STRING(jml_vm_peek(1)),
-                jml_vm_peek(0)
-            );
-
-            jml_vm_pop_two();
-            ++current;
-        }
-    }
-#endif
-    return true;
-#else
-    return false;
-#endif
 }
 
 
 void
 jml_module_finalize(jml_obj_module_t *module)
 {
-#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
     if (module == NULL
         && module->handle == NULL)
         return;
 
-    jml_mfunction free_function = dlsym(
+    jml_mfunction free_function = (jml_mfunction)SHARED_SYM(
         module->handle, "module_free"
     );
 
@@ -339,20 +280,6 @@ jml_module_finalize(jml_obj_module_t *module)
         free_function(module);
 
     jml_module_close(module);
-#else
-    if (module == NULL
-        && module->handle == NULL)
-        return;
-
-    jml_mfunction free_function = (jml_mfunction)GetProcAddress(
-        module->handle, "module_free"
-    );
-
-    if (free_function != NULL)
-        free_function(module);
-
-    jml_module_close(module);
-#endif
 }
 
 
