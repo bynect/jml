@@ -41,6 +41,7 @@ jml_strdup
 jml_strsep
 jml_strtok
 jml_obj_array_add
+jml_obj_array_append
 jml_obj_array_new
 jml_obj_cfunction_new
 jml_obj_class_new

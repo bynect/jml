@@ -5,8 +5,6 @@
 #endif
 
 #include <math.h>
-#include <string.h>
-#include <stdio.h>
 
 #include <jml.h>
 
@@ -209,17 +207,16 @@ module_init(jml_obj_module_t *module)
 #endif
 
 #ifndef NAN
+
 #define NAN                         -(0.f/0.f)
+
 #endif
+    jml_module_add_value(module, "nan",     NUM_VAL(NAN));
 
 #ifndef INFINITY
+
 #define INFINITY                    HUGE_VAL
+
 #endif
-
-    jml_module_add_value(module, "nan",     NUM_VAL(NAN));
     jml_module_add_value(module, "inf",     NUM_VAL(INFINITY));
-
-    jml_module_add_value(
-        module, "MAX_FLOAT", NUM_VAL(MAXFLOAT)
-    );
 }

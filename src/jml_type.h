@@ -183,7 +183,9 @@ jml_obj_string_t *jml_obj_string_copy(const char *chars,
 
 jml_obj_array_t *jml_obj_array_new(void);
 
-void jml_obj_array_add(jml_obj_array_t *array, jml_value_t value);
+void jml_obj_array_append(jml_obj_array_t *array, jml_value_t value);
+
+void jml_obj_array_add(jml_obj_array_t *source, jml_obj_array_t *dest);
 
 jml_obj_map_t *jml_obj_map_new(void);
 
@@ -219,6 +221,8 @@ char *jml_obj_stringify(jml_value_t value);
 const char *jml_obj_stringify_type(jml_value_t value);
 
 bool jml_obj_is_sentinel(jml_value_t value);
+
+jml_value_t jml_obj_get_sentinel(void);
 
 
 static inline bool

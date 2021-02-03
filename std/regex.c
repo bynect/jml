@@ -123,7 +123,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
 
             int index = matches[groups].rm_eo - matches[groups].rm_so;
 
-            jml_obj_array_add(array, OBJ_VAL(
+            jml_obj_array_append(array, OBJ_VAL(
                 jml_obj_string_copy(current + matches[groups].rm_so, index)
             ));
         }

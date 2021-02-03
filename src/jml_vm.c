@@ -578,7 +578,7 @@ jml_array_copy(jml_obj_array_t *array)
     jml_vm_push(OBJ_VAL(jml_obj_array_new()));
 
     for (int i = 0; i < array->values.count; ++i) {
-        jml_obj_array_add(AS_ARRAY(jml_vm_peek(0)),
+        jml_obj_array_append(AS_ARRAY(jml_vm_peek(0)),
             array->values.values[i]);
     }
 
@@ -1460,7 +1460,7 @@ jml_vm_run(jml_value_t *last)
                 jml_gc_exempt_push(OBJ_VAL(jml_obj_array_new()));
 
                 for (int i = 0; i < item_count; ++i) {
-                    jml_obj_array_add(
+                    jml_obj_array_append(
                         AS_ARRAY(jml_gc_exempt_peek(0)),
                         values[i]
                     );

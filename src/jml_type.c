@@ -120,7 +120,7 @@ jml_obj_array_new(void)
 
 
 void
-jml_obj_array_add(jml_obj_array_t *array,
+jml_obj_array_append(jml_obj_array_t *array,
     jml_value_t value)
 {
     jml_vm_push(value);
@@ -129,6 +129,21 @@ jml_obj_array_add(jml_obj_array_t *array,
         jml_vm_peek(0));
 
     jml_vm_pop();
+}
+
+
+void
+jml_obj_array_add(jml_obj_array_t *source,
+    jml_obj_array_t *dest)
+{
+    jml_vm_push(OBJ_VAL(source));
+    jml_vm_push(OBJ_VAL(dest));
+
+    for (int i = 0; i < source->values.count; ++i) {
+        jml_obj_array_append(dest, source->values.values[i]);
+    }
+
+    jml_vm_pop_two();
 }
 
 
@@ -686,4 +701,11 @@ bool
 jml_obj_is_sentinel(jml_value_t value)
 {
     return (AS_OBJ(value) == vm->sentinel);
+}
+
+
+jml_value_t
+jml_obj_get_sentinel(void)
+{
+    return OBJ_VAL(vm->sentinel);
 }
