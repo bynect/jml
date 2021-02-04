@@ -72,8 +72,6 @@ typedef struct jml_compiler {
     int                             local_count;
     jml_upvalue_t                   upvalues[LOCAL_MAX];
     int                             scope_depth;
-
-    bool                            in_module;
     jml_obj_module_t               *module;
 } jml_compiler_t;
 

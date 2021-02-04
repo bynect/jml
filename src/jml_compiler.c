@@ -50,7 +50,7 @@ jml_parser_error_at(jml_token_t *token,
 
     fprintf(stderr, "[line %d", token->line);
 
-    if (current->in_module)
+    if (current->module != NULL)
         fprintf(stderr, " in %s", current->module->name->chars);
 
     fprintf(stderr, "] Error");
@@ -252,7 +252,6 @@ jml_compiler_init(jml_compiler_t *compiler,
     compiler->function      = NULL;
     compiler->type          = type;
 
-    compiler->in_module     = module != NULL;
     compiler->module        = module;
 
     compiler->local_count = 0;
@@ -328,52 +327,6 @@ jml_scope_end(void)
         }
 
         current->local_count--;
-    }
-}
-
-
-/*forwarded declaration*/
-static void jml_expression();
-
-static void jml_statement();
-
-static void jml_declaration();
-
-static jml_parser_rule *jml_parser_rule_get(
-    jml_token_type type);
-
-static void jml_parser_precedence_parse(
-    jml_parser_precedence precedence);
-
-
-static void
-jml_parser_synchronize(void)
-{
-    parser.panicked = false;
-
-    while (parser.current.type != TOKEN_EOF) {
-        if (parser.previous.type == TOKEN_LINE) {
-            jml_parser_match_line();
-            return;
-        }
-
-        switch (parser.current.type) {
-            case TOKEN_FOR:
-            case TOKEN_WHILE:
-            case TOKEN_BREAK:
-            case TOKEN_SKIP:
-            case TOKEN_IF:
-            case TOKEN_CLASS:
-            case TOKEN_LET:
-            case TOKEN_FN:
-            case TOKEN_RETURN:
-            case TOKEN_IMPORT:
-                return;
-
-            default:
-                break;
-        }
-        jml_parser_advance();
     }
 }
 
@@ -518,6 +471,51 @@ jml_variable_definition(uint8_t global)
     }
 
     jml_bytecode_emit_bytes(OP_DEF_GLOBAL, global);
+}
+
+
+/*forwarded declaration*/
+static void jml_expression(void);
+
+static void jml_statement(void);
+
+static void jml_declaration(void);
+
+static jml_parser_rule *jml_parser_rule_get(jml_token_type type);
+
+static void jml_parser_precedence_parse(jml_parser_precedence precedence);
+
+
+static void
+jml_parser_synchronize(void)
+{
+    parser.panicked = false;
+
+    while (parser.current.type != TOKEN_EOF) {
+        if (parser.previous.type == TOKEN_LINE) {
+            jml_parser_match_line();
+            return;
+        }
+
+        switch (parser.current.type) {
+            case TOKEN_FOR:
+            case TOKEN_WHILE:
+            case TOKEN_BREAK:
+            case TOKEN_SKIP:
+            case TOKEN_IF:
+            case TOKEN_CLASS:
+            case TOKEN_LET:
+            case TOKEN_FN:
+            case TOKEN_RETURN:
+            case TOKEN_IMPORT:
+                return;
+
+            default:
+                break;
+        }
+
+        jml_parser_advance();
+    }
 }
 
 
@@ -1261,7 +1259,7 @@ jml_class_declaration(void)
     }
 
     jml_parser_consume(TOKEN_RBRACE, "Expect '}' after class body.");
-    jml_parser_newline();
+    jml_parser_match_line();
     jml_bytecode_emit_byte(OP_POP);
 
     if (class_compiler.w_superclass) {
@@ -1320,7 +1318,7 @@ jml_return_statement(void)
             jml_parser_error("Can't return a value from an initializer.");
 
         jml_expression();
-        jml_parser_newline();
+        jml_parser_match_line();
         jml_bytecode_emit_byte(OP_RETURN);
     }
 }
