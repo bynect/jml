@@ -634,7 +634,7 @@ jml_obj_stringify(jml_value_t value)
             char message[4096];
 #else
             size_t size = exc->name->length + 32;
-            char message[size + exc->module != NULL ? exc->module->name->length : 0];
+            char message[size + (exc->module != NULL ? exc->module->name->length : 0)];
 #endif
 
             if (exc->module != NULL) {

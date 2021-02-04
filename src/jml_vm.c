@@ -1070,7 +1070,8 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_JUMP_IF_FALSE) {
                 uint16_t offset = READ_SHORT();
-                if (jml_is_falsey(jml_vm_peek(0))) pc += offset;
+                if (jml_is_falsey(jml_vm_peek(0)))
+                    pc += offset;
                 END_OP();
             }
 

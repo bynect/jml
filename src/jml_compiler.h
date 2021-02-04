@@ -64,6 +64,14 @@ typedef struct {
 } jml_local_t;
 
 
+typedef struct jml_loop {
+    struct jml_loop                *enclosing;
+    int                             start;
+    int                             body;
+    int                             exit;
+} jml_loop_t;
+
+
 typedef struct jml_compiler {
     struct jml_compiler            *enclosing;
     jml_obj_function_t             *function;
@@ -73,6 +81,7 @@ typedef struct jml_compiler {
     jml_upvalue_t                   upvalues[LOCAL_MAX];
     int                             scope_depth;
     jml_obj_module_t               *module;
+    jml_loop_t                     *loop;
 } jml_compiler_t;
 
 

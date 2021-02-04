@@ -186,11 +186,11 @@ jml_bytecode_emit_bytes(uint8_t byte1,
 
 
 static void
-jml_bytecode_emit_loop(int start_pos)
+jml_bytecode_emit_loop(int start)
 {
     jml_bytecode_emit_byte(OP_LOOP);
 
-    int offset = jml_bytecode_current()->count - start_pos + 2;
+    int offset = jml_bytecode_current()->count - start + 2;
     if (offset > UINT16_MAX) jml_parser_error("Loop body too large.");
 
     jml_bytecode_emit_byte((offset >> 8) & 0xff);
@@ -254,10 +254,10 @@ jml_compiler_init(jml_compiler_t *compiler,
 
     compiler->module        = module;
 
-    compiler->local_count = 0;
-    compiler->scope_depth = 0;
-    compiler->function = jml_obj_function_new();
-    current = compiler;
+    compiler->local_count   = 0;
+    compiler->scope_depth   = 0;
+    compiler->function      = jml_obj_function_new();
+    current                 = compiler;
 
     if (type != FUNCTION_MAIN) {
         current->function->name = jml_obj_string_copy(
@@ -271,18 +271,20 @@ jml_compiler_init(jml_compiler_t *compiler,
         );
     }
 
-    jml_local_t *local = &current->locals[current->local_count++];
-    local->depth = 0;
+    jml_local_t *local      = &current->locals[current->local_count++];
+    local->depth            = 0;
 
     if (type != FUNCTION_FN) {
-        local->name.start = "self";
-        local->name.length = 4;
+        local->name.start   = "self";
+        local->name.length  = 4;
     } else {
-        local->name.start = "";
-        local->name.length = 0;
+        local->name.start   = "";
+        local->name.length  = 0;
     }
 
-    local->captured = false;
+    local->captured         = false;
+
+    compiler->loop          = NULL;
 }
 
 
@@ -422,6 +424,41 @@ jml_upvalue_resolve(jml_compiler_t *compiler,
     }
 
     return -1;
+}
+
+
+static void
+jml_loop_begin(int start, int body, int exit)
+{
+    jml_loop_t  *loop   = jml_alloc(sizeof(jml_loop_t));
+
+    loop->enclosing     = current->loop;
+    loop->start         = start;
+    loop->body          = body;
+    loop->exit          = exit;
+
+    current->loop = loop;
+}
+
+
+static void
+jml_loop_end(void)
+{
+    jml_loop_t  *loop   = current->loop;
+
+    if (loop != NULL) {
+        for (int i = loop->body; i < jml_bytecode_current()->count; ) {
+            if (jml_bytecode_current()->code[i] == UINT8_MAX) {
+                jml_bytecode_current()->code[i] = OP_JUMP;
+                jml_bytecode_patch_jump(i + 1);
+                i += 3;
+            } else
+                ++i;
+        }
+
+        current->loop   = loop->enclosing;
+        jml_free(loop);
+    }
 }
 
 
@@ -1365,6 +1402,7 @@ jml_while_statement(void)
     jml_parser_consume(TOKEN_RPAREN, "Expect ')' after condition.");
 
     int exit = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
+    jml_loop_begin(start, jml_bytecode_current()->count, exit);
 
     jml_bytecode_emit_byte(OP_POP);
     jml_statement();
@@ -1373,6 +1411,33 @@ jml_while_statement(void)
 
     jml_bytecode_patch_jump(exit);
     jml_bytecode_emit_byte(OP_POP);
+
+    jml_loop_end();
+}
+
+
+static void
+jml_break_statement(void)
+{
+    if (current->loop == NULL)
+        jml_parser_error("Can't use 'break' outside of a loop.");
+
+    /*placeholder*/
+    jml_bytecode_emit_jump(UINT8_MAX);
+}
+
+
+static void
+jml_skip_statement(void)
+{
+    if (current->loop == NULL)
+        jml_parser_error("Can't use 'skip' outside of a loop.");
+
+    jml_bytecode_emit_byte(OP_LOOP);
+    int offset = jml_bytecode_current()->count - current->loop->start + 2;
+
+    jml_bytecode_emit_byte((offset >> 8) & 0xff);
+    jml_bytecode_emit_byte(offset & 0xff);
 }
 
 
@@ -1509,6 +1574,12 @@ jml_statement(void)
 
     else if (jml_parser_match(TOKEN_WHILE))
         jml_while_statement();
+
+    else if (jml_parser_match(TOKEN_BREAK))
+        jml_break_statement();
+
+    else if (jml_parser_match(TOKEN_SKIP))
+        jml_skip_statement();
 
     else if (jml_parser_match(TOKEN_FOR))
         jml_for_statement();
