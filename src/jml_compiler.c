@@ -447,7 +447,8 @@ jml_loop_end(void)
     jml_loop_t  *loop   = current->loop;
 
     if (loop != NULL) {
-        for (int i = loop->body; i < jml_bytecode_current()->count; ) {
+        int count       = jml_bytecode_current()->count;
+        for (int i = loop->body; i < count; ) {
             if (jml_bytecode_current()->code[i] == UINT8_MAX) {
                 jml_bytecode_current()->code[i] = OP_JUMP;
                 jml_bytecode_patch_jump(i + 1);
@@ -465,7 +466,8 @@ jml_loop_end(void)
 static void
 jml_variable_declaration(void)
 {
-    if (current->scope_depth == 0) return;
+    if (current->scope_depth == 0)
+        return;
 
     jml_token_t *name = &parser.previous;
 
@@ -478,7 +480,7 @@ jml_variable_declaration(void)
 
         if (jml_identifier_equal(name, &local->name)) {
             jml_parser_error(
-                "Already variable with this name in this scope."
+                "Variable alredy declared in this scope."
             );
         }
     }
@@ -493,7 +495,8 @@ jml_variable_parse(const char *message)
     jml_parser_consume(TOKEN_NAME, message);
 
     jml_variable_declaration();
-    if (current->scope_depth > 0) return 0;
+    if (current->scope_depth > 0)
+        return 0;
 
     return jml_identifier_const(&parser.previous);
 }
@@ -1433,11 +1436,7 @@ jml_skip_statement(void)
     if (current->loop == NULL)
         jml_parser_error("Can't use 'skip' outside of a loop.");
 
-    jml_bytecode_emit_byte(OP_LOOP);
-    int offset = jml_bytecode_current()->count - current->loop->start + 2;
-
-    jml_bytecode_emit_byte((offset >> 8) & 0xff);
-    jml_bytecode_emit_byte(offset & 0xff);
+    jml_bytecode_emit_loop(current->loop->start);
 }
 
 
@@ -1479,6 +1478,7 @@ jml_for_statement(void)
         jml_bytecode_patch_jump(body);
     }
 
+    jml_loop_begin(start, jml_bytecode_current()->count, exit);
     jml_statement();
 
     jml_bytecode_emit_loop(start);
@@ -1487,6 +1487,7 @@ jml_for_statement(void)
         jml_bytecode_emit_byte(OP_POP);
     }
 
+    jml_loop_end();
     jml_scope_end();
 }
 
