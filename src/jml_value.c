@@ -127,6 +127,19 @@ jml_value_equal(jml_value_t a, jml_value_t b)
     if (IS_NUM(a) && IS_NUM(b)) {
         return AS_NUM(a) == AS_NUM(b);
     }
+
+    if (IS_ARRAY(a) && IS_ARRAY(b)) {
+        if (AS_ARRAY(a)->values.count != AS_ARRAY(b)->values.count)
+            return false;
+
+        for (int i = 0; i < AS_ARRAY(a)->values.count; ++i) {
+            if (!jml_value_equal(AS_ARRAY(a)->values.values[i],
+                AS_ARRAY(b)->values.values[i]))
+                return false;
+        }
+        return true;
+    }
+
     return a == b;
 
 #else
@@ -136,7 +149,22 @@ jml_value_equal(jml_value_t a, jml_value_t b)
         case VAL_BOOL:      return AS_BOOL(a) == AS_BOOL(b);
         case VAL_NONE:      return true;
         case VAL_NUM:       return AS_NUM(a) == AS_NUM(b);
-        case VAL_OBJ:       return AS_OBJ(a) == AS_OBJ(b);
+
+        case VAL_OBJ: {
+            if (IS_ARRAY(a)) {
+                if (AS_ARRAY(a)->values.count != AS_ARRAY(b)->values.count)
+                    return false;
+
+                for (int i = 0; i < AS_ARRAY(a)->values.count; ++i) {
+                    if (!jml_value_equal(AS_ARRAY(a)->values.values[i],
+                        AS_ARRAY(b)->values.values[i]))
+                        return false;
+                }
+                return true;
+            }
+
+            return AS_OBJ(a) == AS_OBJ(b);
+        }
 
         default:            return false;
     }
