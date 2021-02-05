@@ -348,15 +348,24 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
         case  ',':  return  jml_token_emit(TOKEN_COMMA, lexer);
         case  '.':  return  jml_token_emit(TOKEN_DOT, lexer);
 
-        case  '+':  return  jml_token_emit(TOKEN_PLUS, lexer);
-        case  '*':  return  jml_token_emit(jml_lexer_match('*', lexer)
-                        ? TOKEN_STARSTAR : TOKEN_STAR, lexer);
-
-        case  '/':  return  jml_token_emit(TOKEN_SLASH, lexer);
-        case  '%':  return  jml_token_emit(TOKEN_PERCENT, lexer);
+        case  '+':  return  jml_token_emit(jml_lexer_match('=', lexer)
+                        ? TOKEN_PLUSEQ : TOKEN_PLUS, lexer);
 
         case  '-':  return  jml_token_emit(jml_lexer_match('>', lexer)
-                        ? TOKEN_ARROW : TOKEN_MINUS, lexer);
+                        ? TOKEN_ARROW : jml_lexer_match('=', lexer)
+                        ? TOKEN_MINUSEQ : TOKEN_MINUS, lexer);
+
+
+        case  '*':  return  jml_token_emit(jml_lexer_match('*', lexer)
+                        ? jml_lexer_match('=', lexer) ? TOKEN_STARSTAREQ
+                        : TOKEN_STARSTAR : jml_lexer_match('=', lexer)
+                        ? TOKEN_STAREQ : TOKEN_STAR, lexer);
+
+        case  '/':  return  jml_token_emit(jml_lexer_match('=', lexer)
+                        ? TOKEN_SLASHEQ : TOKEN_SLASH, lexer);
+
+        case  '%':  return  jml_token_emit(jml_lexer_match('=', lexer)
+                        ? TOKEN_PERCENTEQ : TOKEN_PERCENT, lexer);
 
         case  '=':  return  jml_token_emit(jml_lexer_match('=', lexer)
                         ? TOKEN_EQEQUAL : TOKEN_EQUAL, lexer);

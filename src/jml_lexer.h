@@ -32,14 +32,20 @@ typedef enum {
 
     /* arithmetic operators */
     TOKEN_PLUS,
+    TOKEN_PLUSEQ,
     TOKEN_MINUS,
+    TOKEN_MINUSEQ,
     TOKEN_STAR,
+    TOKEN_STAREQ,
     TOKEN_STARSTAR,
+    TOKEN_STARSTAREQ,
     TOKEN_SLASH,
+    TOKEN_SLASHEQ,
     TOKEN_PERCENT,
+    TOKEN_PERCENTEQ,
+    TOKEN_EQUAL,
 
     /* logic operators */
-    TOKEN_EQUAL,
     TOKEN_EQEQUAL,
     TOKEN_GREATER,
     TOKEN_GREATEREQ,

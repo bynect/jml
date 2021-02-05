@@ -957,6 +957,54 @@ jml_variable_named(jml_token_t name,
         jml_expression();
         jml_bytecode_emit_bytes(set_op, (uint8_t)arg);
 
+    } else if (assignable && jml_parser_match(TOKEN_PLUSEQ)) {
+        jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+        jml_parser_match_line();
+        jml_expression();
+
+        jml_bytecode_emit_bytes(OP_ADD, set_op);
+        jml_bytecode_emit_byte((uint8_t)arg);
+
+    } else if (assignable && jml_parser_match(TOKEN_MINUSEQ)) {
+        jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+        jml_parser_match_line();
+        jml_expression();
+
+        jml_bytecode_emit_bytes(OP_SUB, set_op);
+        jml_bytecode_emit_byte((uint8_t)arg);
+
+    } else if (assignable && jml_parser_match(TOKEN_STAREQ)) {
+        jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+        jml_parser_match_line();
+        jml_expression();
+
+        jml_bytecode_emit_bytes(OP_MUL, set_op);
+        jml_bytecode_emit_byte((uint8_t)arg);
+
+    } else if (assignable && jml_parser_match(TOKEN_STARSTAREQ)) {
+        jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+        jml_parser_match_line();
+        jml_expression();
+
+        jml_bytecode_emit_bytes(OP_POW, set_op);
+        jml_bytecode_emit_byte((uint8_t)arg);
+
+    } else if (assignable && jml_parser_match(TOKEN_SLASHEQ)) {
+        jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+        jml_parser_match_line();
+        jml_expression();
+
+        jml_bytecode_emit_bytes(OP_DIV, set_op);
+        jml_bytecode_emit_byte((uint8_t)arg);
+
+    } else if (assignable && jml_parser_match(TOKEN_PERCENTEQ)) {
+        jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+        jml_parser_match_line();
+        jml_expression();
+
+        jml_bytecode_emit_bytes(OP_MOD, set_op);
+        jml_bytecode_emit_byte((uint8_t)arg);
+
     } else if (assignable && jml_parser_match(TOKEN_ARROW)) {
         jml_parser_match_line();
         jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
@@ -972,16 +1020,71 @@ jml_variable_named(jml_token_t name,
         jml_parser_match_line();
         jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
 
+        set_op = OP_SET_INDEX, get_op = OP_GET_INDEX;
+
         if (assignable && jml_parser_match(TOKEN_EQUAL)) {
             jml_parser_match_line();
             jml_expression();
-            jml_bytecode_emit_bytes(OP_SET_INDEX, (uint8_t)arg);
-        } else {
-            jml_bytecode_emit_bytes(OP_GET_INDEX, (uint8_t)arg);
-        }
-    } else {
+            jml_bytecode_emit_bytes(set_op, (uint8_t)arg);
+
+        } else if (assignable && jml_parser_match(TOKEN_PLUSEQ)) {
+            jml_bytecode_emit_byte(OP_SAVE);
+            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+            jml_parser_match_line();
+            jml_expression();
+
+            jml_bytecode_emit_bytes(OP_ADD, set_op);
+            jml_bytecode_emit_byte((uint8_t)arg);
+
+        } else if (assignable && jml_parser_match(TOKEN_MINUSEQ)) {
+            jml_bytecode_emit_byte(OP_SAVE);
+            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+            jml_parser_match_line();
+            jml_expression();
+
+            jml_bytecode_emit_bytes(OP_SUB, set_op);
+            jml_bytecode_emit_byte((uint8_t)arg);
+
+        } else if (assignable && jml_parser_match(TOKEN_STAREQ)) {
+            jml_bytecode_emit_byte(OP_SAVE);
+            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+            jml_parser_match_line();
+            jml_expression();
+
+            jml_bytecode_emit_bytes(OP_MUL, set_op);
+            jml_bytecode_emit_byte((uint8_t)arg);
+
+        } else if (assignable && jml_parser_match(TOKEN_STARSTAREQ)) {
+            jml_bytecode_emit_byte(OP_SAVE);
+            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+            jml_parser_match_line();
+            jml_expression();
+
+            jml_bytecode_emit_bytes(OP_POW, set_op);
+            jml_bytecode_emit_byte((uint8_t)arg);
+
+        } else if (assignable && jml_parser_match(TOKEN_SLASHEQ)) {
+            jml_bytecode_emit_byte(OP_SAVE);
+            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+            jml_parser_match_line();
+            jml_expression();
+
+            jml_bytecode_emit_bytes(OP_DIV, set_op);
+            jml_bytecode_emit_byte((uint8_t)arg);
+
+        } else if (assignable && jml_parser_match(TOKEN_PERCENTEQ)) {
+            jml_bytecode_emit_byte(OP_SAVE);
+            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
+            jml_parser_match_line();
+            jml_expression();
+
+            jml_bytecode_emit_bytes(OP_MOD, set_op);
+            jml_bytecode_emit_byte((uint8_t)arg);
+
+        } else
+            jml_bytecode_emit_bytes(get_op, (uint8_t)arg);
+    } else
         jml_bytecode_emit_bytes(get_op, (uint8_t)arg);
-    }
 }
 
 
@@ -1076,11 +1179,17 @@ static jml_parser_rule rules[] = {
     /*TOKEN_ARROW*/     {NULL,          NULL,           PREC_NONE},
 
     /*TOKEN_PLUS*/      {NULL,          &jml_binary,    PREC_TERM},
+    /*TOKEN_PLUSEQ*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_MINUS*/     {&jml_unary,    &jml_binary,    PREC_TERM},
+    /*TOKEN_MINUSEQ*/   {NULL,          NULL,           PREC_NONE},
     /*TOKEN_STAR*/      {NULL,          &jml_binary,    PREC_FACTOR},
+    /*TOKEN_STAREQ*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_STARSTAR*/  {NULL,          &jml_binary,    PREC_FACTOR},
+    /*TOKEN_STARSTAREQ*/{NULL,          NULL,           PREC_NONE},
     /*TOKEN_SLASH*/     {NULL,          &jml_binary,    PREC_FACTOR},
+    /*TOKEN_SLASHEQ*/   {NULL,          NULL,           PREC_NONE},
     /*TOKEN_PERCENT*/   {NULL,          &jml_binary,    PREC_FACTOR},
+    /*TOKEN_PERCENTEQ*/ {NULL,          NULL,           PREC_NONE},
 
     /*TOKEN_EQUAL*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_EQEQUAL*/   {NULL,          &jml_binary,    PREC_EQUALITY},

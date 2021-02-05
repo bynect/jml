@@ -781,6 +781,7 @@ jml_vm_run(jml_value_t *last)
         &&exec_OP_POP,
         &&exec_OP_POP_TWO,
         &&exec_OP_ROT,
+        &&exec_OP_SAVE,
         &&exec_OP_CONST,
         &&exec_OP_NONE,
         &&exec_OP_TRUE,
@@ -890,6 +891,11 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_ROT) {
                 jml_vm_rot();
+                END_OP();
+            }
+
+            EXEC_OP(OP_SAVE) {
+                jml_vm_push(jml_vm_peek(0));
                 END_OP();
             }
 

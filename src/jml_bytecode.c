@@ -179,6 +179,9 @@ jml_bytecode_instruction_disassemble(
         case OP_ROT:
             return jml_bytecode_instruction_simple("OP_ROT", offset);
 
+        case OP_SAVE:
+            return jml_bytecode_instruction_simple("OP_SAVE", offset);
+
         case OP_CONST:
             return jml_bytecode_instruction_const("OP_CONST", bytecode, offset);
 
