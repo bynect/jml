@@ -209,10 +209,11 @@ jml_core_reverse(int arg_count, jml_value_t *args)
     jml_value_t value = args[0];
 
     if (IS_STRING(value)) {
-        jml_obj_string_t *string_obj = AS_STRING(value);
+        jml_obj_string_t *obj   = AS_STRING(value);
 
-        char *str               = jml_strdup(string_obj->chars);
-        int length              = string_obj->length;
+        char *str               = obj->chars;
+        int length              = obj->length;
+        char *end               = str + length;
 
         for (int i = 0; i < length / 2; ++i) {
             char temp           = str[i];
@@ -220,9 +221,50 @@ jml_core_reverse(int arg_count, jml_value_t *args)
             str[length - 1 - i] = temp;
         }
 
-        return OBJ_VAL(jml_obj_string_take(
-            str, strlen(str))
-        );
+        while(str < --end) {
+            char temp;
+            switch((*end & 0xf0) >> 4) {
+                case 0x0f:
+                    if (end - str < 4)
+                        return false;
+
+                    temp        = *(end - 3);
+                    *(end - 3)  = *end;
+                    *end        = temp;
+
+                    temp        = *(end - 2);
+                    *(end - 2)  = *(end - 1);
+                    *(end - 1)  = temp;
+
+                    end -= 3;
+                    break;
+
+                case 0x0e:
+                    if (end - str < 3)
+                        return false;
+
+                    temp        = *(end - 2);
+                    *(end - 2)  = *end;
+                    *end        = temp;
+
+                    end -= 2;
+                    break;
+
+                case 0x0c:
+                case 0x0d:
+                    if (end - str < 1)
+                        return false;
+
+                    temp        = *(end - 1);
+                    *(end - 1)  = *end;
+                    *end        = temp;
+
+                    --end;
+                    break;
+            }
+        }
+
+        return value;
 
     } else if (IS_ARRAY(value)) {
         jml_obj_array_t *array  = AS_ARRAY(value);
@@ -239,7 +281,7 @@ jml_core_reverse(int arg_count, jml_value_t *args)
     }
 
     return OBJ_VAL(
-        jml_core_exception_types(true, 2, "string", "array")
+        jml_core_exception_implemented(value)
     );
 }
 
