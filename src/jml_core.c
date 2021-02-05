@@ -504,6 +504,52 @@ err:
 }
 
 
+static jml_value_t
+jml_core_max(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc        = jml_core_exception_args(
+        arg_count, 2);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    jml_value_t a = args[0];
+    jml_value_t b = args[1];
+
+
+    if (!IS_NUM(a) || !IS_NUM(b)) {
+        return OBJ_VAL(
+            jml_core_exception_types(false, 2, "number")
+        );
+    }
+
+    return AS_NUM(a) >= AS_NUM(b) ? a : b;
+}
+
+
+static jml_value_t
+jml_core_min(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc        = jml_core_exception_args(
+        arg_count, 2);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    jml_value_t a = args[0];
+    jml_value_t b = args[1];
+
+
+    if (!IS_NUM(a) || !IS_NUM(b)) {
+        return OBJ_VAL(
+            jml_core_exception_types(false, 2, "number")
+        );
+    }
+
+    return AS_NUM(a) < AS_NUM(b) ? a : b;
+}
+
+
 /*core function registration*/
 jml_module_function core_functions[] = {
     {"format",                      &jml_core_format},
@@ -517,6 +563,8 @@ jml_module_function core_functions[] = {
     {"type",                        &jml_core_type},
     {"globals",                     &jml_core_globals},
     {"attr",                        &jml_core_attr},
+    {"max",                         &jml_core_max},
+    {"min",                         &jml_core_min},
     {NULL,                          NULL}
 };
 
