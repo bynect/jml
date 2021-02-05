@@ -474,9 +474,16 @@ jml_obj_print(jml_value_t value)
             jml_obj_cfunction_print(AS_CFUNCTION(value));
             break;
 
-        case OBJ_EXCEPTION:
-            printf("<exception>");
+        case OBJ_EXCEPTION: {
+            jml_obj_exception_t *exc = AS_EXCEPTION(value);
+            printf("<exception ");
+
+            if (exc->module != NULL)
+                printf("%s.", exc->module->name->chars);
+
+            printf("%s>", exc->name->chars);
             break;
+        }
     }
 }
 
@@ -588,17 +595,76 @@ jml_obj_stringify(jml_value_t value)
         case OBJ_STRING:
             return jml_strdup(AS_CSTRING(value));
 
-        case OBJ_ARRAY:
-            return jml_strdup("<array>");
+        case OBJ_ARRAY: {
+            jml_value_array_t array = AS_ARRAY(value)->values;
 
-        case OBJ_MAP:
-            return jml_strdup("<map>");
+            if (array.count <= 0)
+                return jml_strdup("[]");
+
+            size_t size = array.count * 34 + 3;
+            char *buffer = jml_realloc(NULL, size);
+            char *ptr = buffer;
+            *ptr++ = '[';
+
+            int item_count          = array.count - 1;
+            for (int i = 0; i < item_count; ++i) {
+                char *temp = jml_value_stringify(array.values[i]);
+                REALLOC(char, buffer, size, size + strlen(temp));
+                ptr += sprintf(ptr, "%s, ", temp);
+                jml_free(temp);
+            }
+
+            char *temp = jml_value_stringify(array.values[item_count]);
+            REALLOC(char, buffer, size, size + strlen(temp));
+            ptr += sprintf(ptr, "%s", temp);
+            jml_free(temp);
+
+            *ptr++ = ']';
+            *ptr = 0;
+
+            return buffer;
+        }
+
+        case OBJ_MAP: {
+            jml_hashmap_t hashmap   = AS_MAP(value)->hashmap;
+
+            if (hashmap.count <= 0)
+                return jml_strdup("{}");
+
+            size_t size = hashmap.count * 38 + 3;
+            char *buffer = jml_realloc(NULL, size);
+            char *ptr = buffer;
+            *ptr++ = '{';
+
+            int item_count          = hashmap.count - 1;
+            jml_hashmap_entry_t *entries = jml_hashmap_iterator(&hashmap);
+
+            for (int i = 0; i < item_count; ++i) {
+                char *temp = jml_value_stringify(entries[i].value);
+                REALLOC(char, buffer, size, size + strlen(temp) + entries[i].key->length + 1);
+                ptr += sprintf(ptr, "\"%s\": %s, ", entries[i].key->chars, temp);
+                jml_free(temp);
+            }
+
+            char *temp = jml_value_stringify(entries[item_count].value);
+            REALLOC(char, buffer, size, size + strlen(temp) + entries[item_count].key->length + 2);
+            ptr += sprintf(ptr, "\"%s\": %s", entries[item_count].key->chars, temp);
+            jml_free(temp);
+            jml_free(entries);
+
+            *ptr++ = '}';
+            *ptr = 0;
+
+            return buffer;
+        }
 
         case OBJ_MODULE: {
-            char module[48];
-            sprintf(module, "<module %s>",
+            size_t size = AS_MODULE(value)->name->length + 16;
+            char *buffer = jml_alloc(size);
+
+            sprintf(buffer, "<module %s>",
                 AS_MODULE(value)->name->chars);
-            return jml_strdup(module);
+            return buffer;
         }
 
         case OBJ_CLASS:
@@ -630,23 +696,23 @@ jml_obj_stringify(jml_value_t value)
 
         case OBJ_EXCEPTION: {
             jml_obj_exception_t *exc = AS_EXCEPTION(value);
-#ifdef JML_PLATFORM_WIN
-            char message[4096];
-#else
-            size_t size = exc->name->length + 32;
-            char message[size + (exc->module != NULL ? exc->module->name->length : 0)];
-#endif
 
+            size_t size = exc->name->length + 32;
+            if (exc->module != NULL)
+                size += exc->module->name->length;
+
+            char *buffer = jml_alloc(size);
             if (exc->module != NULL) {
-                sprintf(message, "<exception %s.%s>",
+                sprintf(buffer, "<exception %s.%s>",
                     exc->module->name->chars,
                     exc->name->chars
                 );
             } else {
-                sprintf(message, "<exception %s>",
+                sprintf(buffer, "<exception %s>",
                     exc->name->chars);
             }
-            return jml_strdup(message);
+
+            return buffer;
         }
     }
     return NULL;
