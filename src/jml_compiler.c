@@ -226,7 +226,7 @@ jml_bytecode_patch_jump(int offset)
 static void
 jml_bytecode_emit_return(void)
 {
-    if (current->type == FUNCTION_INITIALIZER)
+    if (current->type == FUNCTION_INIT)
         jml_bytecode_emit_bytes(OP_GET_LOCAL, 0);
     else
         jml_bytecode_emit_byte(OP_NONE);
@@ -274,7 +274,7 @@ jml_compiler_init(jml_compiler_t *compiler,
     jml_local_t *local      = &current->locals[current->local_count++];
     local->depth            = 0;
 
-    if (type != FUNCTION_FN) {
+    if (type == FUNCTION_METHOD || type == FUNCTION_INIT) {
         local->name.start   = "self";
         local->name.length  = 4;
     } else {
@@ -932,8 +932,7 @@ jml_map(JML_UNUSED(bool assignable))
 
 
 static void
-jml_variable_named(jml_token_t name,
-    bool assignable)
+jml_variable_named(jml_token_t name, bool assignable)
 {
     uint8_t get_op, set_op;
     int arg     = jml_local_resolve(current, &name);
@@ -952,12 +951,25 @@ jml_variable_named(jml_token_t name,
         set_op  = OP_SET_GLOBAL;
     }
 
+    if (jml_parser_match(TOKEN_LSQARE)) {
+        jml_parser_match_line();
+        jml_expression();
+
+        jml_parser_match_line();
+        jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
+
+        set_op = OP_SET_INDEX, get_op = OP_GET_INDEX;
+    }
+
     if (assignable && jml_parser_match(TOKEN_EQUAL)) {
         jml_parser_match_line();
         jml_expression();
         jml_bytecode_emit_bytes(set_op, (uint8_t)arg);
 
     } else if (assignable && jml_parser_match(TOKEN_PLUSEQ)) {
+        if (get_op == OP_GET_INDEX)
+            jml_bytecode_emit_byte(OP_SAVE);
+
         jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
         jml_parser_match_line();
         jml_expression();
@@ -966,6 +978,9 @@ jml_variable_named(jml_token_t name,
         jml_bytecode_emit_byte((uint8_t)arg);
 
     } else if (assignable && jml_parser_match(TOKEN_MINUSEQ)) {
+        if (get_op == OP_GET_INDEX)
+            jml_bytecode_emit_byte(OP_SAVE);
+
         jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
         jml_parser_match_line();
         jml_expression();
@@ -974,6 +989,9 @@ jml_variable_named(jml_token_t name,
         jml_bytecode_emit_byte((uint8_t)arg);
 
     } else if (assignable && jml_parser_match(TOKEN_STAREQ)) {
+        if (get_op == OP_GET_INDEX)
+            jml_bytecode_emit_byte(OP_SAVE);
+
         jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
         jml_parser_match_line();
         jml_expression();
@@ -982,6 +1000,9 @@ jml_variable_named(jml_token_t name,
         jml_bytecode_emit_byte((uint8_t)arg);
 
     } else if (assignable && jml_parser_match(TOKEN_STARSTAREQ)) {
+        if (get_op == OP_GET_INDEX)
+            jml_bytecode_emit_byte(OP_SAVE);
+
         jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
         jml_parser_match_line();
         jml_expression();
@@ -990,6 +1011,9 @@ jml_variable_named(jml_token_t name,
         jml_bytecode_emit_byte((uint8_t)arg);
 
     } else if (assignable && jml_parser_match(TOKEN_SLASHEQ)) {
+        if (get_op == OP_GET_INDEX)
+            jml_bytecode_emit_byte(OP_SAVE);
+
         jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
         jml_parser_match_line();
         jml_expression();
@@ -998,6 +1022,9 @@ jml_variable_named(jml_token_t name,
         jml_bytecode_emit_byte((uint8_t)arg);
 
     } else if (assignable && jml_parser_match(TOKEN_PERCENTEQ)) {
+        if (get_op == OP_GET_INDEX)
+            jml_bytecode_emit_byte(OP_SAVE);
+
         jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
         jml_parser_match_line();
         jml_expression();
@@ -1006,83 +1033,14 @@ jml_variable_named(jml_token_t name,
         jml_bytecode_emit_byte((uint8_t)arg);
 
     } else if (assignable && jml_parser_match(TOKEN_ARROW)) {
-        jml_parser_match_line();
-        jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
-        uint8_t new_name = jml_identifier_const(&parser.previous);
-
-        jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, (uint8_t)arg);
-        jml_bytecode_emit_byte(new_name);
-
-    } else if (jml_parser_match(TOKEN_LSQARE)) {
-        jml_parser_match_line();
-        jml_expression();
-
-        jml_parser_match_line();
-        jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
-
-        set_op = OP_SET_INDEX, get_op = OP_GET_INDEX;
-
-        if (assignable && jml_parser_match(TOKEN_EQUAL)) {
+        if (get_op != OP_GET_INDEX) {
             jml_parser_match_line();
-            jml_expression();
-            jml_bytecode_emit_bytes(set_op, (uint8_t)arg);
+            jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
+            uint8_t new_name = jml_identifier_const(&parser.previous);
 
-        } else if (assignable && jml_parser_match(TOKEN_PLUSEQ)) {
-            jml_bytecode_emit_byte(OP_SAVE);
-            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
-            jml_parser_match_line();
-            jml_expression();
-
-            jml_bytecode_emit_bytes(OP_ADD, set_op);
-            jml_bytecode_emit_byte((uint8_t)arg);
-
-        } else if (assignable && jml_parser_match(TOKEN_MINUSEQ)) {
-            jml_bytecode_emit_byte(OP_SAVE);
-            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
-            jml_parser_match_line();
-            jml_expression();
-
-            jml_bytecode_emit_bytes(OP_SUB, set_op);
-            jml_bytecode_emit_byte((uint8_t)arg);
-
-        } else if (assignable && jml_parser_match(TOKEN_STAREQ)) {
-            jml_bytecode_emit_byte(OP_SAVE);
-            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
-            jml_parser_match_line();
-            jml_expression();
-
-            jml_bytecode_emit_bytes(OP_MUL, set_op);
-            jml_bytecode_emit_byte((uint8_t)arg);
-
-        } else if (assignable && jml_parser_match(TOKEN_STARSTAREQ)) {
-            jml_bytecode_emit_byte(OP_SAVE);
-            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
-            jml_parser_match_line();
-            jml_expression();
-
-            jml_bytecode_emit_bytes(OP_POW, set_op);
-            jml_bytecode_emit_byte((uint8_t)arg);
-
-        } else if (assignable && jml_parser_match(TOKEN_SLASHEQ)) {
-            jml_bytecode_emit_byte(OP_SAVE);
-            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
-            jml_parser_match_line();
-            jml_expression();
-
-            jml_bytecode_emit_bytes(OP_DIV, set_op);
-            jml_bytecode_emit_byte((uint8_t)arg);
-
-        } else if (assignable && jml_parser_match(TOKEN_PERCENTEQ)) {
-            jml_bytecode_emit_byte(OP_SAVE);
-            jml_bytecode_emit_bytes((uint8_t)get_op, (uint8_t)arg);
-            jml_parser_match_line();
-            jml_expression();
-
-            jml_bytecode_emit_bytes(OP_MOD, set_op);
-            jml_bytecode_emit_byte((uint8_t)arg);
-
-        } else
-            jml_bytecode_emit_bytes(get_op, (uint8_t)arg);
+            jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, (uint8_t)arg);
+            jml_bytecode_emit_byte(new_name);
+        }
     } else
         jml_bytecode_emit_bytes(get_op, (uint8_t)arg);
 }
@@ -1339,14 +1297,10 @@ jml_method(void)
     uint8_t constant = jml_identifier_const(&parser.previous);
 
     jml_function_type type = FUNCTION_METHOD;
-    if (parser.previous.length == 6 &&
-        memcmp(parser.previous.start, "__init", 6) == 0) {
-        type = FUNCTION_INITIALIZER;
 
-    } else if (parser.previous.length == 6 &&
-        memcmp(parser.previous.start, "__", 2) == 0) {
-        type = FUNCTION_DUNDER;
-    }
+    if (parser.previous.length == 6 &&
+        memcmp(parser.previous.start, "__init", 6) == 0)
+        type = FUNCTION_INIT;
 
     jml_function(type);
     jml_bytecode_emit_bytes(OP_METHOD, constant);
@@ -1403,7 +1357,6 @@ jml_class_declaration(void)
 
     while (!jml_parser_check(TOKEN_RBRACE)
         && !jml_parser_check(TOKEN_EOF)) {
-
         jml_method();
     }
 
@@ -1445,6 +1398,26 @@ jml_let_declaration(void)
 
 
 static void
+jml_declaration(void)
+{
+    if (jml_parser_match(TOKEN_CLASS))
+        jml_class_declaration();
+
+    else if (jml_parser_match(TOKEN_FN))
+        jml_function_declaration();
+
+    else if (jml_parser_match(TOKEN_LET))
+        jml_let_declaration();
+
+    else
+        jml_statement();
+
+    if (parser.panicked)
+        jml_parser_synchronize();
+}
+
+
+static void
 jml_expression_statement(void)
 {
     jml_expression();
@@ -1463,7 +1436,7 @@ jml_return_statement(void)
     if (jml_parser_match_line())
         jml_bytecode_emit_return();
     else {
-        if (current->type == FUNCTION_INITIALIZER)
+        if (current->type == FUNCTION_INIT)
             jml_parser_error("Can't return a value from an initializer.");
 
         jml_expression();
@@ -1648,26 +1621,6 @@ jml_if_statement(void)
         jml_statement();
 
     jml_bytecode_patch_jump(else_jump);
-}
-
-
-static void
-jml_declaration(void)
-{
-    if (jml_parser_match(TOKEN_CLASS))
-        jml_class_declaration();
-
-    else if (jml_parser_match(TOKEN_FN))
-        jml_function_declaration();
-
-    else if (jml_parser_match(TOKEN_LET))
-        jml_let_declaration();
-
-    else
-        jml_statement();
-
-    if (parser.panicked)
-        jml_parser_synchronize();
 }
 
 

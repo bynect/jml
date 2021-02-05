@@ -35,9 +35,8 @@ typedef enum {
 typedef enum {
     FUNCTION_FN,
     FUNCTION_METHOD,
-    FUNCTION_DUNDER,
     FUNCTION_MAIN,
-    FUNCTION_INITIALIZER
+    FUNCTION_INIT
 } jml_function_type;
 
 
