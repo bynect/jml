@@ -28,10 +28,10 @@ typedef enum {
     WRITE_READ_BIN,
     APPEND_READ,
     APPEND_READ_BIN
-} jml_file_mode_t;
+} jml_file_mode;
 
 
-static jml_file_mode_t
+static jml_file_mode
 jml_std_fs_file_open_mode(jml_obj_string_t *string)
 {
     if (string->length < 1 || string->length > 3)
@@ -91,7 +91,7 @@ jml_std_fs_file_open_mode(jml_obj_string_t *string)
 typedef struct {
     const char                     *name;
     FILE                           *handle;
-    jml_file_mode_t                 mode;
+    jml_file_mode                   mode;
     bool                            open;
 } jml_std_fs_file_t;
 
@@ -113,7 +113,7 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
     jml_obj_instance_t  *self   = AS_INSTANCE(args[0]);
     const char          *name   = AS_CSTRING(args[1]);
     jml_obj_string_t    *mode   = AS_STRING(args[2]);
-    jml_file_mode_t open_mode;
+    jml_file_mode open_mode;
 
     if ((open_mode = jml_std_fs_file_open_mode(mode)) == INVALID) {
         exc = jml_core_exception_value("File open mode.");

@@ -700,13 +700,15 @@ jml_vm_module_bind(jml_obj_module_t *module,
 static jml_interpret_result
 jml_vm_run(jml_value_t *last)
 {
-    jml_call_frame_t *frame = &vm->frames[vm->frame_count - 1];
+    register jml_call_frame_t *frame = &vm->frames[vm->frame_count - 1];
     register uint8_t *pc = frame->pc;
 
 #ifndef JML_EVAL
     (void) last;
 #endif
 
+#define SAVE_FRAME()                (frame->pc = pc)
+#define LOAD_FRAME()                (pc = frame->pc)
 #define READ_BYTE()                 (*pc++)
 #define READ_SHORT()                (pc += 2, (uint16_t)((pc[-2] << 8) | pc[-1]))
 #define READ_STRING()               AS_STRING(READ_CONST())
@@ -718,7 +720,7 @@ jml_vm_run(jml_value_t *last)
     do {                                                \
         if (!IS_NUM(jml_vm_peek(0))                     \
             || !IS_NUM(jml_vm_peek(1))) {               \
-            frame->pc = pc;                             \
+            SAVE_FRAME();                               \
             jml_vm_error(                               \
                 "Operands must be numbers."             \
             );                                          \
@@ -733,7 +735,7 @@ jml_vm_run(jml_value_t *last)
     do {                                                \
         if (!IS_NUM(jml_vm_peek(0))                     \
             || !IS_NUM(jml_vm_peek(1))) {               \
-            frame->pc = pc;                             \
+            SAVE_FRAME();                               \
             jml_vm_error(                               \
                 "Operands must be numbers."             \
             );                                          \
@@ -742,7 +744,7 @@ jml_vm_run(jml_value_t *last)
         num_type b = AS_NUM(jml_vm_pop());              \
         num_type a = AS_NUM(jml_vm_pop());              \
         if (b == 0) {                                   \
-            frame->pc = pc;                             \
+            SAVE_FRAME();                               \
             jml_vm_error(                               \
                 "Can't divide by zero."                 \
             );                                          \
@@ -755,7 +757,7 @@ jml_vm_run(jml_value_t *last)
     do {                                                \
         if (!IS_NUM(jml_vm_peek(0))                     \
             || !IS_NUM(jml_vm_peek(1))) {               \
-            frame->pc = pc;                             \
+            SAVE_FRAME();                               \
             jml_vm_error(                               \
                 "Operands must be numbers."             \
             );                                          \
@@ -922,7 +924,6 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_ADD) {
                 if (IS_STRING(jml_vm_peek(1))) {
-
                     if (IS_STRING(jml_vm_peek(0))) {
                         jml_string_concatenate();
 
@@ -935,7 +936,7 @@ jml_vm_run(jml_value_t *last)
                         jml_string_concatenate();
 
                     } else {
-                        frame->pc = pc;
+                        SAVE_FRAME();
                         jml_vm_error(
                             "Can't concatenate string to %s.",
                             jml_value_stringify_type(jml_vm_peek(0))
@@ -953,7 +954,7 @@ jml_vm_run(jml_value_t *last)
                     jml_array_concatenate();
 
                 } else {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error(
                         "Operands must be numbers, strings or array."
                     );
@@ -996,7 +997,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_NEGATE) {
                 if (!IS_NUM(jml_vm_peek(0))) {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error(
                         "Operand must be a number."
                     );
@@ -1059,7 +1060,7 @@ jml_vm_run(jml_value_t *last)
                         }
                     }
                 } else {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Container must be iterable.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1089,12 +1090,12 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_CALL) {
                 int arg_count = READ_BYTE();
-                frame->pc = pc;
+                SAVE_FRAME();
                 if (!jml_vm_call_value(jml_vm_peek(arg_count), arg_count))
                     return INTERPRET_RUNTIME_ERROR;
 
                 frame = &vm->frames[vm->frame_count - 1];
-                pc = frame->pc;
+                LOAD_FRAME();
                 END_OP();
             }
 
@@ -1107,12 +1108,12 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_string_t *name      = READ_STRING();
                 int               arg_count = READ_BYTE();
 
-                frame->pc = pc;
+                SAVE_FRAME();
                 if (!jml_vm_invoke(name, arg_count))
                     return INTERPRET_RUNTIME_ERROR;
 
                 frame = &vm->frames[vm->frame_count - 1];
-                pc = frame->pc;
+                LOAD_FRAME();
                 END_OP();
             }
 
@@ -1120,13 +1121,13 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_string_t *method    = READ_STRING();
                 int               arg_count = READ_BYTE();
 
-                frame->pc = pc;
+                SAVE_FRAME();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
                 if (!jml_vm_invoke_class(superclass, method, arg_count))
                     return INTERPRET_RUNTIME_ERROR;
 
                 frame = &vm->frames[vm->frame_count - 1];
-                pc = frame->pc;
+                LOAD_FRAME();
                 END_OP();
             }
 
@@ -1159,7 +1160,7 @@ jml_vm_run(jml_value_t *last)
                 vm->stack_top = frame->slots;
                 jml_vm_push(result);
                 frame = &vm->frames[vm->frame_count - 1];
-                pc = frame->pc;
+                LOAD_FRAME();
                 END_OP();
             }
 
@@ -1173,13 +1174,13 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_INHERIT) {
                 jml_value_t superclass = jml_vm_peek(1);
                 if (!IS_CLASS(superclass)) {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Superclass must be a class.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
                 if (!AS_CLASS(superclass)->inheritable) {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Superclass must be inheritable.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1229,7 +1230,7 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_string_t *name = READ_STRING();
                 if (jml_vm_global_set(name, jml_vm_peek(0))) {
                     jml_vm_global_del(name);
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1240,7 +1241,7 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_string_t *name = READ_STRING();
                 jml_value_t value;
                 if (!jml_vm_global_get(name, &value)) {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1281,7 +1282,7 @@ jml_vm_run(jml_value_t *last)
                     END_OP();
 
                 } else {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Only instances have fields.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1302,7 +1303,7 @@ jml_vm_run(jml_value_t *last)
                         END_OP();
                     }
 
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     if (!jml_vm_method_bind(instance->klass, name))
                         return INTERPRET_RUNTIME_ERROR;
 
@@ -1317,12 +1318,12 @@ jml_vm_run(jml_value_t *last)
                         END_OP();
                     }
 
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     if (!jml_vm_module_bind(module, name))
                         return INTERPRET_RUNTIME_ERROR;
 
                 } else {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Only instances have properties.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1337,13 +1338,13 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t         value;
 
                 if (!jml_vm_global_get(name, &value)) {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
                 if (!IS_STRING(index) && !IS_NUM(index)) {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Can index only by number or string.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1358,7 +1359,7 @@ jml_vm_run(jml_value_t *last)
                     int num_index   = AS_NUM(index);
 
                     if (num_index > array.count || num_index < -array.count) {
-                        frame->pc = pc;
+                        SAVE_FRAME();
                         jml_vm_error("Out of bounds assignment to array.");
                         return INTERPRET_RUNTIME_ERROR;
 
@@ -1368,7 +1369,7 @@ jml_vm_run(jml_value_t *last)
                         array.values[num_index] = to_set;
 
                 } else {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Can index only arrays and maps.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1386,13 +1387,13 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t         value;
 
                 if (!jml_vm_global_get(name, &value)) {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
                 if (!IS_STRING(index) && !IS_NUM(index)) {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Can index only by number or string.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1414,7 +1415,7 @@ jml_vm_run(jml_value_t *last)
                         indexed     = array.values[num_index];
 
                 } else {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Can index only arrays and maps.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1430,13 +1431,13 @@ jml_vm_run(jml_value_t *last)
 
                 jml_value_t value;
                 if (!jml_vm_global_pop(old_name, &value)) {
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Undefined variable '%s'.", old_name->chars);
                     return INTERPRET_RUNTIME_ERROR;
 
                 } else if (jml_string_equal(old_name, new_name)) {
                     jml_vm_global_set(old_name, value);
-                    frame->pc = pc;
+                    SAVE_FRAME();
                     jml_vm_error("Can't swap variable to itself.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1454,7 +1455,7 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_SUPER) {
                 jml_obj_string_t *name       = READ_STRING();
                 jml_obj_class_t  *superclass = AS_CLASS(jml_vm_pop());
-                frame->pc = pc;
+                SAVE_FRAME();
                 if (!jml_vm_method_bind(superclass, name)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1484,7 +1485,7 @@ jml_vm_run(jml_value_t *last)
 
                 for (int i = 0; i < item_count; i += 2) {
                     if (!IS_STRING(values[i])) {
-                        frame->pc = pc;
+                        SAVE_FRAME();
                         jml_vm_error("Map key must be a string.");
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -1501,7 +1502,7 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_IMPORT_GLOBAL) {
-                frame->pc = pc;
+                SAVE_FRAME();
                 if (!jml_vm_module_import(READ_STRING())) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1516,7 +1517,7 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_IMPORT_WILDCARD) {
                 jml_obj_string_t *name = READ_STRING();
 
-                frame->pc = pc;
+                SAVE_FRAME();
                 if (!jml_vm_module_import(name)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1539,6 +1540,8 @@ jml_vm_run(jml_value_t *last)
     }
 #endif
 
+#undef SAVE_FRAME
+#undef LOAD_FRAME
 #undef READ_BYTE
 #undef READ_SHORT
 #undef READ_STRING
