@@ -211,7 +211,7 @@ jml_core_reverse(int arg_count, jml_value_t *args)
     if (IS_STRING(value)) {
         jml_obj_string_t *obj   = AS_STRING(value);
 
-        char *str               = obj->chars;
+        char *str               = jml_strdup(obj->chars);
         int length              = obj->length;
         char *end               = str + length;
 
@@ -264,10 +264,12 @@ jml_core_reverse(int arg_count, jml_value_t *args)
             }
         }
 
-        return value;
+        return OBJ_VAL(
+            jml_obj_string_take(str, length)
+        );
 
     } else if (IS_ARRAY(value)) {
-        jml_obj_array_t *array  = AS_ARRAY(value);
+        jml_obj_array_t *array          = AS_ARRAY(value);
 
         for (int i = 0; i < array->values.count / 2; ++i) {
             jml_value_t temp            = array->values.values[i];

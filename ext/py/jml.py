@@ -22,7 +22,8 @@ def jml_setup() -> None:
                     ("JML_NDEBUG", None)
                 ],
                 include_dirs = [
-                    "include"
+                    "include",
+                    "src"
                 ],
                 library_dirs = [
                     "lib"
