@@ -72,10 +72,12 @@
 #ifdef __GNUC__
 
 #define JML_COMPUTED_GOTO
+#define JML_DEPRECATED              __attribute__((deprecated))
 #define JML_UNUSED(arg)             __attribute__((unused)) arg
 
 #else
 
+#define JML_DEPRECATED
 #define JML_UNUSED(arg)             arg
 
 #endif

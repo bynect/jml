@@ -1204,7 +1204,8 @@ jml_parser_precedence_parse(
 {
     jml_parser_advance();
 
-    jml_parser_fn prefix_rule = jml_parser_rule_get(parser.previous.type)->prefix;
+    jml_parser_fn prefix_rule = jml_parser_rule_get(
+        parser.previous.type)->prefix;
 
     if (prefix_rule == NULL) {
         jml_parser_error("Expect expression.");
@@ -1214,11 +1215,13 @@ jml_parser_precedence_parse(
     bool assignable = precedence <= PREC_ASSIGNMENT;
     prefix_rule(assignable);
 
-    while (precedence <=
-        jml_parser_rule_get(parser.current.type)->precedence) {
+    while (precedence <= jml_parser_rule_get(
+        parser.current.type)->precedence) {
 
         jml_parser_advance();
-        jml_parser_fn infix_rule = jml_parser_rule_get(parser.previous.type)->infix;
+        jml_parser_fn infix_rule = jml_parser_rule_get(
+            parser.previous.type)->infix;
+
         infix_rule(assignable);
     }
 
