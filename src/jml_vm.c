@@ -128,7 +128,7 @@ jml_vm_error(const char *format, ...)
             if (function->klass_name != NULL)
                 fprintf(stderr, "%s.", function->klass_name->chars);
 
-            fprintf(stderr, "%s/%d", function->name->chars,
+            fprintf(stderr, "%s/%d\n", function->name->chars,
                 function->arity);
 
         } else if (vm->external != NULL) {
@@ -615,7 +615,7 @@ jml_array_concatenate(void)
 
 
 static bool
-jml_vm_module_import(jml_obj_string_t *name)
+jml_vm_module_import(jml_obj_string_t *name, bool global)
 {
     jml_value_t value;
 
@@ -643,17 +643,21 @@ jml_vm_module_import(jml_obj_string_t *name)
             vm->module_string, OBJ_VAL(module->name));
 
         if (!jml_module_initialize(module)) {
-            jml_vm_error("ImportExc: Import of '%s' failed.",
+            jml_vm_error("ImportErr: Import of '%s' failed.",
                 module->name->chars);
             return false;
         }
 
         jml_hashmap_set(&vm->modules, name, jml_vm_peek(0));
-        jml_vm_global_set(name, jml_vm_peek(0));
 
-        jml_vm_pop();
+        if (global)
+            jml_vm_global_set(name, jml_vm_peek(0));
+
     } else {
-        jml_vm_global_set(name, value);
+        jml_vm_push(value);
+
+        if (global)
+            jml_vm_global_set(name, value);
     }
 
     return true;
@@ -670,8 +674,7 @@ jml_vm_module_bind(jml_obj_module_t *module,
         jml_obj_cfunction_t *cfunction = jml_module_get_raw(
             module, name->chars, true);
 
-        if (cfunction == NULL) goto err;
-        else {
+        if (cfunction != NULL) {
             function = OBJ_VAL(cfunction);
             jml_vm_push(function);
 
@@ -1503,32 +1506,31 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_IMPORT_GLOBAL) {
                 SAVE_FRAME();
-                if (!jml_vm_module_import(READ_STRING())) {
+                if (!jml_vm_module_import(READ_STRING(), true)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 END_OP();
             }
 
             EXEC_OP(OP_IMPORT_LOCAL) {
-                /*TODO*/
+                SAVE_FRAME();
+                if (!jml_vm_module_import(READ_STRING(), false)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                uint8_t slot = READ_BYTE();
+                frame->slots[slot] = jml_vm_peek(0);
                 END_OP();
             }
 
             EXEC_OP(OP_IMPORT_WILDCARD) {
-                jml_obj_string_t *name = READ_STRING();
-
                 SAVE_FRAME();
-                if (!jml_vm_module_import(name)) {
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-
-                jml_value_t module;
-                if (!jml_vm_global_pop(name, &module)) {
+                if (!jml_vm_module_import(READ_STRING(), false)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
                 jml_hashmap_add(
-                    &AS_MODULE(module)->globals, &vm->globals
+                    &AS_MODULE(jml_vm_peek(0))->globals, &vm->globals
                 );
                 END_OP();
             }

@@ -62,7 +62,7 @@ jml_bytecode_disassemble(jml_bytecode_t *bytecode,
     const char *name)
 {
     printf(
-        "======   %s   ======\n"
+        "======   %-14s   ======\n"
         "OFFSET   LINE   OPCODE               DATA\n",
         name
     );
@@ -89,7 +89,7 @@ static int
 jml_bytecode_instruction_byte(const char *name,
     jml_bytecode_t *bytecode, int offset)
 {
-    uint8_t slot = bytecode->code[offset + 1];
+    uint8_t slot        = bytecode->code[offset + 1];
     printf("%-16s   %4d\n", name, slot);
 
     return offset + 2;
@@ -97,10 +97,27 @@ jml_bytecode_instruction_byte(const char *name,
 
 
 static int
+jml_bytecode_instruction_bytes(const char *name,
+    jml_bytecode_t *bytecode, int offset)
+{
+    uint8_t byte1       = bytecode->code[offset + 1];
+    uint8_t byte2       = bytecode->code[offset + 2];
+    printf("%-16s %4d '", name, byte1);
+
+    jml_value_print(bytecode->constants.values[byte1]);
+    printf("'   - %4d '", byte2);
+    jml_value_print(bytecode->constants.values[byte2]);
+    printf("'\n");
+
+    return offset + 3;
+}
+
+
+static int
 jml_bytecode_instruction_jump(const char *name,
     int sign, jml_bytecode_t *bytecode, int offset)
 {
-    uint16_t jump = (uint16_t)(bytecode->code[offset + 1] << 8);
+    uint16_t jump       = (uint16_t)(bytecode->code[offset + 1] << 8);
     jump |= bytecode->code[offset + 2];
 
     printf("%-16s   %4d -> %d\n",
@@ -119,23 +136,6 @@ jml_bytecode_instruction_invoke(const char *name,
     uint8_t arg_count   = bytecode->code[offset + 2];
     printf("%-16s (%d args) %4d '", name, arg_count, constant);
     jml_value_print(bytecode->constants.values[constant]);
-    printf("'\n");
-
-    return offset + 3;
-}
-
-
-static int
-jml_bytecode_instruction_swap(const char *name,
-    jml_bytecode_t *bytecode, int offset)
-{
-    uint8_t old_name    = bytecode->code[offset + 1];
-    uint8_t new_name    = bytecode->code[offset + 2];
-    printf("%-16s %4d '", name, old_name);
-
-    jml_value_print(bytecode->constants.values[old_name]);
-    printf("'   -> %4d '", new_name);
-    jml_value_print(bytecode->constants.values[new_name]);
     printf("'\n");
 
     return offset + 3;
@@ -263,7 +263,7 @@ jml_bytecode_instruction_disassemble(
         case OP_CLOSURE: {
             offset++;
             uint8_t constant = bytecode->code[offset++];
-            printf("%-16s   %4d   ", "OP_CLOSURE", constant);
+            printf("%-16s %4d   ", "OP_CLOSURE", constant);
             jml_value_print(bytecode->constants.values[constant]);
             printf("\n");
 
@@ -324,10 +324,10 @@ jml_bytecode_instruction_disassemble(
             return jml_bytecode_instruction_const("OP_GET_INDEX", bytecode, offset);
 
         case OP_SWAP_GLOBAL:
-            return jml_bytecode_instruction_swap("OP_SWAP_GLOBAL", bytecode, offset);
+            return jml_bytecode_instruction_bytes("OP_SWAP_GLOBAL", bytecode, offset);
 
         case OP_SWAP_LOCAL:
-            return jml_bytecode_instruction_swap("OP_SWAP_LOCAL", bytecode, offset);
+            return jml_bytecode_instruction_bytes("OP_SWAP_LOCAL", bytecode, offset);
 
         case OP_SUPER:
             return jml_bytecode_instruction_const("OP_SUPER", bytecode, offset);
@@ -342,7 +342,7 @@ jml_bytecode_instruction_disassemble(
             return jml_bytecode_instruction_const("OP_IMPORT_GLOBAL", bytecode, offset);
 
         case OP_IMPORT_LOCAL:
-            return jml_bytecode_instruction_const("OP_IMPORT_LOCAL", bytecode, offset);
+            return jml_bytecode_instruction_bytes("OP_IMPORT_LOCAL", bytecode, offset);
 
         case OP_IMPORT_WILDCARD:
             return jml_bytecode_instruction_const("OP_IMPORT_WILDCARD", bytecode, offset);

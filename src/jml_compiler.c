@@ -178,8 +178,7 @@ jml_bytecode_emit_byte(uint8_t byte)
 
 
 static void
-jml_bytecode_emit_bytes(uint8_t byte1,
-    uint8_t byte2)
+jml_bytecode_emit_bytes(uint8_t byte1, uint8_t byte2)
 {
     jml_bytecode_emit_byte(byte1);
     jml_bytecode_emit_byte(byte2);
@@ -343,10 +342,11 @@ jml_identifier_const(jml_token_t *name) {
 
 
 static bool
-jml_identifier_equal(jml_token_t *a,
-    jml_token_t *b)
+jml_identifier_equal(jml_token_t *a, jml_token_t *b)
 {
-    if (a->length != b->length) return false;
+    if (a->length != b->length)
+        return false;
+
     return memcmp(a->start, b->start, a->length) == 0;
 }
 
@@ -370,11 +370,13 @@ static int
 jml_local_resolve(jml_compiler_t *compiler,
     jml_token_t *name)
 {
-    for (int i = compiler->local_count - 1; i >= 0; i--) {
+    for (int i = compiler->local_count - 1; i >= 0; --i) {
         jml_local_t *local = &compiler->locals[i];
         if (jml_identifier_equal(name, &local->name)) {
             if (local->depth == -1) {
-                jml_parser_error("Can't read local variable in its own initializer.");
+                jml_parser_error(
+                    "Can't read local variable in its own initializer."
+                );
             }
             return i;
         }
@@ -397,7 +399,7 @@ jml_upvalue_add(jml_compiler_t *compiler,
     }
 
     if (upvalue_count == LOCAL_MAX) {
-        jml_parser_error("Too many closure variables in function.");
+        jml_parser_error("Too many upvalues in function.");
         return 0;
     }
 
@@ -411,7 +413,8 @@ static int
 jml_upvalue_resolve(jml_compiler_t *compiler,
     jml_token_t *name)
 {
-    if (compiler->enclosing == NULL) return -1;
+    if (compiler->enclosing == NULL)
+        return -1;
 
     int local = jml_local_resolve(compiler->enclosing, name);
     if (local != -1) {
@@ -472,7 +475,7 @@ jml_variable_declaration(void)
 
     jml_token_t *name = &parser.previous;
 
-    for (int i = current->local_count - 1; i >= 0; i--) {
+    for (int i = current->local_count - 1; i >= 0; --i) {
         jml_local_t *local = &current->locals[i];
         if (local->depth != -1
             && local->depth < current->scope_depth) {
@@ -1457,26 +1460,41 @@ static void
 jml_import_statement(void)
 {
     jml_parser_consume(TOKEN_NAME, "Expect identifier after 'import'.");
-    uint8_t name = jml_identifier_const(&parser.previous);
+    uint8_t arg = jml_identifier_const(&parser.previous);
 
     if (jml_parser_match(TOKEN_DOT)) {
+        jml_parser_consume(TOKEN_STAR, "Expect '*' after wildcard import.");
+
         if (current->type == FUNCTION_MAIN) {
-            jml_parser_consume(TOKEN_STAR, "Expect '*' after wildcard import.");
-            jml_bytecode_emit_bytes(OP_IMPORT_WILDCARD, name);
+            jml_bytecode_emit_bytes(OP_IMPORT_WILDCARD, arg);
         } else
-            jml_parser_error("Can wildcard import only from top-level code.");
-    } else {
-        jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, name);
+            jml_parser_error("Can use wildcard import only in top-level code.");
+
+    } else if (current->type == FUNCTION_MAIN) {
+        jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, arg);
 
         if (jml_parser_match(TOKEN_ARROW)) {
             jml_parser_match_line();
             jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
             uint8_t new_name = jml_identifier_const(&parser.previous);
 
-            jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, name);
+            jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, arg);
             jml_bytecode_emit_byte(new_name);
         }
+    } else {
+        int local = jml_local_resolve(current, &parser.previous);
+
+        if (local == -1) {
+            jml_local_add(parser.previous);
+            jml_mark_initialized();
+            local = jml_local_resolve(current, &parser.previous);
+        }
+
+        jml_bytecode_emit_bytes(OP_IMPORT_LOCAL, arg);
+        jml_bytecode_emit_byte(local);
     }
+
+    jml_bytecode_emit_byte(OP_POP);
 }
 
 
@@ -1511,8 +1529,10 @@ jml_while_statement(void)
 static void
 jml_break_statement(void)
 {
-    if (current->loop == NULL)
+    if (current->loop == NULL) {
         jml_parser_error("Can't use 'break' outside of a loop.");
+        return;
+    }
 
     /*placeholder*/
     jml_bytecode_emit_jump(UINT8_MAX);
@@ -1522,8 +1542,10 @@ jml_break_statement(void)
 static void
 jml_skip_statement(void)
 {
-    if (current->loop == NULL)
+    if (current->loop == NULL) {
         jml_parser_error("Can't use 'skip' outside of a loop.");
+        return;
+    }
 
     jml_bytecode_emit_loop(current->loop->start);
 }
