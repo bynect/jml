@@ -30,7 +30,7 @@ typedef struct {
 static jml_std_fs_dir_t *
 jml_std_fs_dir_internal_init(const char *name, DIR *handle)
 {
-    jml_std_fs_dir_t *internal = jml_alloc(sizeof(jml_std_fs_dir_t));
+    jml_std_fs_dir_t *internal  = jml_alloc(sizeof(jml_std_fs_dir_t));
 
     internal->name              = name;
     internal->handle            = handle;
@@ -121,7 +121,7 @@ jml_std_fs_dir_open(int arg_count, jml_value_t *args)
     if (internal->open || internal->handle != NULL) {
         exc = jml_obj_exception_new(
             "IOError",
-            "File alredy opened."
+            "Dir alredy opened."
         );
         goto err;
     }
@@ -183,7 +183,7 @@ jml_std_fs_dir_close(int arg_count, jml_value_t *args)
     if (!internal->open || internal->handle == NULL) {
         exc = jml_obj_exception_new(
             "IOError",
-            "File alredy closed."
+            "Dir alredy closed."
         );
         goto err;
     }
@@ -431,9 +431,9 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
     fseek(internal->handle, 0, SEEK_SET);
 
     jml_obj_string_t *mode_string = jml_obj_string_copy("mode", 4);
-    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
-
     jml_gc_exempt_push(OBJ_VAL(mode_string));
+
+    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
     jml_gc_exempt_push(OBJ_VAL(name_string));
 
     jml_hashmap_set(&self->fields, mode_string, args[2]);
@@ -513,9 +513,9 @@ jml_std_fs_file_open(int arg_count, jml_value_t *args)
     fseek(internal->handle, 0, SEEK_SET);
 
     jml_obj_string_t *mode_string = jml_obj_string_copy("mode", 4);
-    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
-
     jml_gc_exempt_push(OBJ_VAL(mode_string));
+
+    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
     jml_gc_exempt_push(OBJ_VAL(name_string));
 
     jml_hashmap_set(&self->fields, mode_string, args[1]);
@@ -570,9 +570,9 @@ jml_std_fs_file_close(int arg_count, jml_value_t *args)
     internal->open              = false;
 
     jml_obj_string_t *mode_string = jml_obj_string_copy("mode", 4);
-    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
-
     jml_gc_exempt_push(OBJ_VAL(mode_string));
+
+    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
     jml_gc_exempt_push(OBJ_VAL(name_string));
 
     jml_hashmap_set(&self->fields, mode_string, NONE_VAL);
@@ -886,7 +886,7 @@ jml_std_fs_tempfile(int arg_count, JML_UNUSED(jml_value_t *args))
 
     if (file_class == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "ValueError",
             "File class error."
         );
         goto err;
@@ -909,9 +909,9 @@ jml_std_fs_tempfile(int arg_count, JML_UNUSED(jml_value_t *args))
     file->extra = internal;
 
     jml_obj_string_t *mode_string = jml_obj_string_copy("mode", 4);
-    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
-
     jml_gc_exempt_push(OBJ_VAL(mode_string));
+
+    jml_obj_string_t *name_string = jml_obj_string_copy("name", 4);
     jml_gc_exempt_push(OBJ_VAL(name_string));
 
     jml_hashmap_set(&file->fields, mode_string, jml_string_intern("wb+"));
