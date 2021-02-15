@@ -147,7 +147,8 @@ jml_parser_match_line(void)
 static void
 jml_parser_newline(void)
 {
-    jml_parser_consume(TOKEN_LINE, "Expect newline.");
+    if (!jml_parser_check(TOKEN_RBRACE))
+        jml_parser_consume(TOKEN_LINE, "Expect newline.");
     jml_parser_match_line();
 }
 
@@ -1306,6 +1307,9 @@ jml_method(void)
         type = FUNCTION_INIT;
 
     jml_function(type);
+    if (!jml_parser_check(TOKEN_EOF))
+        jml_parser_newline();
+
     jml_bytecode_emit_bytes(OP_METHOD, constant);
 }
 
