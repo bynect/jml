@@ -1056,13 +1056,13 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_CONTAIN) {
-                jml_value_t box = jml_vm_pop();
-                jml_value_t val = jml_vm_pop();
+                jml_value_t box     = jml_vm_pop();
+                jml_value_t value   = jml_vm_pop();
 
                 if (IS_ARRAY(box)) {
                     jml_obj_array_t *array = AS_ARRAY(box);
                     for (int i = 0; i < array->values.count; ++i) {
-                        if (jml_value_equal(val, array->values.values[i])) {
+                        if (jml_value_equal(value, array->values.values[i])) {
                             jml_vm_push(TRUE_VAL);
                             END_OP();
                         }
@@ -1335,17 +1335,9 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_SET_INDEX) {
-                jml_obj_string_t   *name    = READ_STRING();
-                jml_value_t         to_set  = jml_vm_peek(0);
+                jml_value_t         value   = jml_vm_peek(0);
                 jml_value_t         index   = jml_vm_peek(1);
-
-                jml_value_t         value;
-
-                if (!jml_vm_global_get(name, &value)) {
-                    SAVE_FRAME();
-                    jml_vm_error("Undefined variable '%s'.", name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
-                }
+                jml_value_t         box     = jml_vm_peek(2);
 
                 if (!IS_STRING(index) && !IS_NUM(index)) {
                     SAVE_FRAME();
@@ -1353,25 +1345,63 @@ jml_vm_run(jml_value_t *last)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                if (IS_STRING(index) && IS_MAP(value)) {
-                    jml_obj_map_t *map = AS_MAP(value);
-                    jml_hashmap_set(&map->hashmap,
-                        AS_STRING(index), to_set);
+                if (IS_STRING(index) && IS_MAP(box)) {
+                    jml_hashmap_set(
+                        &AS_MAP(box)->hashmap, AS_STRING(index), value
+                    );
 
-                } else if (IS_NUM(index) && IS_ARRAY(value)) {
-                    jml_value_array_t array = AS_ARRAY(value)->values;
+                } else if (IS_NUM(index) && IS_ARRAY(box)) {
+                    jml_value_array_t array = AS_ARRAY(box)->values;
                     int num_index   = AS_NUM(index);
 
-                    if (num_index > array.count || num_index < -array.count) {
+                    if (num_index >= array.count || num_index < -array.count) {
                         SAVE_FRAME();
                         jml_vm_error("Out of bounds assignment to array.");
                         return INTERPRET_RUNTIME_ERROR;
 
-                    } else if (num_index < 0)
-                        array.values[array.count + num_index] = to_set;
-                    else
-                        array.values[num_index] = to_set;
+                    }
 
+                    if (num_index < 0)
+                        array.values[array.count + num_index]   = value;
+                    else
+                        array.values[num_index]                 = value;
+                } else {
+                    SAVE_FRAME();
+                    jml_vm_error("Can index only arrays and maps.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_vm_pop_two();
+                jml_vm_pop();
+                jml_vm_push(value);
+                END_OP();
+            }
+
+            EXEC_OP(OP_GET_INDEX) {
+                jml_value_t         index   = jml_vm_peek(0);
+                jml_value_t         box     = jml_vm_peek(1);
+                jml_value_t         value;
+
+                if (!IS_STRING(index) && !IS_NUM(index)) {
+                    SAVE_FRAME();
+                    jml_vm_error("Can index only by number or string.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                if (IS_STRING(index) && IS_MAP(box)) {
+                    if (!jml_hashmap_get(&AS_MAP(box)->hashmap, AS_STRING(index), &value))
+                        value       = NONE_VAL;
+
+                } else if (IS_NUM(index) && IS_ARRAY(box)) {
+                    jml_value_array_t array = AS_ARRAY(box)->values;
+                    int num_index   = AS_NUM(index);
+
+                    if (num_index >= array.count || num_index < -array.count)
+                        value       = NONE_VAL;
+                    else if (num_index < 0)
+                        value       = array.values[array.count + num_index];
+                    else
+                        value       = array.values[num_index];
                 } else {
                     SAVE_FRAME();
                     jml_vm_error("Can index only arrays and maps.");
@@ -1380,52 +1410,6 @@ jml_vm_run(jml_value_t *last)
 
                 jml_vm_pop_two();
                 jml_vm_push(value);
-                END_OP();
-            }
-
-            EXEC_OP(OP_GET_INDEX) {
-                jml_obj_string_t   *name    = READ_STRING();
-                jml_value_t         index   = jml_vm_peek(0);
-
-                jml_value_t         indexed;
-                jml_value_t         value;
-
-                if (!jml_vm_global_get(name, &value)) {
-                    SAVE_FRAME();
-                    jml_vm_error("Undefined variable '%s'.", name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-
-                if (!IS_STRING(index) && !IS_NUM(index)) {
-                    SAVE_FRAME();
-                    jml_vm_error("Can index only by number or string.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-
-                if (IS_STRING(index) && IS_MAP(value)) {
-                    if (!jml_hashmap_get(&AS_MAP(value)->hashmap,
-                        AS_STRING(index), &indexed))
-                        indexed     = NONE_VAL;
-
-                } else if (IS_NUM(index) && IS_ARRAY(value)) {
-                    jml_value_array_t array = AS_ARRAY(value)->values;
-                    int num_index   = AS_NUM(index);
-
-                    if (num_index > array.count || num_index < -array.count)
-                        indexed     = NONE_VAL;
-                    else if (num_index < 0)
-                        indexed     = array.values[array.count + num_index];
-                    else
-                        indexed     = array.values[num_index];
-
-                } else {
-                    SAVE_FRAME();
-                    jml_vm_error("Can index only arrays and maps.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-
-                jml_vm_pop();
-                jml_vm_push(indexed);
                 END_OP();
             }
 
