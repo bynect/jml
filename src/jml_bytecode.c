@@ -269,7 +269,7 @@ jml_bytecode_instruction_disassemble(
 
             jml_obj_function_t *function = AS_FUNCTION(bytecode->constants.values[constant]);
 
-            for (int j = 0; j < function->upvalue_count; j++) {
+            for (int i = 0; i < function->upvalue_count; ++i) {
                 int local = bytecode->code[offset++];
                 int index = bytecode->code[offset++];
                 printf("%04d    |                   %s %d\n",

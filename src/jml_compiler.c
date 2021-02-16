@@ -962,7 +962,8 @@ jml_variable_named(jml_token_t name, bool assignable)
         jml_parser_match_line();
         jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
 
-        set_op = OP_SET_INDEX, get_op = OP_GET_INDEX;
+        set_op  = OP_SET_INDEX;
+        get_op  = OP_GET_INDEX;
     }
 
     if (assignable && jml_parser_match(TOKEN_EQUAL)) {

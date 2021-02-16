@@ -242,6 +242,7 @@ jml_gc_free_object(jml_obj_t *object)
             jml_obj_module_t *module = (jml_obj_module_t*)object;
             jml_module_finalize(module);
             jml_hashmap_free(&module->globals);
+            jml_value_array_free(&module->saved);
             FREE(jml_obj_module_t, object);
             break;
         }
@@ -391,6 +392,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
             jml_obj_module_t *module = (jml_obj_module_t*)object;
             jml_gc_mark_obj((jml_obj_t*)module->name);
             jml_hashmap_mark(&module->globals);
+            jml_gc_mark_array(&module->saved);
             break;
         }
 

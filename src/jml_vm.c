@@ -711,7 +711,12 @@ jml_vm_run(jml_value_t *last)
 #endif
 
 #define SAVE_FRAME()                (frame->pc = pc)
-#define LOAD_FRAME()                (pc = frame->pc)
+#define LOAD_FRAME()                                    \
+    do {                                                \
+        frame = &vm->frames[vm->frame_count - 1];       \
+        pc = frame->pc;                                 \
+    } while (false)
+
 #define READ_BYTE()                 (*pc++)
 #define READ_SHORT()                (pc += 2, (uint16_t)((pc[-2] << 8) | pc[-1]))
 #define READ_STRING()               AS_STRING(READ_CONST())
@@ -1097,7 +1102,6 @@ jml_vm_run(jml_value_t *last)
                 if (!jml_vm_call_value(jml_vm_peek(arg_count), arg_count))
                     return INTERPRET_RUNTIME_ERROR;
 
-                frame = &vm->frames[vm->frame_count - 1];
                 LOAD_FRAME();
                 END_OP();
             }
@@ -1115,7 +1119,6 @@ jml_vm_run(jml_value_t *last)
                 if (!jml_vm_invoke(name, arg_count))
                     return INTERPRET_RUNTIME_ERROR;
 
-                frame = &vm->frames[vm->frame_count - 1];
                 LOAD_FRAME();
                 END_OP();
             }
@@ -1129,14 +1132,13 @@ jml_vm_run(jml_value_t *last)
                 if (!jml_vm_invoke_class(superclass, method, arg_count))
                     return INTERPRET_RUNTIME_ERROR;
 
-                frame = &vm->frames[vm->frame_count - 1];
                 LOAD_FRAME();
                 END_OP();
             }
 
             EXEC_OP(OP_CLOSURE) {
                 jml_obj_function_t *function = AS_FUNCTION(READ_CONST());
-                jml_obj_closure_t   *closure = jml_obj_closure_new(function);
+                jml_obj_closure_t  *closure  = jml_obj_closure_new(function);
                 jml_vm_push(OBJ_VAL(closure));
 
                 for (int i = 0; i < closure->upvalue_count; ++i) {
@@ -1162,7 +1164,6 @@ jml_vm_run(jml_value_t *last)
 
                 vm->stack_top = frame->slots;
                 jml_vm_push(result);
-                frame = &vm->frames[vm->frame_count - 1];
                 LOAD_FRAME();
                 END_OP();
             }

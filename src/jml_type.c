@@ -329,6 +329,7 @@ jml_obj_module_new(jml_obj_string_t *name, void *handle)
     module->handle  = handle;
 
     jml_hashmap_init(&module->globals);
+    jml_value_array_init(&module->saved);
 
     return module;
 }

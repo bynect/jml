@@ -188,8 +188,10 @@ jml_value_array_write(jml_value_array_t *array,
     if (array->capacity < array->count + 1) {
         int old_capacity    = array->count;
         array->capacity     = GROW_CAPACITY(old_capacity);
-        array->values       = GROW_ARRAY(jml_value_t,
-            array->values, old_capacity, array->capacity);
+        array->values       = GROW_ARRAY(
+            jml_value_t, array->values,
+            old_capacity, array->capacity
+        );
     }
 
     array->values[array->count++] = value;
