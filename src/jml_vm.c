@@ -1494,6 +1494,8 @@ jml_vm_run(jml_value_t *last)
                 if (!jml_vm_module_import(READ_STRING(), true)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
+
+                jml_vm_pop();
                 END_OP();
             }
 
@@ -1517,6 +1519,8 @@ jml_vm_run(jml_value_t *last)
                 jml_hashmap_add(
                     &AS_MODULE(jml_vm_peek(0))->globals, &vm->globals
                 );
+
+                jml_vm_pop();
                 END_OP();
             }
 

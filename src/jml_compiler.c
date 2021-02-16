@@ -1489,8 +1489,6 @@ jml_import_statement(void)
         jml_bytecode_emit_bytes(OP_IMPORT_LOCAL, arg);
         jml_bytecode_emit_byte(local);
     }
-
-    jml_bytecode_emit_byte(OP_POP);
 }
 
 
