@@ -1431,12 +1431,11 @@ jml_vm_run(jml_value_t *last)
                 }
 
                 jml_vm_global_set(new_name, value);
-                jml_vm_push(value);
                 END_OP();
             }
 
             EXEC_OP(OP_SWAP_LOCAL) {
-                /*TODO*/
+                /*placeholder*/
                 END_OP();
             }
 

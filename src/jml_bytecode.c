@@ -61,10 +61,12 @@ void
 jml_bytecode_disassemble(jml_bytecode_t *bytecode,
     const char *name)
 {
+    uint16_t pad = (23 - strlen(name)) / 2;
+
     printf(
-        "======   %-14s   ======\n"
-        "OFFSET   LINE   OPCODE               DATA\n",
-        name
+        "======   %*s%s%*s   ======\n"
+        "OFFSET   LINE   OPCODE              DATA\n",
+        pad, "", name, pad, ""
     );
 
     for (int offset = 0; offset < bytecode->count;) {

@@ -31,6 +31,13 @@ jml_mark_initialized(void)
 }
 
 
+static inline void
+jml_unmark_initialized(int local)
+{
+    current->locals[local].depth = -1;
+}
+
+
 static jml_token_t
 jml_token_emit_synthetic(const char *text)
 {
@@ -149,6 +156,7 @@ jml_parser_newline(void)
 {
     if (!jml_parser_check(TOKEN_RBRACE))
         jml_parser_consume(TOKEN_LINE, "Expect newline.");
+
     jml_parser_match_line();
 }
 
@@ -1029,14 +1037,20 @@ jml_variable_named(jml_token_t name, bool assignable)
             index, get_op, set_op, (uint8_t)arg, OP_MOD
         );
 
-    } else if (assignable && jml_parser_match(TOKEN_ARROW)) {
+    } else if (jml_parser_match(TOKEN_ARROW)) {
         if (!index) {
             jml_parser_match_line();
             jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
-            uint8_t new_name = jml_identifier_const(&parser.previous);
 
-            jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, (uint8_t)arg);
-            jml_bytecode_emit_byte(new_name);
+            jml_bytecode_emit_byte(OP_NONE);
+
+            if (get_op == OP_GET_GLOBAL) {
+                jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, (uint8_t)arg);
+                jml_bytecode_emit_byte(jml_identifier_const(&parser.previous));
+
+            } else
+                memcpy(&current->locals[arg].name, &parser.previous, sizeof(jml_token_t));
+
         } else
             jml_parser_error("Can't swap indexed value.");
     } else if (index)
@@ -1248,8 +1262,6 @@ jml_block(void)
         jml_declaration();
 
     jml_parser_consume(TOKEN_RBRACE, "Expect '}' after block.");
-
-    jml_parser_match_line();
 }
 
 
@@ -1278,6 +1290,7 @@ jml_function(jml_function_type type)
     jml_parser_consume(TOKEN_RPAREN, "Expect ')' after parameters.");
     jml_parser_consume(TOKEN_LBRACE, "Expect '{' before function body.");
     jml_block();
+    jml_parser_newline();
 
     jml_obj_function_t *function = jml_compiler_end();
     jml_bytecode_emit_bytes(
@@ -1306,9 +1319,6 @@ jml_method(void)
         type = FUNCTION_INIT;
 
     jml_function(type);
-    if (!jml_parser_check(TOKEN_EOF))
-        jml_parser_newline();
-
     jml_bytecode_emit_bytes(OP_METHOD, constant);
 }
 
@@ -1488,6 +1498,14 @@ jml_import_statement(void)
 
         jml_bytecode_emit_bytes(OP_IMPORT_LOCAL, arg);
         jml_bytecode_emit_byte(local);
+
+        if (jml_parser_match(TOKEN_ARROW)) {
+            jml_parser_match_line();
+            jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
+
+            memcpy(&current->locals[local].name,
+                &parser.previous, sizeof(jml_token_t));
+        }
     }
 }
 
