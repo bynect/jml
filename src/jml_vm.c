@@ -107,10 +107,29 @@ jml_vm_error(const char *format, ...)
 
     va_end(args);
 
-#ifdef JML_BACKTRACE
-    for (int i = 0; i < vm->frame_count; ++i) {
-#else
+#ifndef JML_BACKTRACE
+    jml_call_frame_t    *frame    = &vm->frames[0];
+    jml_obj_function_t  *function = frame->closure->function;
+
+    size_t instruction = frame->pc - function->bytecode.code - 1;
+
+    fprintf(stderr, "[line %d] in function ",
+        function->bytecode.lines[instruction]
+    );
+
+    if (vm->external != NULL) {
+        if (vm->external->module != NULL)
+            fprintf(stderr, "%s.", vm->external->module->name->chars);
+
+        if (vm->external->klass_name != NULL)
+            fprintf(stderr, "%s.", vm->external->klass_name->chars);
+
+        fprintf(stderr, "%s\n", vm->external->name->chars);
+    }
+
     for (int i = vm->frame_count - 1; i >= 0; --i) {
+#else
+    for (int i = 0; i < vm->frame_count; ++i) {
 #endif
         jml_call_frame_t    *frame    = &vm->frames[i];
         jml_obj_function_t  *function = frame->closure->function;
@@ -130,18 +149,30 @@ jml_vm_error(const char *format, ...)
 
             fprintf(stderr, "%s/%d\n", function->name->chars,
                 function->arity);
-
-        } else if (vm->external != NULL) {
-            if (vm->external->module != NULL)
-                fprintf(stderr, "%s.", vm->external->module->name->chars);
-
-            if (vm->external->klass_name != NULL)
-                fprintf(stderr, "%s.", vm->external->klass_name->chars);
-
-            fprintf(stderr, "%s\n", vm->external->name->chars);
         } else
             fprintf(stderr, "__main\n");
     }
+
+#ifdef JML_BACKTRACE
+    jml_call_frame_t    *frame    = &vm->frames[vm->frame_count - 1];
+    jml_obj_function_t  *function = frame->closure->function;
+
+    size_t instruction = frame->pc - function->bytecode.code - 1;
+
+    fprintf(stderr, "[line %d] in function ",
+        function->bytecode.lines[instruction]
+    );
+
+    if (vm->external != NULL) {
+        if (vm->external->module != NULL)
+            fprintf(stderr, "%s.", vm->external->module->name->chars);
+
+        if (vm->external->klass_name != NULL)
+            fprintf(stderr, "%s.", vm->external->klass_name->chars);
+
+        fprintf(stderr, "%s\n", vm->external->name->chars);
+    }
+#endif
 
     jml_vm_reset(vm);
 }

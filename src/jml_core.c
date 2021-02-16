@@ -552,6 +552,25 @@ jml_core_min(int arg_count, jml_value_t *args)
 }
 
 
+static jml_value_t
+jml_core_assert(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc        = jml_core_exception_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    if (jml_is_falsey(args[0])) {
+        return OBJ_VAL(jml_obj_exception_new(
+            "AssertErr", "Assertion failed."
+        ));
+    }
+
+    return NONE_VAL;
+}
+
+
 /*core function registration*/
 jml_module_function core_functions[] = {
     {"format",                      &jml_core_format},
@@ -567,6 +586,7 @@ jml_module_function core_functions[] = {
     {"attr",                        &jml_core_attr},
     {"max",                         &jml_core_max},
     {"min",                         &jml_core_min},
+    {"assert",                      &jml_core_assert},
     {NULL,                          NULL}
 };
 
