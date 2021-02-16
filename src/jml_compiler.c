@@ -152,10 +152,10 @@ jml_parser_match_line(void)
 
 
 static void
-jml_parser_newline(void)
+jml_parser_newline(const char *message)
 {
     if (!jml_parser_check(TOKEN_RBRACE))
-        jml_parser_consume(TOKEN_LINE, "Expect newline.");
+        jml_parser_consume(TOKEN_LINE, message);
 
     jml_parser_match_line();
 }
@@ -695,8 +695,9 @@ static void
 jml_grouping(JML_UNUSED(bool assignable))
 {
     jml_parser_match_line();
-
     jml_expression();
+
+    jml_parser_match_line();
     jml_parser_consume(TOKEN_RPAREN, "Expect ')' after expression.");
 }
 
@@ -1255,7 +1256,7 @@ jml_function(jml_function_type type)
     jml_parser_consume(TOKEN_RPAREN, "Expect ')' after parameters.");
     jml_parser_consume(TOKEN_LBRACE, "Expect '{' before function body.");
     jml_block();
-    jml_parser_newline();
+    jml_parser_newline("Expect newline after 'fn' declaration.");
 
     jml_obj_function_t *function = jml_compiler_end();
     jml_bytecode_emit_bytes(
@@ -1342,7 +1343,7 @@ jml_class_declaration(void)
     }
 
     jml_parser_consume(TOKEN_RBRACE, "Expect '}' after class body.");
-    jml_parser_match_line();
+    jml_parser_newline("Expect newline after 'class' declaration.");
     jml_bytecode_emit_byte(OP_POP);
 
     if (class_compiler.w_superclass) {
@@ -1373,7 +1374,7 @@ jml_let_declaration(void)
     else
         jml_bytecode_emit_byte(OP_NONE);
 
-    jml_parser_newline();
+    jml_parser_newline("Expect newline after 'let' declaration.");
     jml_variable_definition(global);
 }
 
@@ -1402,7 +1403,7 @@ static void
 jml_expression_statement(void)
 {
     jml_expression();
-    jml_parser_newline();
+    jml_parser_newline("Expect newline.");
     jml_bytecode_emit_byte(OP_POP);
 }
 
@@ -1480,19 +1481,18 @@ jml_while_statement(void)
 {
     int start = jml_bytecode_current()->count;
 
-    jml_parser_consume(TOKEN_LPAREN, "Expect '(' after 'while'.");
-
     jml_parser_match_line();
     jml_expression();
     jml_parser_match_line();
-
-    jml_parser_consume(TOKEN_RPAREN, "Expect ')' after condition.");
 
     int exit = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
     jml_loop_begin(start, jml_bytecode_current()->count, exit);
 
     jml_bytecode_emit_byte(OP_POP);
-    jml_statement();
+
+    jml_parser_consume(TOKEN_LBRACE, "Expect '{' after 'while'.");
+    jml_block();
+    jml_parser_newline("Expect newline after 'while' block.");
 
     jml_bytecode_emit_loop(start);
 
@@ -1614,17 +1614,28 @@ jml_if_statement(void)
 {
     jml_parser_match_line();
     jml_expression();
+    jml_parser_match_line();
 
     int then_jump = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
     jml_bytecode_emit_byte(OP_POP);
-    jml_statement();
+
+    jml_parser_consume(TOKEN_LBRACE, "Expect '{' after 'if'.");
+
+    jml_block();
 
     int else_jump = jml_bytecode_emit_jump(OP_JUMP);
     jml_bytecode_patch_jump(then_jump);
     jml_bytecode_emit_byte(OP_POP);
 
-    if (jml_parser_match(TOKEN_ELSE))
-        jml_statement();
+    if (jml_parser_match(TOKEN_ELSE)) {
+        jml_parser_match_line();
+
+        jml_parser_consume(TOKEN_LBRACE, "Expect '{' after 'if'.");
+        jml_block();
+        jml_parser_newline("Expect newline after 'else' block.");
+
+    } else
+        jml_parser_newline("Expect newline after 'if' block.");
 
     jml_bytecode_patch_jump(else_jump);
 }
@@ -1660,6 +1671,7 @@ jml_statement(void)
         jml_scope_begin();
         jml_block();
         jml_scope_end();
+        jml_parser_newline("Expect newline after block");
 
     } else
         jml_expression_statement();
