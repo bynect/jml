@@ -521,7 +521,7 @@ jml_core_max(int arg_count, jml_value_t *args)
 
     if (!IS_NUM(a) || !IS_NUM(b)) {
         return OBJ_VAL(
-            jml_core_exception_types(false, 2, "number")
+            jml_core_exception_types(false, 2, "number", "number")
         );
     }
 
@@ -544,7 +544,7 @@ jml_core_min(int arg_count, jml_value_t *args)
 
     if (!IS_NUM(a) || !IS_NUM(b)) {
         return OBJ_VAL(
-            jml_core_exception_types(false, 2, "number")
+            jml_core_exception_types(false, 2, "number", "number")
         );
     }
 

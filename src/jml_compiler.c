@@ -741,47 +741,12 @@ jml_string(JML_UNUSED(bool assignable))
             }
 
             switch (raw[i + 1]) {
-                case '\'': {
-                    c = '\'';
-                    ++i;
-                    break;
-                }
-
-                case '"': {
-                    c = '"';
-                    ++i;
-                    break;
-                }
-
-                case '\\': {
-                    c = '\\';
-                    ++i;
-                    break;
-                }
-
-                case 'b': {
-                    c = '\b';
-                    ++i;
-                    break;
-                }
-
-                case 'n': {
-                    c = '\n';
-                    ++i;
-                    break;
-                }
-
-                case 'r': {
-                    c = '\r';
-                    ++i;
-                    break;
-                }
-
-                case 't': {
-                    c = '\t';
-                    ++i;
-                    break;
-                }
+                case '\'':              c = '\''; ++i;                          break;
+                case  '"':              c = '"';  ++i;                          break;
+                case '\\':              c = '\\'; ++i;                          break;
+                case  'n':              c = '\n'; ++i;                          break;
+                case  'r':              c = '\r'; ++i;                          break;
+                case  't':              c = '\t'; ++i;                          break;
 
                 case 'x': {
                     if (i + 3 >= length) {

@@ -375,7 +375,7 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
         goto err;
 
     if (!IS_STRING(args[1]) || !IS_STRING(args[2])) {
-        exc = jml_core_exception_types(false, 2, "string");
+        exc = jml_core_exception_types(false, 2, "string", "string");
         goto err;
     }
 
@@ -432,7 +432,7 @@ jml_std_fs_file_open(int arg_count, jml_value_t *args)
         goto err;
 
     if (!IS_STRING(args[0]) || !IS_STRING(args[1])) {
-        exc = jml_core_exception_types(false, 2, "string");
+        exc = jml_core_exception_types(false, 2, "string", "string");
         goto err;
     }
 
