@@ -311,7 +311,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
                 } else if (arg_count != 0) {
                     jml_vm_error(
-                        "Expected 0 arguments but got %d.", arg_count
+                        "Expected '0' arguments but got %d.", arg_count
                     );
                     return false;
                 }
@@ -884,13 +884,14 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_POP) {
 #ifdef JML_EVAL
+                jml_value_t value = jml_vm_pop();
                 if (vm->frame_count - 1 == 0) {
                     if (last != NULL)
-                        *last = jml_vm_pop();
-                    END_OP();
+                        *last = value;
                 }
-#endif
+#else
                 jml_vm_pop();
+#endif
                 END_OP();
             }
 
@@ -1287,7 +1288,9 @@ jml_vm_run(jml_value_t *last)
 
                 } else {
                     SAVE_FRAME();
-                    jml_vm_error("Only instances have fields.");
+                    jml_vm_error(
+                        "Only instances and modules have properties."
+                    );
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 END_OP();
@@ -1328,7 +1331,9 @@ jml_vm_run(jml_value_t *last)
 
                 } else {
                     SAVE_FRAME();
-                    jml_vm_error("Only instances have properties.");
+                    jml_vm_error(
+                        "Only instances and modules have properties."
+                    );
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 END_OP();

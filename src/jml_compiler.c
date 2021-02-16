@@ -731,7 +731,7 @@ jml_string(JML_UNUSED(bool assignable))
     char *buffer                = ALLOCATE(char, length + 1);
     size_t size                 = 0;
 
-    for (unsigned int i = 0; i < length; ) {
+    for (size_t i = 0; i < length; ) {
         uint32_t c = raw[i];
 
         if (c == '\\') {

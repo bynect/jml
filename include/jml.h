@@ -96,17 +96,19 @@
 
 #ifdef JML_PLATFORM_WIN
 
-#define JML_API                     __declspec(dllexport) JML_NOMANGLE
+#define JML_APIF                    __declspec(dllexport) JML_NOMANGLE
+#define JML_APIM                    __declspec(dllexport)
 
 #else
 
-#define JML_API                     JML_NOMANGLE
+#define JML_APIF                    JML_NOMANGLE
+#define JML_APIM
 
 #endif
 
 
-#define MODULE_TABLE_HEAD           JML_API jml_module_function
-#define MODULE_FUNC_HEAD            JML_API void
+#define MODULE_TABLE_HEAD           JML_APIM jml_module_function
+#define MODULE_FUNC_HEAD            JML_APIF void
 
 
 /*API*/
