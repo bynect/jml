@@ -7,20 +7,20 @@ jml_string_encode(char *buffer, uint32_t value)
     char *bytes = buffer;
 
     if (value <= 0x7f) {
-        *bytes = (char)(value & 0x7f);
+        *bytes   = (char)(value & 0x7f);
         return 1;
     }
 
     if (value <= 0x7ff) {
         *bytes++ = (char)(0xc0 | ((value & 0x7c0) >> 6));
-        *bytes = (char)(0x80 | (value & 0x3f));
+        *bytes   = (char)(0x80 | (value & 0x3f));
         return 2;
     }
 
     if (value <= 0xffff) {
         *bytes++ = (char)(0xe0 | ((value & 0xf000) >> 12));
         *bytes++ = (char)(0x80 | ((value & 0xfc0) >> 6));
-        *bytes = (char)(0x80 | (value & 0x3f));
+        *bytes   = (char)(0x80 | (value & 0x3f));
         return 3;
     }
 
@@ -28,7 +28,7 @@ jml_string_encode(char *buffer, uint32_t value)
         *bytes++ = (char)(0xf0 | ((value & 0x1c0000) >> 18));
         *bytes++ = (char)(0x80 | ((value & 0x3f000) >> 12));
         *bytes++ = (char)(0x80 | ((value & 0xfc0) >> 6));
-        *bytes = (char)(0x80 | (value & 0x3f));
+        *bytes   = (char)(0x80 | (value & 0x3f));
         return 4;
     }
 
@@ -53,12 +53,12 @@ jml_string_decode(const char *str, uint32_t *val)
 
         for (; c & 0x40; c <<= 1) {
             unsigned int cc = (unsigned char)str[++count];
-            if ((cc & 0xC0) != 0x80)
+            if ((cc & 0xc0) != 0x80)
                 return NULL;
-            res = (res << 6) | (cc & 0x3F);
+            res = (res << 6) | (cc & 0x3f);
         }
 
-        res |= ((uint32_t)(c & 0x7F) << (count * 5));
+        res |= ((uint32_t)(c & 0x7f) << (count * 5));
 
         if (count > 5 || res > JML_MAXUTF || res < limits[count])
             return NULL;
@@ -78,10 +78,10 @@ jml_string_charbytes(const char *str, uint32_t i)
 {
     unsigned char c = (unsigned char)str[i];
 
-    if ((c > 0) && (c <= 127)) return 1;
-    if ((c >= 194) && (c <= 223)) return 2;
-    if ((c >= 224) && (c <= 239)) return 3;
-    if ((c >= 240) && (c <= 244)) return 4;
+    if ((c >  0x00) && (c <= 0x7f)) return 1;
+    if ((c >= 0xc2) && (c <= 0xdf)) return 2;
+    if ((c >= 0xe0) && (c <= 0xef)) return 3;
+    if ((c >= 0xf0) && (c <= 0xf4)) return 4;
 
     return 0;
 }

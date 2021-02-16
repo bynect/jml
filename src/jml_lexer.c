@@ -126,10 +126,6 @@ jml_lexer_skip_char(jml_lexer_t *lexer)
                 } else
                     return;
 
-            case '\\':
-                jml_lexer_advance(lexer);
-                break;
-
             case  '!':
                 if (jml_lexer_peek_next(lexer) == '=') return;
                 while (jml_lexer_peek(lexer) != '\n' && !jml_is_eof(lexer))

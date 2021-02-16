@@ -26,7 +26,9 @@ RM=rm -f
 
 CFLAGS=-Wall -Wextra -Werror
 LFLAGS=-rdynamic
+
 XSHARED=-shared -fpic
+LSHARED=
 
 DEFINES=
 INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
@@ -45,7 +47,7 @@ endif
 
 ifdef NDEBUG
 	DEFINES+=-DJML_NDEBUG
-	CFLAGS+=-O3 -Wno-unused-result
+	CFLAGS+=-O3 -fno-semantic-interposition
 else
 	CFLAGS+=-g3
 endif
@@ -55,10 +57,14 @@ ifdef READLINE
 	LIBS+=-lreadline
 endif
 
+ifdef LINK_STD
+	LSHARED+=-Llib -ljml
+endif
 
-all:: $(TARGET_BIN) $(TARGET_LIB) $(TARGET_SO)
 
-all:: $(TARGET_STD)
+all: $(TARGET_BIN) $(TARGET_LIB) $(TARGET_SO)
+
+all: $(TARGET_STD)
 
 
 $(CLI_D)/%.o: $(CLI_D)/%.c
@@ -70,8 +76,8 @@ $(SRC_D)/%.o: $(SRC_D)/%.c
 $(STD_D)/%.o: $(STD_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) -fpic
 
-$(STD_D)/%.so: $(STD_D)/%.o
-	$(CC) $< -o $@ $(XSHARED)
+$(STD_D)/%.so: $(STD_D)/%.o $(TARGET_SO)
+	$(CC) $< -o $@ $(XSHARED) $(LSHARED)
 
 $(TARGET_BIN): $(SRC_O) $(CLI_O)
 	$(CC) $^ -o $@ $(CFLAGS) $(LFLAGS) $(INCLUDES) $(LIBS)

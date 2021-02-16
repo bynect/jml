@@ -128,7 +128,9 @@ jml_file_find(const char *filename, char *result)
                 break;
 
         } else if (strcmp(dir->d_name, filename) == 0) {
-            getcwd(result, JML_PATH_MAX);
+            if (getcwd(result, JML_PATH_MAX) == NULL)
+                return false;
+
             int length = strlen(result);
             snprintf(result + length, JML_PATH_MAX - length, "/%s", dir->d_name);
             break;
