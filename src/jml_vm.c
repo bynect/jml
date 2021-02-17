@@ -92,7 +92,7 @@ jml_vm_free(jml_vm_t *vm)
     vm->module_string       = NULL;
     vm->path_string         = NULL;
 
-    ASSERT(
+    JML_ASSERT(
         vm->allocated == 0,
         "[VM]  |%zd bytes not freed|\n",
         vm->allocated
@@ -1240,12 +1240,32 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_SET_LOCAL) {
                 uint8_t slot = READ_BYTE();
+
+#ifdef JML_TRACE_SLOT
+                printf("          (slot %d)     [", slot);
+                jml_value_print(frame->slots[slot]);
+                printf(" ]     ->     [ ");
+                jml_value_print(jml_vm_peek(0));
+                printf("]\n");
+#endif
+
                 frame->slots[slot] = jml_vm_peek(0);
                 END_OP();
             }
 
             EXEC_OP(OP_GET_LOCAL) {
                 uint8_t slot = READ_BYTE();
+
+                printf("\n %d \n", slot);
+                jml_value_print(frame->slots[slot]);
+                printf("\n");
+
+#ifdef JML_TRACE_SLOT
+                printf("          (slot %d)     [", slot);
+                jml_value_print(frame->slots[slot]);
+                printf("]\n");
+#endif
+
                 jml_vm_push(frame->slots[slot]);
                 END_OP();
             }
@@ -1608,7 +1628,7 @@ jml_vm_run(jml_value_t *last)
 
 #ifndef JML_COMPUTED_GOTO
             default:
-                UNREACHABLE();
+                JML_UNREACHABLE();
         }
     }
 #endif
@@ -1641,8 +1661,7 @@ jml_cfunction_register(const char *name,
             function, module)
     ));
 
-    jml_hashmap_set(
-        &vm->globals,
+    jml_vm_global_set(
         AS_STRING(jml_vm_peek(1)),
         jml_vm_peek(0)
     );

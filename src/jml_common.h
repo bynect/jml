@@ -23,6 +23,7 @@
 #define JML_NAN_TAGGING
 #undef  JML_DISASSEMBLE
 #undef  JML_TRACE_STACK
+#undef  JML_TRACE_SLOT
 #undef  JML_STEP_STACK
 #undef  JML_STRESS_GC
 #undef  JML_TRACE_GC
@@ -36,6 +37,7 @@
 #define JML_NAN_TAGGING
 #define JML_DISASSEMBLE
 #define JML_TRACE_STACK
+#define JML_TRACE_SLOT
 #undef  JML_STEP_STACK
 #undef  JML_STRESS_GC
 #undef  JML_TRACE_GC
@@ -52,7 +54,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ASSERT(condition, format, ...)                  \
+#define JML_ASSERT(condition, format, ...)              \
     do {                                                \
         if (!condition) {                               \
             fprintf(                                    \
@@ -68,10 +70,11 @@
         }                                               \
     } while (false)
 
-#define UNREACHABLE()                                   \
+#define JML_UNREACHABLE()                               \
     do {                                                \
         fprintf(                                        \
-            stderr,"[%s:%d] Unreachable hit in %s\n",   \
+            stderr,                                     \
+            "[%s:%d] Unreachable code hit in %s\n",     \
             __FILE__, __LINE__, __func__                \
         );                                              \
         abort();                                        \
@@ -79,8 +82,8 @@
 
 #else
 
-#define ASSERT(condition, format, ...)
-#define UNREACHABLE()
+#define JML_ASSERT(condition, format, ...)
+#define JML_UNREACHABLE()
 
 #endif
 

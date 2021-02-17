@@ -654,7 +654,7 @@ jml_binary(JML_UNUSED(bool assignable))
 
         case TOKEN_IN:          jml_bytecode_emit_byte(OP_CONTAIN);     break;
 
-        default:                UNREACHABLE();
+        default:                JML_UNREACHABLE();
     }
 }
 
@@ -731,7 +731,7 @@ jml_literal(JML_UNUSED(bool assignable))
         case TOKEN_NONE:        jml_bytecode_emit_byte(OP_NONE);        break;
         case TOKEN_TRUE:        jml_bytecode_emit_byte(OP_TRUE);        break;
 
-        default:                UNREACHABLE();
+        default:                JML_UNREACHABLE();
     }
 }
 
@@ -1109,7 +1109,7 @@ jml_unary(JML_UNUSED(bool assignable))
         case TOKEN_NOT:         jml_bytecode_emit_byte(OP_NOT);       break;
         case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_NEGATE);    break;
 
-        default:                UNREACHABLE();
+        default:                JML_UNREACHABLE();
     }
 }
 
