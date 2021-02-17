@@ -21,6 +21,8 @@ struct jml_vm {
     jml_obj_string_t               *init_string;
     jml_obj_string_t               *call_string;
     jml_obj_string_t               *free_string;
+    jml_obj_string_t               *get_string;
+    jml_obj_string_t               *set_string;
     jml_obj_string_t               *module_string;
     jml_obj_string_t               *path_string;
 

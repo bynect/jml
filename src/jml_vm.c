@@ -54,6 +54,8 @@ jml_vm_init(jml_vm_t *vm)
     vm->init_string         = NULL;
     vm->call_string         = NULL;
     vm->free_string         = NULL;
+    vm->get_string          = NULL;
+    vm->set_string          = NULL;
     vm->module_string       = NULL;
     vm->path_string         = NULL;
 
@@ -61,6 +63,8 @@ jml_vm_init(jml_vm_t *vm)
     vm->init_string         = jml_obj_string_copy("__init", 6);
     vm->call_string         = jml_obj_string_copy("__call", 6);
     vm->free_string         = jml_obj_string_copy("__free", 6);
+    vm->get_string          = jml_obj_string_copy("__get", 5);
+    vm->set_string          = jml_obj_string_copy("__set", 5);
     vm->module_string       = jml_obj_string_copy("__module", 8);
     vm->path_string         = jml_obj_string_copy("__path", 6);
 
@@ -83,6 +87,8 @@ jml_vm_free(jml_vm_t *vm)
     vm->init_string         = NULL;
     vm->call_string         = NULL;
     vm->free_string         = NULL;
+    vm->get_string          = NULL;
+    vm->set_string          = NULL;
     vm->module_string       = NULL;
     vm->path_string         = NULL;
 
@@ -1129,7 +1135,7 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_CALL) {
-                int arg_count = READ_BYTE();
+                int             arg_count = READ_BYTE();
                 SAVE_FRAME();
                 if (!jml_vm_call_value(jml_vm_peek(arg_count), arg_count))
                     return INTERPRET_RUNTIME_ERROR;
@@ -1375,18 +1381,24 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t         index   = jml_vm_peek(1);
                 jml_value_t         box     = jml_vm_peek(2);
 
-                if (!IS_STRING(index) && !IS_NUM(index)) {
-                    SAVE_FRAME();
-                    jml_vm_error("Can index only by number or string.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
+                if (IS_MAP(box)) {
+                    if (!IS_STRING(index)) {
+                        SAVE_FRAME();
+                        jml_vm_error("Maps can be indexed only by strings.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
 
-                if (IS_STRING(index) && IS_MAP(box)) {
                     jml_hashmap_set(
                         &AS_MAP(box)->hashmap, AS_STRING(index), value
                     );
 
-                } else if (IS_NUM(index) && IS_ARRAY(box)) {
+                } else if (IS_ARRAY(box)) {
+                    if (!IS_NUM(index)) {
+                        SAVE_FRAME();
+                        jml_vm_error("Arrays can be indexed only by numbers.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
                     jml_value_array_t array = AS_ARRAY(box)->values;
                     int num_index   = AS_NUM(index);
 
@@ -1401,9 +1413,23 @@ jml_vm_run(jml_value_t *last)
                         array.values[array.count + num_index]   = value;
                     else
                         array.values[num_index]                 = value;
+
+                } else if (IS_INSTANCE(box)) {
+                    SAVE_FRAME();
+                    if (!jml_vm_invoke_instance(AS_INSTANCE(box), vm->set_string, 2)) {
+                        jml_vm_error(
+                            "Instance of class '%s' is not indexable.",
+                            AS_INSTANCE(box)->klass->name->chars
+                        );
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    LOAD_FRAME();
+                    END_OP();
+
                 } else {
                     SAVE_FRAME();
-                    jml_vm_error("Can index only arrays and maps.");
+                    jml_vm_error("Can index only arrays, maps and instances.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1418,17 +1444,24 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t         box     = jml_vm_peek(1);
                 jml_value_t         value;
 
-                if (!IS_STRING(index) && !IS_NUM(index)) {
-                    SAVE_FRAME();
-                    jml_vm_error("Can index only by number or string.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
+                if (IS_MAP(box)) {
+                    if (!IS_STRING(index)) {
+                        SAVE_FRAME();
+                        jml_vm_error("Maps can be indexed only by strings.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
 
-                if (IS_STRING(index) && IS_MAP(box)) {
-                    if (!jml_hashmap_get(&AS_MAP(box)->hashmap, AS_STRING(index), &value))
+                    if (!jml_hashmap_get(&AS_MAP(box)->hashmap,
+                        AS_STRING(index), &value))
                         value       = NONE_VAL;
 
-                } else if (IS_NUM(index) && IS_ARRAY(box)) {
+                } else if (IS_ARRAY(box)) {
+                    if (!IS_NUM(index)) {
+                        SAVE_FRAME();
+                        jml_vm_error("Arrays can be indexed only by numbers.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
                     jml_value_array_t array = AS_ARRAY(box)->values;
                     int num_index   = AS_NUM(index);
 
@@ -1438,9 +1471,23 @@ jml_vm_run(jml_value_t *last)
                         value       = array.values[array.count + num_index];
                     else
                         value       = array.values[num_index];
+
+                } else if (IS_INSTANCE(box)) {
+                    SAVE_FRAME();
+                    if (!jml_vm_invoke_instance(AS_INSTANCE(box), vm->get_string, 1)) {
+                        jml_vm_error(
+                            "Instance of class '%s' is not indexable.",
+                            AS_INSTANCE(box)->klass->name->chars
+                        );
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    LOAD_FRAME();
+                    END_OP();
+
                 } else {
                     SAVE_FRAME();
-                    jml_vm_error("Can index only arrays and maps.");
+                    jml_vm_error("Can index only arrays, maps and instances.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
