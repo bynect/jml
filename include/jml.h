@@ -202,5 +202,7 @@ size_t jml_string_len(const char *str, size_t size);
 
 #include <jml_util.h>
 
+#include <jml_repr.h>
+
 
 #endif /* JML_H_ */

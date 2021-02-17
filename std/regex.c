@@ -23,6 +23,7 @@ static char                        *last_string;
         }                                               \
     } while (false)
 
+
 #define REGEX_REUSE(rule, result)                       \
     do {                                                \
         if (last_string == NULL || strncmp(last_string, \
@@ -34,6 +35,7 @@ static char                        *last_string;
                 goto regerr;                            \
         }                                               \
     } while (false)
+
 
 #define REGEX_ERR(exc)                                  \
     do {                                                \

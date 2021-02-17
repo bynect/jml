@@ -215,12 +215,6 @@ jml_obj_exception_t *jml_obj_exception_format(const char *name,
     char *message_format, ...);
 
 
-void jml_obj_print(jml_value_t value);
-
-char *jml_obj_stringify(jml_value_t value);
-
-const char *jml_obj_stringify_type(jml_value_t value);
-
 bool jml_obj_is_sentinel(jml_value_t value);
 
 jml_value_t jml_obj_get_sentinel(void);

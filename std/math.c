@@ -1,7 +1,11 @@
 #ifdef __GNUC__
+
 #define _XOPEN_SOURCE               500
+
 #elif defined _MSC_VER
+
 #define _USE_MATH_DEFINES
+
 #endif
 
 #include <math.h>

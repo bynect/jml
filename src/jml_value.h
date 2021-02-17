@@ -44,9 +44,9 @@ jml_num_to_val(double num)
 static inline double
 jml_value_to_num(jml_value_t value)
 {
-  double num;
-  memcpy(&num, &value, sizeof(jml_value_t));
-  return num;
+    double num;
+    memcpy(&num, &value, sizeof(jml_value_t));
+    return num;
 }
 
 
@@ -76,16 +76,12 @@ typedef struct {
 } jml_value_t;
 
 
-#define BOOL_VAL(value)                                 \
-    ((jml_value_t){VAL_BOOL, {.boolean = value}})
+#define BOOL_VAL(value)             ((jml_value_t){VAL_BOOL, {.boolean = value}})
 #define TRUE_VAL                    BOOL_VAL(true)
 #define FALSE_VAL                   BOOL_VAL(false)
-#define NONE_VAL                                        \
-    ((jml_value_t){VAL_NONE, {.number = 0}})
-#define NUM_VAL(value)                                  \
-    ((jml_value_t){VAL_NUM, {.number = value}})
-#define OBJ_VAL(object)                                 \
-    ((jml_value_t){VAL_OBJ, {.obj = (jml_obj_t*)object}})
+#define NONE_VAL                    ((jml_value_t){VAL_NONE, {.number = 0}})
+#define NUM_VAL(value)              ((jml_value_t){VAL_NUM, {.number = value}})
+#define OBJ_VAL(object)             ((jml_value_t){VAL_OBJ, {.obj = (jml_obj_t*)object}})
 
 #define AS_BOOL(value)              ((value).of.boolean)
 #define AS_NUM(value)               ((value).of.number)
@@ -105,12 +101,6 @@ typedef struct {
     jml_value_t                    *slots;
 } jml_call_frame_t;
 
-
-void jml_value_print(jml_value_t value);
-
-char *jml_value_stringify(jml_value_t value);
-
-const char *jml_value_stringify_type(jml_value_t value);
 
 bool jml_value_equal(jml_value_t a, jml_value_t b);
 

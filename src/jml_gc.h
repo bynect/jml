@@ -11,19 +11,24 @@
 #define ALLOCATE(type, count)                           \
     (type*)jml_reallocate(NULL, 0, sizeof(type) * (count))
 
+
 #define FREE(type, ptr)                                 \
     jml_reallocate(ptr, sizeof(type), 0)
 
+
 #define GROW_CAPACITY(capacity)                         \
     ((capacity) < 8 ? 8 : (capacity) * 2)
+
 
 #define GROW_ARRAY(type, ptr, old_count, new_count)     \
     (type*)jml_reallocate(ptr,                          \
         sizeof(type) * (old_count),                     \
         sizeof(type) * (new_count))
 
+
 #define FREE_ARRAY(type, ptr, old_count)                \
     jml_reallocate(ptr, sizeof(type) * (old_count), 0)
+
 
 #define REALLOC(type, ptr, size, dest_size)             \
     do {                                                \
