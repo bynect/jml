@@ -81,6 +81,7 @@ typedef struct jml_compiler {
     int                             scope_depth;
     jml_obj_module_t               *module;
     jml_loop_t                     *loop;
+    bool                            output;
 } jml_compiler_t;
 
 
@@ -94,7 +95,7 @@ typedef struct jml_class_compiler {
 void jml_compiler_mark_roots(void);
 
 jml_obj_function_t *jml_compiler_compile(const char *source,
-    jml_obj_module_t *module);
+    jml_obj_module_t *module, bool output);
 
 
 #endif /* JML_COMPILER_H_ */

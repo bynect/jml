@@ -55,29 +55,32 @@ jml_parser_error_at(jml_token_t *token,
     if (parser.panicked) return;
     parser.panicked = true;
 
-    fprintf(stderr, "[line %d", token->line);
+    if (current->output) {
+        fprintf(stderr, "[line %d", token->line);
 
-    if (current->module != NULL)
-        fprintf(stderr, " in %s", current->module->name->chars);
+        if (current->module != NULL)
+            fprintf(stderr, " in %s", current->module->name->chars);
 
-    fprintf(stderr, "] Error");
+        fprintf(stderr, "] Error");
 
-    if (token->type == TOKEN_EOF) {
-        fprintf(stderr, " at eof");
+        if (token->type == TOKEN_EOF) {
+            fprintf(stderr, " at eof");
 
-    } else if (token->type == TOKEN_ERROR) {
-        /*pass*/
+        } else if (token->type == TOKEN_ERROR) {
+            /*pass*/
 
-    } else if (strncmp(token->start,
-        "\n", token->length) == 0) {
-        fprintf(stderr, " at newline");
+        } else if (strncmp(token->start,
+            "\n", token->length) == 0) {
+            fprintf(stderr, " at newline");
 
-    } else {
-        fprintf(stderr, " at '%.*s'",
-            token->length, token->start);
+        } else {
+            fprintf(stderr, " at '%.*s'",
+                token->length, token->start);
+        }
+
+        fprintf(stderr, ": %s\n", message);
     }
 
-    fprintf(stderr, ": %s\n", message);
     parser.w_error = true;
 }
 
@@ -253,8 +256,8 @@ jml_bytecode_emit_const(jml_value_t value)
 
 
 static void
-jml_compiler_init(jml_compiler_t *compiler,
-    jml_function_type type, jml_obj_module_t *module)
+jml_compiler_init(jml_compiler_t *compiler, jml_function_type type,
+    jml_obj_module_t *module, bool output)
 {
     compiler->enclosing     = current;
     compiler->function      = NULL;
@@ -273,7 +276,7 @@ jml_compiler_init(jml_compiler_t *compiler,
         );
     }
 
-    if (type != FUNCTION_MAIN && type != FUNCTION_FN) {
+    if (type == FUNCTION_METHOD || type == FUNCTION_INIT) {
         compiler->function->klass_name = jml_obj_string_copy(
             class_current->name.start, class_current->name.length
         );
@@ -293,6 +296,8 @@ jml_compiler_init(jml_compiler_t *compiler,
     local->captured         = false;
 
     compiler->loop          = NULL;
+
+    compiler->output        = output;
 }
 
 
@@ -1256,7 +1261,7 @@ static void
 jml_function(jml_function_type type)
 {
     jml_compiler_t compiler;
-    jml_compiler_init(&compiler, type, current->module);
+    jml_compiler_init(&compiler, type, current->module, current->output);
     jml_scope_begin();
 
     jml_parser_consume(TOKEN_LPAREN, "Expect '(' after function name.");
@@ -1703,11 +1708,11 @@ jml_statement(void)
 
 jml_obj_function_t *
 jml_compiler_compile(const char *source,
-    jml_obj_module_t *module)
+    jml_obj_module_t *module, bool output)
 {
     jml_lexer_init(source, &parser.lexer);
     jml_compiler_t compiler;
-    jml_compiler_init(&compiler, FUNCTION_MAIN, module);
+    jml_compiler_init(&compiler, FUNCTION_MAIN, module, output);
 
     parser.w_error = false;
     parser.panicked = false;
