@@ -681,13 +681,14 @@ jml_dot(bool assignable)
         jml_parser_match_line();
         jml_expression();
         jml_bytecode_emit_bytes(OP_SET_MEMBER, name);
+
     } else if (jml_parser_match(TOKEN_LPAREN)) {
         uint8_t arg_count = jml_arguments_list();
         jml_bytecode_emit_bytes(OP_INVOKE, name);
         jml_bytecode_emit_byte(arg_count);
-    } else {
+
+    } else
         jml_bytecode_emit_bytes(OP_GET_MEMBER, name);
-    }
 }
 
 
@@ -696,9 +697,29 @@ jml_grouping(JML_UNUSED(bool assignable))
 {
     jml_parser_match_line();
     jml_expression();
-
     jml_parser_match_line();
+
     jml_parser_consume(TOKEN_RPAREN, "Expect ')' after expression.");
+}
+
+
+static void
+jml_indexing(bool assignable)
+{
+    jml_parser_match_line();
+    jml_expression();
+    jml_parser_match_line();
+
+    jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
+    jml_parser_match_line();
+
+    if (assignable && jml_parser_match(TOKEN_EQUAL)) {
+        jml_parser_match_line();
+        jml_expression();
+        jml_bytecode_emit_byte(OP_SET_INDEX);
+
+    } else
+        jml_bytecode_emit_byte(OP_GET_INDEX);
 }
 
 
@@ -1097,7 +1118,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_RPAREN*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_LPAREN*/    {&jml_grouping, &jml_call,      PREC_CALL},
     /*TOKEN_RSQARE*/    {NULL,          NULL,           PREC_NONE},
-    /*TOKEN_LSQARE*/    {&jml_array,    NULL,           PREC_NONE},
+    /*TOKEN_LSQARE*/    {&jml_array,    &jml_indexing,  PREC_CALL},
     /*TOKEN_RBRACE*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_LBRACE*/    {&jml_map,      NULL,           PREC_NONE},
 

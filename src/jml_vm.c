@@ -108,16 +108,16 @@ jml_vm_error(const char *format, ...)
     va_end(args);
 
 #ifndef JML_BACKTRACE
-    jml_call_frame_t    *frame    = &vm->frames[0];
-    jml_obj_function_t  *function = frame->closure->function;
-
-    size_t instruction = frame->pc - function->bytecode.code - 1;
-
-    fprintf(stderr, "[line %d] in function ",
-        function->bytecode.lines[instruction]
-    );
-
     if (vm->external != NULL) {
+        jml_call_frame_t    *frame    = &vm->frames[0];
+        jml_obj_function_t  *function = frame->closure->function;
+
+        size_t instruction = frame->pc - function->bytecode.code - 1;
+
+        fprintf(stderr, "[line %d] in function ",
+            function->bytecode.lines[instruction]
+        );
+
         if (vm->external->module != NULL)
             fprintf(stderr, "%s.", vm->external->module->name->chars);
 
@@ -154,16 +154,16 @@ jml_vm_error(const char *format, ...)
     }
 
 #ifdef JML_BACKTRACE
-    jml_call_frame_t    *frame    = &vm->frames[vm->frame_count - 1];
-    jml_obj_function_t  *function = frame->closure->function;
-
-    size_t instruction = frame->pc - function->bytecode.code - 1;
-
-    fprintf(stderr, "[line %d] in function ",
-        function->bytecode.lines[instruction]
-    );
-
     if (vm->external != NULL) {
+        jml_call_frame_t    *frame    = &vm->frames[vm->frame_count - 1];
+        jml_obj_function_t  *function = frame->closure->function;
+
+        size_t instruction = frame->pc - function->bytecode.code - 1;
+
+        fprintf(stderr, "[line %d] in function ",
+            function->bytecode.lines[instruction]
+        );
+
         if (vm->external->module != NULL)
             fprintf(stderr, "%s.", vm->external->module->name->chars);
 
