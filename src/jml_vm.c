@@ -747,6 +747,7 @@ jml_vm_run(jml_value_t *last)
     (void) last;
 #endif
 
+
 #define SAVE_FRAME()                (frame->pc = pc)
 #define LOAD_FRAME()                                    \
     do {                                                \
@@ -754,12 +755,14 @@ jml_vm_run(jml_value_t *last)
         pc = frame->pc;                                 \
     } while (false)
 
+
 #define READ_BYTE()                 (*pc++)
 #define READ_SHORT()                (pc += 2, (uint16_t)((pc[-2] << 8) | pc[-1]))
 #define READ_STRING()               AS_STRING(READ_CONST())
 #define READ_CSTRING()              AS_CSTRING(READ_CONST())
 #define READ_CONST()                                    \
     (frame->closure->function->bytecode.constants.values[READ_BYTE()])
+
 
 #define BINARY_OP(type, op, num_type)                   \
     do {                                                \
@@ -775,6 +778,7 @@ jml_vm_run(jml_value_t *last)
         num_type a = AS_NUM(jml_vm_pop());              \
         jml_vm_push(type(a op b));                      \
     } while (false)
+
 
 #define BINARY_DIV(type, op, num_type)                  \
     do {                                                \
@@ -798,6 +802,7 @@ jml_vm_run(jml_value_t *last)
         jml_vm_push(type(a op b));                      \
     } while (false)
 
+
 #define BINARY_FN(type, fn, num_type)                   \
     do {                                                \
         if (!IS_NUM(jml_vm_peek(0))                     \
@@ -812,6 +817,7 @@ jml_vm_run(jml_value_t *last)
         num_type a = AS_NUM(jml_vm_pop());              \
         jml_vm_push(type(fn(a, b)));                    \
     } while (false)
+
 
 #ifdef JML_COMPUTED_GOTO
 
@@ -1242,11 +1248,11 @@ jml_vm_run(jml_value_t *last)
                 uint8_t slot = READ_BYTE();
 
 #ifdef JML_TRACE_SLOT
-                printf("          (slot %d)     [", slot);
+                printf("          (slot %d)     [ ", slot);
                 jml_value_print(frame->slots[slot]);
                 printf(" ]     ->     [ ");
                 jml_value_print(jml_vm_peek(0));
-                printf("]\n");
+                printf(" ]\n");
 #endif
 
                 frame->slots[slot] = jml_vm_peek(0);
@@ -1261,9 +1267,9 @@ jml_vm_run(jml_value_t *last)
                 printf("\n");
 
 #ifdef JML_TRACE_SLOT
-                printf("          (slot %d)     [", slot);
+                printf("          (slot %d)     [ ", slot);
                 jml_value_print(frame->slots[slot]);
-                printf("]\n");
+                printf(" ]\n");
 #endif
 
                 jml_vm_push(frame->slots[slot]);
@@ -1545,6 +1551,7 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_SUPER) {
                 jml_obj_string_t *name       = READ_STRING();
                 jml_obj_class_t  *superclass = AS_CLASS(jml_vm_pop());
+
                 SAVE_FRAME();
                 if (!jml_vm_method_bind(superclass, name)) {
                     return INTERPRET_RUNTIME_ERROR;
@@ -1608,7 +1615,7 @@ jml_vm_run(jml_value_t *last)
                 }
 
                 uint8_t slot = READ_BYTE();
-                frame->slots[slot] = jml_vm_peek(0);
+                frame->slots[slot] = jml_vm_pop();
                 END_OP();
             }
 
@@ -1633,8 +1640,10 @@ jml_vm_run(jml_value_t *last)
     }
 #endif
 
+
 #undef SAVE_FRAME
 #undef LOAD_FRAME
+
 #undef READ_BYTE
 #undef READ_SHORT
 #undef READ_STRING

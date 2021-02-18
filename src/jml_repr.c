@@ -16,7 +16,7 @@ jml_value_print(jml_value_t value)
         jml_obj_print(value);
 
     else if (IS_NUM(value))
-        printf("%.*g\n", DBL_DIG, AS_NUM(value));
+        printf("%.*g", DBL_DIG, AS_NUM(value));
 
     else if (IS_BOOL(value))
         printf(AS_BOOL(value) ? "true" : "false");
@@ -34,7 +34,7 @@ jml_value_print(jml_value_t value)
             break;
 
         case VAL_NUM:
-            printf("%.*g\n", DBL_DIG, AS_NUM(value));
+            printf("%.*g", DBL_DIG, AS_NUM(value));
             break;
 
         case VAL_OBJ:

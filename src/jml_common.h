@@ -54,6 +54,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #define JML_ASSERT(condition, format, ...)              \
     do {                                                \
         if (!condition) {                               \
@@ -70,6 +71,7 @@
         }                                               \
     } while (false)
 
+
 #define JML_UNREACHABLE()                               \
     do {                                                \
         fprintf(                                        \
@@ -79,6 +81,7 @@
         );                                              \
         abort();                                        \
     } while (false)
+
 
 #else
 

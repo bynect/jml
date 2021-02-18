@@ -995,6 +995,7 @@ jml_variable_named(jml_token_t name, bool assignable)
     if (assignable && jml_parser_match(TOKEN_EQUAL)) {
         jml_parser_match_line();
         jml_expression();
+
         if (index)
             jml_bytecode_emit_byte(OP_SET_INDEX);
         else
@@ -1024,6 +1025,7 @@ jml_variable_named(jml_token_t name, bool assignable)
         jml_variable_assignment(
             index, get_op, set_op, (uint8_t)arg, OP_DIV
         );
+
     } else if (assignable && jml_parser_match(TOKEN_PERCENTEQ)) {
         jml_variable_assignment(
             index, get_op, set_op, (uint8_t)arg, OP_MOD
@@ -1039,12 +1041,11 @@ jml_variable_named(jml_token_t name, bool assignable)
             if (get_op == OP_GET_GLOBAL) {
                 jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, (uint8_t)arg);
                 jml_bytecode_emit_byte(jml_identifier_const(&parser.previous));
-
             } else
                 memcpy(&current->locals[arg].name, &parser.previous, sizeof(jml_token_t));
-
         } else
             jml_parser_error("Can't swap indexed value.");
+
     } else if (index)
         jml_bytecode_emit_byte(OP_GET_INDEX);
     else
@@ -1231,7 +1232,15 @@ jml_parser_precedence_parse(
         infix_rule(assignable);
     }
 
-    if (assignable && jml_parser_match(TOKEN_EQUAL)) {
+    if (assignable
+        && (jml_parser_match(TOKEN_EQUAL)
+        || jml_parser_match(TOKEN_PLUSEQ)
+        || jml_parser_match(TOKEN_MINUSEQ)
+        || jml_parser_match(TOKEN_STAREQ)
+        || jml_parser_match(TOKEN_STARSTAREQ)
+        || jml_parser_match(TOKEN_SLASHEQ)
+        || jml_parser_match(TOKEN_PERCENTEQ))) {
+
         jml_parser_error("Invalid assignment target.");
     }
 }
