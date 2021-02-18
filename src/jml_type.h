@@ -56,6 +56,7 @@ typedef enum {
 struct jml_obj {
     jml_obj_type                    type;
     bool                            marked;
+    bool                            exempt;
     struct jml_obj                 *next;
 };
 

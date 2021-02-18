@@ -201,8 +201,6 @@ jml_vm_reset(jml_vm_t *vm)
     vm->stack_top       = vm->stack;
     vm->frame_count     = 0;
     vm->open_upvalues   = NULL;
-    vm->exempt          = vm->exempt_stack;
-
     vm->external        = NULL;
 }
 
@@ -1560,25 +1558,29 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_ARRAY) {
-                int item_count      = READ_BYTE();
-                jml_value_t *values = vm->stack_top -= item_count;
-                jml_gc_exempt_push(OBJ_VAL(jml_obj_array_new()));
+                uint8_t          item_count  = READ_BYTE();
+                jml_value_t     *values      = vm->stack_top -= item_count;
+                jml_obj_array_t *array       = jml_obj_array_new();
+                jml_value_t      array_value = OBJ_VAL(array);
+                jml_gc_exempt(array_value);
 
                 for (int i = 0; i < item_count; ++i) {
                     jml_obj_array_append(
-                        AS_ARRAY(jml_gc_exempt_peek(0)),
-                        values[i]
+                        array, values[i]
                     );
                 }
 
-                jml_vm_push(jml_gc_exempt_pop());
+                jml_gc_unexempt(array_value);
+                jml_vm_push(array_value);
                 END_OP();
             }
 
             EXEC_OP(OP_MAP) {
-                int item_count      = READ_BYTE();
-                jml_value_t *values = vm->stack_top -= item_count;
-                jml_gc_exempt_push(OBJ_VAL(jml_obj_map_new()));
+                uint8_t          item_count  = READ_BYTE();
+                jml_value_t     *values      = vm->stack_top -= item_count;
+                jml_obj_map_t   *map         = jml_obj_map_new();
+                jml_value_t      map_value   = OBJ_VAL(map);
+                jml_gc_exempt(map_value);
 
                 for (int i = 0; i < item_count; i += 2) {
                     if (!IS_STRING(values[i])) {
@@ -1588,13 +1590,14 @@ jml_vm_run(jml_value_t *last)
                     }
 
                     jml_hashmap_set(
-                        &AS_MAP(jml_gc_exempt_peek(0))->hashmap,
+                        &map->hashmap,
                         AS_STRING(values[i]),
                         values[i + 1]
                     );
                 }
 
-                jml_vm_push(jml_gc_exempt_pop());
+                jml_gc_unexempt(map_value);
+                jml_vm_push(map_value);
                 END_OP();
             }
 

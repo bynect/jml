@@ -180,19 +180,17 @@ jml_interpret_result jml_vm_interpret(const char *source);
 jml_value_t jml_vm_eval(const char *source);
 
 
-void jml_gc_exempt_push(jml_value_t value);
-
-jml_value_t jml_gc_exempt_pop(void);
-
-jml_value_t jml_gc_exempt_peek(int distance);
-
-
 /*UTILITY*/
 void *jml_realloc(void *ptr, size_t new_size);
 
 void *jml_alloc(size_t size);
 
 void jml_free(void *ptr);
+
+
+void jml_gc_exempt(jml_value_t value);
+
+void jml_gc_unexempt(jml_value_t value);
 
 
 jml_value_t jml_string_intern(const char *string);

@@ -20,6 +20,8 @@ jml_obj_allocate(size_t size, jml_obj_type type)
 
     object->type                = type;
     object->marked              = false;
+    object->exempt              = false;
+
     object->next                = vm->objects;
     vm->objects                 = object;
 

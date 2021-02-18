@@ -96,8 +96,9 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
     char               *copy        = jml_strdup(string->chars);
     char               *current     = copy;
 
-    jml_obj_array_t *array = jml_obj_array_new();
-    jml_gc_exempt_push(OBJ_VAL(array));
+    jml_obj_array_t *array          = jml_obj_array_new();
+    jml_value_t      array_value    = OBJ_VAL(array);
+    jml_gc_exempt(array_value);
 
     int i = 0;
     for ( ; i < max_match; ++i) {
@@ -135,7 +136,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
     jml_free(copy);
     jml_free(matches);
 
-    jml_gc_exempt_pop();
+    jml_gc_unexempt(array_value);
     return OBJ_VAL(array);
 
     REGEX_ERR(exc);

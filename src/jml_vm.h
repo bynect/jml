@@ -34,9 +34,6 @@ struct jml_vm {
     int                             gray_count;
     int                             gray_capacity;
     jml_obj_t                     **gray_stack;
-
-    jml_value_t                     exempt_stack[EXEMPT_MAX];
-    jml_value_t                    *exempt;
 };
 
 

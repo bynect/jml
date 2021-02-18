@@ -100,25 +100,30 @@ jml_free(void *ptr)
 
 
 void
-jml_gc_exempt_push(jml_value_t value)
+jml_gc_exempt(jml_value_t value)
 {
-    *vm->exempt = value;
-    vm->exempt++;
+    if (!IS_OBJ(value))
+        return;
+
+    jml_obj_t *object = AS_OBJ(value);
+    if (object == NULL)
+        return;
+
+    object->exempt = true;
 }
 
 
-jml_value_t
-jml_gc_exempt_pop(void)
+void
+jml_gc_unexempt(jml_value_t value)
 {
-    vm->exempt--;
-    return *vm->exempt;
-}
+    if (!IS_OBJ(value))
+        return;
 
+    jml_obj_t *object = AS_OBJ(value);
+    if (object == NULL)
+        return;
 
-jml_value_t
-jml_gc_exempt_peek(int distance)
-{
-    return vm->exempt[-1 - distance];
+    object->exempt = false;
 }
 
 
@@ -138,12 +143,6 @@ jml_gc_mark_roots(void)
         upvalue != NULL; upvalue = upvalue->next) {
 
         jml_gc_mark_obj((jml_obj_t*)upvalue);
-    }
-
-    for (jml_value_t *exempt = vm->exempt_stack;
-        exempt < vm->exempt; exempt++) {
-
-        jml_gc_mark_value(*exempt);
     }
 
     jml_hashmap_mark(&vm->globals);
@@ -348,10 +347,11 @@ jml_gc_sweep(void)
     jml_obj_t *object            = vm->objects;
 
     while (object != NULL) {
-        if (object->marked) {
+        if (object->marked || object->exempt) {
             object->marked       = false;
             previous             = object;
             object               = object->next;
+
         } else {
             jml_obj_t *unreached = object;
             object               = object->next;

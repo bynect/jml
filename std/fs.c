@@ -224,7 +224,8 @@ jml_std_fs_dir_read(int arg_count, jml_value_t *args)
     }
 
     jml_obj_array_t *entries = jml_obj_array_new();
-    jml_gc_exempt_push(OBJ_VAL(entries));
+    jml_value_t      value   = OBJ_VAL(entries);
+    jml_gc_exempt(value);
 
     struct dirent *entry;
     while ((entry = readdir(internal->handle)) != NULL) {
@@ -233,10 +234,10 @@ jml_std_fs_dir_read(int arg_count, jml_value_t *args)
         );
     }
 
-    jml_gc_exempt_pop();
-
     rewinddir(internal->handle);
-    return OBJ_VAL(entries);
+
+    jml_gc_unexempt(value);
+    return value;
 
 err:
     return OBJ_VAL(exc);
