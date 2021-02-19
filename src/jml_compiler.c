@@ -43,7 +43,7 @@ jml_token_emit_synthetic(const char *text)
 {
     jml_token_t token;
     token.start     = text;
-    token.length    = (int)strlen(text);
+    token.length    = strlen(text);
     return token;
 }
 
@@ -52,14 +52,18 @@ static void
 jml_parser_error_at(jml_token_t *token,
     const char *message)
 {
-    if (parser.panicked) return;
+    if (parser.panicked)
+        return;
+
     parser.panicked = true;
 
     if (current->output) {
         fprintf(stderr, "[line %d", token->line);
 
-        if (current->module != NULL)
-            fprintf(stderr, " in %s", current->module->name->chars);
+        if (current->module != NULL) {
+            fprintf(stderr, " in module %s",
+                current->module->name->chars);
+        }
 
         fprintf(stderr, "] Error");
 
@@ -1719,7 +1723,7 @@ jml_obj_function_t *
 jml_compiler_compile(const char *source,
     jml_obj_module_t *module, bool output)
 {
-    jml_lexer_init(source, &parser.lexer);
+    jml_lexer_init(&parser.lexer, source);
     jml_compiler_t compiler;
     jml_compiler_init(&compiler, FUNCTION_MAIN, module, output);
 

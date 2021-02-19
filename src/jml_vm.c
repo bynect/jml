@@ -828,7 +828,7 @@ jml_vm_run(jml_value_t *last)
 #define END_OP()                    DISPATCH()
 #endif
 
-    static void *dispatcher[] = {
+    static const void *dispatcher[] = {
         &&exec_OP_POP,
         &&exec_OP_POP_TWO,
         &&exec_OP_ROT,

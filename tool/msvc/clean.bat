@@ -1,3 +1,5 @@
+::call tool/msvc/clean.bat
+
 set src_dir=src
 set std_dir=std
 set bin_dir=bin
@@ -10,7 +12,7 @@ call :clean_dir %lib_dir%
 
 del *.obj *.exp *.pdb *.dll *.lib *.ilk jml.exe 2> nul
 
-cd etx/cli
+cd ext/cli
 
 del *.obj *.exp *.pdb *.dll *.lib *.ilk jml.exe 2> nul
 

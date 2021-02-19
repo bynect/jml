@@ -6,7 +6,7 @@
 
 
 void
-jml_lexer_init(const char *source, jml_lexer_t *lexer)
+jml_lexer_init(jml_lexer_t *lexer, const char *source)
 {
     lexer->start    = source;
     lexer->current  = source;
@@ -17,7 +17,7 @@ jml_lexer_init(const char *source, jml_lexer_t *lexer)
 
 
 static inline bool
-jml_is_eof(jml_lexer_t *lexer)
+jml_lexer_eof(jml_lexer_t *lexer)
 {
     return *lexer->current == '\0';
 }
@@ -33,7 +33,9 @@ jml_lexer_peek(jml_lexer_t *lexer)
 static inline char
 jml_lexer_peek_next(jml_lexer_t *lexer)
 {
-    if (jml_is_eof(lexer)) return '\0';
+    if (jml_lexer_eof(lexer))
+        return '\0';
+
     return lexer->current[1];
 }
 
@@ -63,7 +65,7 @@ jml_lexer_newline(jml_lexer_t *lexer)
 static bool
 jml_lexer_match(char expected, jml_lexer_t *lexer)
 {
-    if (jml_is_eof(lexer))              return false;
+    if (jml_lexer_eof(lexer))           return false;
     if (*lexer->current != expected)    return false;
 
     lexer->current++;
@@ -104,7 +106,7 @@ jml_lexer_skip_char(jml_lexer_t *lexer)
         char c = jml_lexer_peek(lexer);
 
         if (lexer->comment && c != '?' && c != '\n') {
-            if (jml_is_eof(lexer))
+            if (jml_lexer_eof(lexer))
                 return;
 
             jml_lexer_advance(lexer);
@@ -128,7 +130,7 @@ jml_lexer_skip_char(jml_lexer_t *lexer)
 
             case  '!':
                 if (jml_lexer_peek_next(lexer) == '=') return;
-                while (jml_lexer_peek(lexer) != '\n' && !jml_is_eof(lexer))
+                while (jml_lexer_peek(lexer) != '\n' && !jml_lexer_eof(lexer))
                     jml_lexer_advance(lexer);
 
                 if (jml_lexer_peek(lexer) == '\n') {
@@ -262,7 +264,7 @@ jml_string_literal(const char delimiter, jml_lexer_t *lexer)
         char c =        jml_lexer_peek(lexer);
         if  (c == '\n') jml_lexer_newline(lexer);
 
-        if  (jml_is_eof(lexer))
+        if  (jml_lexer_eof(lexer))
             return jml_token_emit_error("Unterminated string.", lexer);
 
         jml_lexer_advance(lexer);
@@ -318,7 +320,7 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
     jml_lexer_skip_char(lexer);
     lexer->start    =       lexer->current;
 
-    if (jml_is_eof(lexer)) {
+    if (jml_lexer_eof(lexer)) {
         lexer->eof  =       true;
 
         if (lexer->comment)
