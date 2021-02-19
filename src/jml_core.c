@@ -92,7 +92,7 @@ jml_obj_exception_t *
 jml_core_exception_value(const char *value)
 {
     return jml_obj_exception_format(
-        "ValueError", "Invalid '%s'.", value
+        "WrongValue", "Invalid '%s'.", value
     );
 }
 
@@ -103,12 +103,12 @@ jml_core_format(int arg_count, jml_value_t *args)
 {
     if (arg_count == 0)
         return OBJ_VAL(
-            jml_obj_exception_new("FmtError", "Expected format string.")
+            jml_obj_exception_new("FormatErr", "Expected format string.")
         );
 
     if (!IS_STRING(args[0]))
         return OBJ_VAL(
-            jml_obj_exception_new("FmtError", "Expected format string.")
+            jml_obj_exception_new("FormatErr", "Expected format string.")
         );
 
     jml_obj_string_t *fmt_obj   = AS_STRING(args[0]);
@@ -151,7 +151,7 @@ jml_core_format(int arg_count, jml_value_t *args)
         jml_free(buffer);
         return OBJ_VAL(
             jml_obj_exception_format(
-                "FmtError",
+                "FormatErr",
                 "Expected '%d' format arguments but got '%d'.",
                 fmt_err, arg_count - 1
             )

@@ -5,15 +5,17 @@
 #include <jml.h>
 
 
-static regex_t                     *last_rule;
-static char                        *last_string;
+static regex_t                      last_rule;
+static int                          last_result = -1;
+static char                        *last_string = NULL;
 
 
 #define REGEX_CHECK(exc, arg_count, args, arg_num, ...) \
     do {                                                \
         exc = jml_core_exception_args(                  \
             arg_count, arg_num);                        \
-        if (exc != NULL) goto err;                      \
+        if (exc != NULL)                                \
+            goto err;                                   \
                                                         \
         if (!IS_STRING(args[0])                         \
             || !IS_STRING(args[1])) {                   \
@@ -29,22 +31,28 @@ static char                        *last_string;
         if (last_string == NULL || strncmp(last_string, \
             rule->chars, rule->length) != 0) {          \
                                                         \
-            last_string = rule->chars;                  \
-            if ((result = regcomp(last_rule,            \
-                rule->chars, REG_EXTENDED)) != 0)       \
+            if ((result = regcomp(&last_rule,           \
+                rule->chars, REG_EXTENDED)) != 0) {     \
+                last_result = result;                   \
                 goto regerr;                            \
+            } else {                                    \
+                last_result = result;                   \
+                last_string = rule->chars;              \
+            }                                           \
         }                                               \
     } while (false)
 
 
-#define REGEX_ERR(exc)                                  \
+#define REGEX_ERR(exc, result)                          \
     do {                                                \
         regerr: {                                       \
-            size_t size = 2048;                         \
-            char buffer[size];                          \
-            regerror(result, last_rule, buffer, size);  \
+            char buffer[4096];                          \
+            regerror(result, &last_rule, buffer, 4096); \
+                                                        \
             exc = jml_obj_exception_new(                \
-                "RegexError", buffer);                  \
+                "RegexErr", buffer);                    \
+                                                        \
+            regfree(&last_rule);                        \
             goto err;                                   \
         }                                               \
                                                         \
@@ -67,13 +75,13 @@ jml_std_regex_match(int arg_count, jml_value_t *args)
 
     REGEX_REUSE(rule, result);
 
-    result = regexec(last_rule, string->chars, 0, NULL, 0);
+    result = regexec(&last_rule, string->chars, 0, NULL, 0);
 
     if (!result)                    return TRUE_VAL;
     else if (result == REG_NOMATCH) return FALSE_VAL;
     else                            goto regerr;
 
-    REGEX_ERR(exc);
+    REGEX_ERR(exc, result);
 }
 
 
@@ -108,7 +116,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
             matches = jml_realloc(matches, max_match * sizeof(regmatch_t));
         }
 
-        if ((result = regexec(last_rule, current, max_match, matches, 0)))
+        if ((result = regexec(&last_rule, current, max_match, matches, 0)))
             break;
 
         int groups  = 0;
@@ -139,7 +147,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
     jml_gc_unexempt(array_value);
     return OBJ_VAL(array);
 
-    REGEX_ERR(exc);
+    REGEX_ERR(exc, result);
 }
 
 
@@ -159,17 +167,13 @@ MODULE_TABLE_HEAD module_table[] = {
 MODULE_FUNC_HEAD
 module_init(JML_UNUSED(jml_obj_module_t *module))
 {
-    last_string = NULL;
-
-    last_rule   = jml_alloc(sizeof(regex_t));
+    memset(&last_rule, 0, sizeof(regex_t));
 }
 
 
 MODULE_FUNC_HEAD
 module_free(JML_UNUSED(jml_obj_module_t *module))
 {
-    last_string = NULL;
-
-    if (last_rule != NULL)
-        regfree(last_rule);
+    if (!last_result)
+        regfree(&last_rule);
 }

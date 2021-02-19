@@ -325,10 +325,7 @@ jml_std_sock_socket_accept(int arg_count, jml_value_t *args)
     }
 
     if (socket_class == NULL) {
-        exc = jml_obj_exception_new(
-            "ValueError",
-            "Socket class error."
-        );
+        exc = jml_core_exception_value("Socket class");
         goto err;
     }
 

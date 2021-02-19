@@ -133,7 +133,7 @@ jml_module_open(jml_obj_string_t *module_name, char *path)
         if (path != NULL)
             strcpy(path, filename_jml);
 
-        jml_vm_error("ImportExc: Cannot import jml module.");
+        jml_vm_error("ImportErr: Cannot import jml module.");
         goto err;
 
     } else {

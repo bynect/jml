@@ -36,7 +36,7 @@ jml_std_rand_srand(int arg_count, jml_value_t *args)
     double num = AS_NUM(val);
     if (num < 0 || num > UINT_MAX) {
         exc = jml_obj_exception_format(
-            "OverlowError",
+            "OverlowErr",
             "Number exceed unsigned integer."
         );
         goto err;

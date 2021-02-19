@@ -15,13 +15,13 @@
 #endif
 
 
-static jml_obj_class_t *dir_class = NULL;
+static jml_obj_class_t *dir_class       = NULL;
 
-static jml_obj_class_t *file_class = NULL;
+static jml_obj_class_t *file_class      = NULL;
 
-static jml_obj_string_t *mode_string = NULL;
+static jml_obj_string_t *mode_string    = NULL;
 
-static jml_obj_string_t *name_string = NULL;
+static jml_obj_string_t *name_string    = NULL;
 
 
 typedef struct {
@@ -63,7 +63,7 @@ jml_std_fs_dir_init(int arg_count, jml_value_t *args)
 
     if (!jml_file_isdir(name)) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "DirErr",
             "Filename doesn't point to a directory."
         );
         goto err;
@@ -73,7 +73,7 @@ jml_std_fs_dir_init(int arg_count, jml_value_t *args)
 
     if (handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "DirErr",
             "Opening Dir failed."
         );
         goto err;
@@ -117,7 +117,7 @@ jml_std_fs_dir_open(int arg_count, jml_value_t *args)
 
     if (internal->open || internal->handle != NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "DirErr",
             "Dir alredy opened."
         );
         goto err;
@@ -125,7 +125,7 @@ jml_std_fs_dir_open(int arg_count, jml_value_t *args)
 
     if (!jml_file_isdir(name)) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "DirErr",
             "Filename doesn't point to a directory."
         );
         goto err;
@@ -135,7 +135,7 @@ jml_std_fs_dir_open(int arg_count, jml_value_t *args)
 
     if (handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "DirErr",
             "Opening Dir failed."
         );
         goto err;
@@ -172,7 +172,7 @@ jml_std_fs_dir_close(int arg_count, jml_value_t *args)
 
     if (!internal->open || internal->handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "DirErr",
             "Dir alredy closed."
         );
         goto err;
@@ -180,7 +180,7 @@ jml_std_fs_dir_close(int arg_count, jml_value_t *args)
 
     if (closedir(internal->handle) == -1) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "DirErr",
             "Closing Dir failed."
         );
         goto err;
@@ -217,7 +217,7 @@ jml_std_fs_dir_read(int arg_count, jml_value_t *args)
 
     if (!internal->open || internal->handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "DirErr",
             "Dir instance is closed."
         );
         goto err;
@@ -392,7 +392,7 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
 
     if (jml_file_isdir(name)) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "Filename points to a directory."
         );
         goto err;
@@ -402,7 +402,7 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
 
     if (handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "Opening File failed."
         );
         goto err;
@@ -450,7 +450,7 @@ jml_std_fs_file_open(int arg_count, jml_value_t *args)
 
     if (internal->open || internal->handle != NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "File alredy opened."
         );
         goto err;
@@ -463,7 +463,7 @@ jml_std_fs_file_open(int arg_count, jml_value_t *args)
 
     if (jml_file_isdir(name)) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "Filename points to a directory."
         );
         goto err;
@@ -473,7 +473,7 @@ jml_std_fs_file_open(int arg_count, jml_value_t *args)
 
     if (handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "Opening File failed."
         );
         goto err;
@@ -514,7 +514,7 @@ jml_std_fs_file_close(int arg_count, jml_value_t *args)
 
     if (!internal->open || internal->handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "File alredy closed."
         );
         goto err;
@@ -522,7 +522,7 @@ jml_std_fs_file_close(int arg_count, jml_value_t *args)
 
     if (fclose(internal->handle) == -1) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "Closing File failed."
         );
         goto err;
@@ -561,7 +561,7 @@ jml_std_fs_file_read(int arg_count, jml_value_t *args)
 
     if (!internal->open || internal->handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "File instance is closed."
         );
         goto err;
@@ -587,7 +587,7 @@ jml_std_fs_file_read(int arg_count, jml_value_t *args)
             if (bytes < size) {
                 jml_free(buffer);
                 exc = jml_obj_exception_new(
-                    "IOError",
+                    "FileErr",
                     "Reading File failed."
                 );
                 goto err;
@@ -601,7 +601,7 @@ jml_std_fs_file_read(int arg_count, jml_value_t *args)
 
         default: {
             exc = jml_obj_exception_new(
-                "IOError",
+                "FileErr",
                 "File without read permission."
             );
             goto err;
@@ -640,7 +640,7 @@ jml_std_fs_file_write(int arg_count, jml_value_t *args)
 
     if (!internal->open || internal->handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "File instance is closed."
         );
         goto err;
@@ -662,7 +662,7 @@ jml_std_fs_file_write(int arg_count, jml_value_t *args)
 
             if (bytes != 1) {
                 exc = jml_obj_exception_new(
-                    "IOError",
+                    "FileErr",
                     "Writing to File failed."
                 );
                 goto err;
@@ -673,7 +673,7 @@ jml_std_fs_file_write(int arg_count, jml_value_t *args)
 
         default: {
             exc = jml_obj_exception_new(
-                "IOError",
+                "FileErr",
                 "File without write or append permission."
             );
             goto err;
@@ -704,7 +704,7 @@ jml_std_fs_file_flush(int arg_count, jml_value_t *args)
 
     if (!internal->open || internal->handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "File instance is closed."
         );
         goto err;
@@ -712,7 +712,7 @@ jml_std_fs_file_flush(int arg_count, jml_value_t *args)
 
     if (fflush(internal->handle) == -1) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "Flushing File failed."
         );
         goto err;
@@ -771,7 +771,7 @@ jml_std_fs_remove(int arg_count, jml_value_t *args)
     if (jml_file_exist(AS_CSTRING(args[0]))) {
         if (remove(AS_CSTRING(args[0])) != 0) {
             exc = jml_obj_exception_new(
-                "IOError",
+                "FileErr",
                 "Removing File failed."
             );
             goto err;
@@ -780,7 +780,7 @@ jml_std_fs_remove(int arg_count, jml_value_t *args)
 
     } else {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "File doesn't exist."
         );
         goto err;
@@ -809,7 +809,7 @@ jml_std_fs_rename(int arg_count, jml_value_t *args)
     if (jml_file_exist(AS_CSTRING(args[0]))) {
         if (rename(AS_CSTRING(args[0]), AS_CSTRING(args[1])) != 0) {
             exc = jml_obj_exception_new(
-                "IOError",
+                "FileErr",
                 "Renaming File failed."
             );
             goto err;
@@ -818,7 +818,7 @@ jml_std_fs_rename(int arg_count, jml_value_t *args)
 
     } else {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "File doesn't exist."
         );
         goto err;
@@ -839,10 +839,7 @@ jml_std_fs_tempfile(int arg_count, JML_UNUSED(jml_value_t *args))
         goto err;
 
     if (file_class == NULL) {
-        exc = jml_obj_exception_new(
-            "ValueError",
-            "File class error."
-        );
+        exc = jml_core_exception_value("File class");
         goto err;
     }
 
@@ -850,7 +847,7 @@ jml_std_fs_tempfile(int arg_count, JML_UNUSED(jml_value_t *args))
 
     if (handle == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "FileErr",
             "Opening File failed."
         );
         goto err;
@@ -883,7 +880,7 @@ jml_std_fs_tempname(int arg_count, JML_UNUSED(jml_value_t *args))
     char name[L_tmpnam];
     if (tmpnam(name) == NULL) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "SystemErr",
             "Call to 'tmpnam' failed."
         );
         goto err;
@@ -915,7 +912,7 @@ jml_std_fs_makedir(int arg_count, JML_UNUSED(jml_value_t *args))
 
     if (mkdir(name, 0777) == - 1) {
         exc = jml_obj_exception_new(
-            "IOError",
+            "SystemErr",
             "Call to 'mkdir' failed."
         );
         goto err;
