@@ -572,7 +572,7 @@ jml_core_assert(int arg_count, jml_value_t *args)
 
 
 /*core function registration*/
-jml_module_function core_functions[] = {
+static jml_module_function core_functions[] = {
     {"format",                      &jml_core_format},
     {"print",                       &jml_core_print},
     {"printfmt",                    &jml_core_print_fmt},

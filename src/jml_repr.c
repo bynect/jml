@@ -144,7 +144,7 @@ jml_obj_print(jml_value_t value)
             break;
 
         case OBJ_CLASS: {
-            jml_obj_class_t *klass = AS_CLASS(value);
+            jml_obj_class_t *klass  = AS_CLASS(value);
             printf("<class ");
 
             if (klass->module != NULL)
@@ -155,7 +155,7 @@ jml_obj_print(jml_value_t value)
         }
 
         case OBJ_INSTANCE: {
-            jml_obj_class_t *klass = AS_INSTANCE(value)->klass;
+            jml_obj_class_t *klass  = AS_INSTANCE(value)->klass;
             printf("<instance of ");
 
             if (klass->module != NULL)

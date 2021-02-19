@@ -8,13 +8,11 @@
 #include <jml_string.h>
 
 
-jml_parser_t            parser;
+static jml_parser_t                 parser;
 
-jml_compiler_t         *current         = NULL;
+static jml_compiler_t              *current         = NULL;
 
-jml_class_compiler_t   *class_current   = NULL;
-
-jml_bytecode_t         *compiled;
+static jml_class_compiler_t        *class_current   = NULL;
 
 
 static inline jml_bytecode_t *
