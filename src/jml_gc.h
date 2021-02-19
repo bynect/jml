@@ -32,11 +32,12 @@
 
 #define REALLOC(type, ptr, size, dest_size)             \
     do {                                                \
-        if (size <= dest_size) {                        \
+        size_t new_size = dest_size;                    \
+        if (size <= new_size) {                         \
             do {                                        \
                 size *= GC_HEAP_GROW_FACTOR;            \
                 ptr = (type*)jml_realloc(ptr, size);    \
-            } while (size <= dest_size);                \
+            } while (size <= new_size);                 \
         }                                               \
     } while (false)
 

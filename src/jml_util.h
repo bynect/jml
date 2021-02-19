@@ -14,16 +14,16 @@ char *jml_strcat(char *dest, char *src);
 
 
 static inline bool
-jml_strprfx(const char *pre,
-    const char *str, size_t length)
+jml_strprfx(const char *str,
+    const char *pre, size_t length)
 {
     return strncmp(pre, str, length) == 0;
 }
 
 
 static inline bool
-jml_strsfx(const char *suf,
-    const char *str, size_t suflen, size_t strlen)
+jml_strsfx(const char *str, size_t strlen,
+    const char *suf, size_t suflen)
 {
     if (suflen > strlen) return false;
     return strncmp(str + strlen - suflen, suf, suflen) == 0;
@@ -82,12 +82,12 @@ jml_is_printable(char c)
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 
 #define JML_PATH_MAX                4096
-#define PATH_SEPARATOR              '/'
+#define JML_PATH_SEPARATOR          "/"
 
 #elif defined JML_PLATFORM_WIN
 
 #define JML_PATH_MAX                260
-#define PATH_SEPARATOR              '\\'
+#define JML_PATH_SEPARATOR          "\\"
 
 #endif
 

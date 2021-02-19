@@ -7,7 +7,8 @@
 #include <jml_type.h>
 
 
-jml_obj_module_t *jml_module_open(jml_obj_string_t *module_name, char *path);
+jml_obj_module_t *jml_module_open(jml_obj_string_t *fullname,
+    jml_obj_string_t *name, char *path);
 
 bool jml_module_close(jml_obj_module_t *module);
 

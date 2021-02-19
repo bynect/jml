@@ -15,11 +15,17 @@
 #include <sys/types.h>
 #include <limits.h>
 
+
 #ifdef JML_PLATFORM_MAC
+
 #define SHARED_LIB_EXT              "dylib"
+
 #else
+
 #define SHARED_LIB_EXT              "so"
+
 #endif
+
 
 #define SHARED_LOAD(...)            dlopen(__VA_ARGS__)
 #define SHARED_FREE(...)            dlclose(__VA_ARGS__)
@@ -38,113 +44,137 @@
 #endif
 
 
-static void
+static int
 jml_module_std_path(char *path)
 {
     char *temp = getenv("JML_PATH");
     if (temp == NULL)
         temp = "std";
 
-    snprintf(path, JML_PATH_MAX - 16, "%s", temp);
+    return snprintf(path, JML_PATH_MAX, "%s", temp);
+}
+
+
+static bool
+jml_module_resolve(const char *name, size_t length, char *path)
+{
+    char            *buffer     = jml_alloc(length + 1);
+    memcpy(buffer, name, length + 1);
+
+    char            *save       = NULL;
+    char            *token      = jml_strtok(buffer, ".", &save);
+
+    char            *paths[64];
+    uint8_t          last       = 0;
+
+    for (; token != NULL; ++last) {
+        if (last < 64)
+            paths[last] = token;
+        else
+            goto err;
+
+        token = jml_strtok(NULL, ".", &save);
+    }
+
+    int32_t          offset     = jml_module_std_path(path);
+    int32_t          offset2    = 0;
+    char             path_dll[JML_PATH_MAX];
+    char             path_jml[JML_PATH_MAX];
+
+    for (int i = 0; i < last; ++i) {
+        offset += snprintf(
+            path + offset,
+            JML_PATH_MAX,
+            JML_PATH_SEPARATOR "%s",
+            paths[i]
+        );
+    }
+
+    path[offset] = '\0';
+
+    if (jml_file_isdir(path)) {
+        offset += snprintf(
+            path + offset,
+            JML_PATH_MAX,
+            JML_PATH_SEPARATOR "%s",
+            vm->module_string->chars
+        );
+
+        path[offset] = '\0';
+    }
+
+    offset2 = snprintf(path_dll, JML_PATH_MAX, "%s." SHARED_LIB_EXT, path);
+    if (offset2 < 0) goto err;
+    path_dll[offset2] = '\0';
+
+    if (jml_file_exist(path_dll)) {
+        offset += sprintf(path + offset, "." SHARED_LIB_EXT);
+        path[offset] = '\0';
+        return true;
+    }
+
+    offset2 = snprintf(path_jml, JML_PATH_MAX, "%s.jml", path);
+    if (offset2 < 0) goto err;
+    path_jml[offset2] = '\0';
+
+    if (jml_file_exist(path_jml)) {
+        offset += sprintf(path + offset, ".jml");
+        path[offset] = '\0';
+        return true;
+    }
+
+err:
+    jml_free(buffer);
+    return false;
 }
 
 
 jml_obj_module_t *
-jml_module_open(jml_obj_string_t *module_name, char *path)
+jml_module_open(jml_obj_string_t *fullname,
+    jml_obj_string_t *name, char *path)
 {
-    char *module_str = jml_strdup(module_name->chars);
+    char path_raw[JML_PATH_MAX];
 
-    char filename_so[JML_PATH_MAX];
-    char filename_jml[JML_PATH_MAX];
-
-    char std_path[JML_PATH_MAX - 16];
-    jml_module_std_path(std_path);
-
-#ifdef JML_RECURSIVE_SEARCH
-    char temp_so[256];
-    char temp_jml[256];
-    char buffer[JML_PATH_MAX] = { 0 };
-
-    sprintf(temp_so, "%s.%s", module_str, SHARED_LIB_EXT);
-    sprintf(temp_jml, "%s.jml", module_str);
-
-    if (jml_file_find_in(std_path, temp_so, buffer))
-        sprintf(filename_so, "%s", buffer);
-
-    else if (jml_file_find_in(std_path, temp_jml, buffer))
-        sprintf(filename_jml, "%s", buffer);
-
-    else {
+    if (!jml_module_resolve(fullname->chars, fullname->length, path_raw)) {
         jml_vm_error("ImportErr: Module not found.");
-        goto err;
+        return NULL;
     }
+
+    size_t path_len = strlen(path_raw);
+
+    if (path_len == 0 || !jml_file_exist(path_raw)) {
+        jml_vm_error("ImportErr: Module not found.");
+        return NULL;
+    }
+
+    if (jml_strsfx(path_raw, path_len,
+        "." SHARED_LIB_EXT, strlen("." SHARED_LIB_EXT))) {
+
+#if defined JML_PLATFORM_UNK
+        jml_vm_error(
+            "ImportErr: Dll import not supported on %s.",
+            JML_PLATFORM_STRING
+        );
 #else
-    snprintf(
-        filename_so, JML_PATH_MAX, "%s%c%s.%s",
-        std_path, PATH_SEPARATOR, module_str, SHARED_LIB_EXT
-    );
-
-    snprintf(
-        filename_jml, JML_PATH_MAX, "%s%c%s.jml",
-        std_path, PATH_SEPARATOR, module_str
-    );
-#endif
-
-    if (jml_file_exist(filename_so)) {
-#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
-        jml_module_handle_t handle = SHARED_LOAD(filename_so, RTLD_NOW);
+        jml_module_handle_t handle = SHARED_LOAD(path_raw, RTLD_NOW);
 
         if (handle == NULL) {
             jml_vm_error("ImportErr: %s.", dlerror());
-            goto err;
+            return NULL;
         }
 
-        if (path != NULL)
-            strcpy(path, filename_so);
-
-        jml_realloc(module_str, 0);
-
-        return jml_obj_module_new(
-            module_name, handle);
-
-#elif defined JML_PLATFORM_WIN
-        jml_module_handle_t handle = SHARED_LOAD(filename_so);
-
-        if (handle == NULL) {
-            jml_vm_error("ImportErr: Loading error.");
-            goto err;
-        }
-
-        if (path != NULL)
-            strcpy(path, filename_so);
-
-        jml_realloc(module_str, 0);
-
-        return jml_obj_module_new(
-            module_name, handle);
-#else
-        jml_vm_error(
-            "Module import not supported on %s.",
-            JML_PLATFORM_STRING
-        );
-        return NULL;
+        memcpy(path, path_raw, path_len + 1);
+        return jml_obj_module_new(name, handle);
 #endif
-    } else if (jml_file_exist(filename_jml)) {
-        if (path != NULL)
-            strcpy(path, filename_jml);
-
-        jml_vm_error("ImportErr: Cannot import jml module.");
-        goto err;
+    } else if (jml_strsfx(path_raw, path_len, ".jml", strlen(".jml"))) {
+        memcpy(path, path_raw, path_len + 1);
+        jml_vm_error("ImportErr: Module not loadable.");
 
     } else {
-        jml_vm_error("ImportErr: Module not found.");
-        goto err;
+        jml_vm_error("ImportErr: Module not loadable.");
     }
 
-    err: {
-        jml_realloc(module_str, 0);
-        return NULL;
-    }
+    return NULL;
 }
 
 

@@ -1468,38 +1468,102 @@ jml_return_statement(void)
 static void
 jml_import_statement(void)
 {
+    bool    wildcard    = false;
+    size_t  size        = JML_PATH_MAX;
+
+    char   *fullname    = jml_realloc(NULL, size);
+    size_t  length      = 0;
+
+    char    name[size];
+    size_t  name_length = 0;
+
     jml_parser_consume(TOKEN_NAME, "Expect identifier after 'import'.");
-    uint8_t arg = jml_identifier_const(&parser.previous);
+
+    if (parser.previous.length >= JML_PATH_MAX) {
+        jml_parser_error("Module name too long.");
+        jml_free(fullname);
+        return;
+    }
+
+    memcpy(fullname, parser.previous.start, parser.previous.length);
+    length = parser.previous.length;
+    fullname[length] = '\0';
+
+    memcpy(name, parser.previous.start, parser.previous.length);
+    name_length = parser.previous.length + 1;
+    name[parser.previous.length] = '\0';
 
     if (jml_parser_match(TOKEN_DOT)) {
-        jml_parser_consume(TOKEN_STAR, "Expect '*' after wildcard import.");
+        do {
+            if (jml_parser_match(TOKEN_STAR)) {
+                wildcard = true;
+                break;
+            }
 
-        if (current->type == FUNCTION_MAIN) {
-            jml_bytecode_emit_bytes(OP_IMPORT_WILDCARD, arg);
-        } else
+            jml_parser_consume(TOKEN_NAME, "Expect identifier after '.'.");
+
+            if (parser.previous.length >= JML_PATH_MAX) {
+                jml_parser_error("Module name too long.");
+                jml_free(fullname);
+                return;
+            }
+
+            REALLOC(char, fullname, size, size + parser.previous.length + 1);
+            fullname[length++] = '.';
+
+            memcpy(fullname + length, parser.previous.start, parser.previous.length);
+            length += parser.previous.length;
+            fullname[length] = '\0';
+
+            memcpy(name, parser.previous.start, parser.previous.length);
+            name_length = parser.previous.length;
+            name[parser.previous.length] = '\0';
+
+        } while (jml_parser_match(TOKEN_DOT));
+    }
+
+    jml_vm_push(OBJ_VAL(
+        jml_obj_string_copy(fullname, length)
+    ));
+
+    jml_vm_push(OBJ_VAL(
+        jml_obj_string_copy(name, name_length)
+    ));
+
+    uint8_t full_arg = jml_bytecode_make_const(jml_vm_peek(1));
+
+    if (wildcard) {
+        if (current->type == FUNCTION_MAIN)
+            jml_bytecode_emit_bytes(OP_IMPORT_WILDCARD, full_arg);
+        else
             jml_parser_error("Can use wildcard import only in top-level code.");
 
     } else if (current->type == FUNCTION_MAIN) {
-        jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, arg);
+        uint8_t name_arg = jml_bytecode_make_const(jml_vm_peek(0));
+
+        jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, full_arg);
+        jml_bytecode_emit_byte(name_arg);
 
         if (jml_parser_match(TOKEN_ARROW)) {
             jml_parser_match_line();
             jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
             uint8_t new_name = jml_identifier_const(&parser.previous);
 
-            jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, arg);
+            jml_bytecode_emit_bytes(OP_SWAP_GLOBAL, name_arg);
             jml_bytecode_emit_byte(new_name);
         }
+
     } else {
-        int local = jml_local_resolve(current, &parser.previous);
+        jml_token_t token_name = jml_token_emit_synthetic(name);
+        int local = jml_local_resolve(current, &token_name);
 
         if (local == -1) {
-            jml_local_add(parser.previous);
+            jml_local_add(token_name);
             jml_mark_initialized();
-            local = jml_local_resolve(current, &parser.previous);
+            local = jml_local_resolve(current, &token_name);
         }
 
-        jml_bytecode_emit_bytes(OP_IMPORT_LOCAL, arg);
+        jml_bytecode_emit_bytes(OP_IMPORT_LOCAL, full_arg);
         jml_bytecode_emit_byte(local);
 
         if (jml_parser_match(TOKEN_ARROW)) {
@@ -1507,9 +1571,11 @@ jml_import_statement(void)
             jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
 
             memcpy(&current->locals[local].name,
-                &parser.previous, sizeof(jml_token_t));
+                &token_name, sizeof(jml_token_t));
         }
     }
+
+    jml_vm_pop_two();
 }
 
 

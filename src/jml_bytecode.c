@@ -22,9 +22,12 @@ jml_bytecode_write(jml_bytecode_t *bytecode,
 {
     if (bytecode->capacity < bytecode->count + 1) {
         int old_capacity = bytecode->capacity;
+
         bytecode->capacity = GROW_CAPACITY(old_capacity);
+
         bytecode->code = GROW_ARRAY(uint8_t, bytecode->code,
             old_capacity, bytecode->capacity);
+
         bytecode->lines = GROW_ARRAY(uint16_t , bytecode->lines,
             old_capacity, bytecode->capacity);
     }
@@ -40,6 +43,7 @@ jml_bytecode_free(jml_bytecode_t *bytecode)
 {
     FREE_ARRAY(uint8_t, bytecode->code, bytecode->capacity);
     FREE_ARRAY(int, bytecode->lines, bytecode->capacity);
+
     jml_value_array_free(&bytecode->constants);
     jml_bytecode_init(bytecode);
 }
@@ -107,7 +111,7 @@ jml_bytecode_instruction_bytes(const char *name,
     printf("%-16s %4d '", name, byte1);
 
     jml_value_print(bytecode->constants.values[byte1]);
-    printf("'   - %4d '", byte2);
+    printf("'    %4d '", byte2);
     jml_value_print(bytecode->constants.values[byte2]);
     printf("'\n");
 
@@ -148,7 +152,7 @@ static int
 jml_bytecode_instruction_const(const char *name,
     jml_bytecode_t *bytecode, int offset)
 {
-    uint8_t constant = bytecode->code[offset + 1];
+    uint8_t constant    = bytecode->code[offset + 1];
     printf("%-16s %4d '", name, constant);
     jml_value_print(bytecode->constants.values[constant]);
     printf("'\n");
@@ -341,7 +345,7 @@ jml_bytecode_instruction_disassemble(
             return jml_bytecode_instruction_byte("OP_MAP", bytecode, offset);
 
         case OP_IMPORT_GLOBAL:
-            return jml_bytecode_instruction_const("OP_IMPORT_GLOBAL", bytecode, offset);
+            return jml_bytecode_instruction_bytes("OP_IMPORT_GLOBAL", bytecode, offset);
 
         case OP_IMPORT_LOCAL:
             return jml_bytecode_instruction_bytes("OP_IMPORT_LOCAL", bytecode, offset);

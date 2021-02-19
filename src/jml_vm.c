@@ -650,14 +650,18 @@ jml_array_concatenate(void)
 
 
 static bool
-jml_vm_module_import(jml_obj_string_t *name, bool global)
+jml_vm_module_import(jml_obj_string_t *fullname,
+    jml_obj_string_t *name, bool global)
 {
     jml_value_t value;
+
+    if (name == NULL)
+        name = fullname;
 
     if (!jml_hashmap_get(&vm->modules, name, &value)) {
         char path[JML_PATH_MAX];
 
-        jml_obj_module_t *module = jml_module_open(name, path);
+        jml_obj_module_t *module = jml_module_open(fullname, name, path);
         if (module == NULL)
             return false;
 
@@ -1260,10 +1264,6 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_GET_LOCAL) {
                 uint8_t slot = READ_BYTE();
 
-                printf("\n %d \n", slot);
-                jml_value_print(frame->slots[slot]);
-                printf("\n");
-
 #ifdef JML_TRACE_SLOT
                 printf("          (slot %d)     [ ", slot);
                 jml_value_print(frame->slots[slot]);
@@ -1296,6 +1296,7 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_string_t *name = READ_STRING();
                 if (jml_vm_global_set(name, jml_vm_peek(0))) {
                     jml_vm_global_del(name);
+
                     SAVE_FRAME();
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1602,8 +1603,11 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_IMPORT_GLOBAL) {
+                jml_obj_string_t *fullname   = READ_STRING();
+                jml_obj_string_t *name       = READ_STRING();
+
                 SAVE_FRAME();
-                if (!jml_vm_module_import(READ_STRING(), true)) {
+                if (!jml_vm_module_import(fullname, name, true)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1613,7 +1617,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_IMPORT_LOCAL) {
                 SAVE_FRAME();
-                if (!jml_vm_module_import(READ_STRING(), false)) {
+                if (!jml_vm_module_import(READ_STRING(), NULL, false)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1624,7 +1628,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_IMPORT_WILDCARD) {
                 SAVE_FRAME();
-                if (!jml_vm_module_import(READ_STRING(), false)) {
+                if (!jml_vm_module_import(READ_STRING(), NULL, false)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 

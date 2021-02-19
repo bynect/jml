@@ -45,7 +45,7 @@ jml_reallocate(void *ptr,
 
     void *result = realloc(ptr, new_size);
     if (result == NULL) {
-        printf("MemoryErr: %m");
+        printf("MemoryErr: %m\n");
         exit(EXIT_FAILURE);
     }
 
@@ -71,7 +71,7 @@ jml_realloc(void *ptr, size_t new_size)
 
     void *result = realloc(ptr, new_size);
     if (result == NULL) {
-        printf("MemoryErr: %m");
+        printf("MemoryErr: %m\n");
         exit(EXIT_FAILURE);
     }
 
