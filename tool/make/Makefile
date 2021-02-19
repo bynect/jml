@@ -6,6 +6,9 @@ CLI_D=ext/cli
 SRC_D=src
 STD_D=std
 
+BIN_D=bin
+LIB_D=lib
+
 CLI_C:=$(shell find $(CLI_D) -name '*.c')
 SRC_C:=$(shell find $(SRC_D) -name '*.c')
 STD_C:=$(shell find $(STD_D) -name '*.c')
@@ -14,8 +17,8 @@ CLI_O=$(CLI_C:.c=.o)
 SRC_O=$(SRC_C:.c=.o)
 STD_O=$(STD_C:.c=.o)
 
-TARGET_BIN=bin/jml
-TARGET_LIB=lib/libjml.a
+TARGET_BIN=$(BIN_D)/jml
+TARGET_LIB=$(LIB_D)/libjml.a
 TARGET_SO=$(TARGET_LIB:.a=.so)
 TARGET_STD=$(STD_C:.c=.so)
 
@@ -23,6 +26,7 @@ TARGET_STD=$(STD_C:.c=.so)
 CC=gcc
 AR=ar
 RM=rm -f
+MKD=mkdir -p
 
 CFLAGS=-Wall -Wextra -Werror
 LFLAGS=-rdynamic
@@ -61,10 +65,15 @@ ifdef LINK_STD
 	LSHARED+=-Llib -ljml
 endif
 
+all: prelude
 
 all: $(TARGET_BIN) $(TARGET_LIB) $(TARGET_SO)
 
 all: $(TARGET_STD)
+
+
+prelude:
+	$(MKD) $(BIN_D) $(LIB_D)
 
 
 $(CLI_D)/%.o: $(CLI_D)/%.c

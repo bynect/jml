@@ -5,6 +5,7 @@
 
 #include <jml.h>
 
+
 #ifdef JML_CLI_READLINE
 
 #include <readline/readline.h>
@@ -46,15 +47,14 @@ jml_cli_fread(const char *path)
 }
 
 
-static void
+static bool
 jml_cli_run(const char *path)
 {
     char *source = jml_cli_fread(path);
     jml_interpret_result result = jml_vm_interpret(source);
     free(source);
 
-    if (result != INTERPRET_OK)
-        exit(EXIT_FAILURE);
+    return result == INTERPRET_OK;
 }
 
 
@@ -114,6 +114,8 @@ int
 main(int argc, char **argv)
 {
     jml_vm_t *vm = jml_vm_new();
+    bool success;
+
     if (vm == NULL)
         return EXIT_FAILURE;
 
@@ -121,18 +123,19 @@ main(int argc, char **argv)
         case 1:
             jml_cli_repl();
             printf("\n");
+            success = true;
             break;
 
         case 2:
-            jml_cli_run(argv[1]);
+            success = jml_cli_run(argv[1]);
             break;
 
         default:
             print_error("usage: %s [file]\n", argv[0]);
-            jml_vm_free(vm);
-            return EXIT_FAILURE;
+            success = false;
+            break;
     }
 
     jml_vm_free(vm);
-    return EXIT_SUCCESS;
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
