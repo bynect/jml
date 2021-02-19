@@ -672,14 +672,14 @@ jml_vm_module_import(jml_obj_string_t *fullname,
 
             jml_hashmap_set(&module->globals,
                 vm->path_string, jml_vm_peek(0));
+
             jml_vm_pop();
-        } else {
+        } else
             jml_hashmap_set(&module->globals,
                 vm->path_string, NONE_VAL);
-        }
 
         jml_hashmap_set(&module->globals,
-            vm->module_string, OBJ_VAL(module->name));
+            vm->module_string, OBJ_VAL(fullname));
 
         if (!jml_module_initialize(module)) {
             jml_vm_error("ImportErr: Import of '%s' failed.",
@@ -1627,8 +1627,11 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_IMPORT_WILDCARD) {
+                jml_obj_string_t *fullname   = READ_STRING();
+                jml_obj_string_t *name       = READ_STRING();
+
                 SAVE_FRAME();
-                if (!jml_vm_module_import(READ_STRING(), NULL, false)) {
+                if (!jml_vm_module_import(fullname, name, false)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 

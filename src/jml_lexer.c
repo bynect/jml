@@ -8,6 +8,7 @@
 void
 jml_lexer_init(jml_lexer_t *lexer, const char *source)
 {
+    lexer->source   = source;
     lexer->start    = source;
     lexer->current  = source;
     lexer->line     = 1;
@@ -77,10 +78,11 @@ static jml_token_t
 jml_token_emit(jml_token_type type, jml_lexer_t *lexer)
 {
     jml_token_t token;
-    token.type   = type;
-    token.start  = lexer->start;
-    token.length = lexer->current - lexer->start;
-    token.line   = lexer->line;
+    token.type      = type;
+    token.start     = lexer->start;
+    token.length    = lexer->current - lexer->start;
+    token.line      = lexer->line;
+    token.offset    = lexer->start - lexer->source;
 
     return token;
 }
@@ -90,10 +92,11 @@ static jml_token_t
 jml_token_emit_error(const char *message, jml_lexer_t *lexer)
 {
     jml_token_t token;
-    token.type   = TOKEN_ERROR;
-    token.start  = message;
-    token.length = strlen(message);
-    token.line   = lexer->line;
+    token.type      = TOKEN_ERROR;
+    token.start     = message;
+    token.length    = strlen(message);
+    token.line      = lexer->line;
+    token.offset    = lexer->start - lexer->source;
 
     return token;
 }
@@ -323,10 +326,9 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
     if (jml_lexer_eof(lexer)) {
         lexer->eof  =       true;
 
-        if (lexer->comment)
-            return jml_token_emit_error("Unterminated comment.", lexer);
-        else
-            return jml_token_emit(TOKEN_LINE, lexer);
+        return  lexer->comment
+            ? jml_token_emit_error("Unterminated comment.", lexer)
+            : jml_token_emit(TOKEN_LINE, lexer);
     }
 
     char c          =       jml_lexer_advance(lexer);
@@ -390,6 +392,7 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
         case  '?':  return  jml_token_emit(TOKEN_QUEST, lexer);
         case  '#':  return  jml_token_emit(TOKEN_HASH, lexer);
     }
+
     return jml_token_emit_error("Unexpected character.", lexer);
 }
 

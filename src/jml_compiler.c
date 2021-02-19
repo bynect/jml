@@ -69,10 +69,10 @@ jml_parser_error_at(jml_token_t *token,
             fprintf(stderr, " at eof");
 
         } else if (token->type == TOKEN_ERROR) {
-            /*pass*/
+            fprintf(stderr, " at '%c'",
+                parser.lexer.source[token->offset]);
 
-        } else if (strncmp(token->start,
-            "\n", token->length) == 0) {
+        } else if (strncmp(token->start, "\n", token->length) == 0) {
             fprintf(stderr, " at newline");
 
         } else {
@@ -107,7 +107,8 @@ jml_parser_advance(void)
         jml_token_type_print(parser.current.type);
         printf("    %.*s\n", parser.current.length, parser.current.start);
 #endif
-        if (parser.current.type != TOKEN_ERROR) break;
+        if (parser.current.type != TOKEN_ERROR)
+            break;
 
         jml_parser_error_current(parser.current.start);
     }
@@ -312,7 +313,7 @@ jml_compiler_end(void)
 #ifdef JML_DISASSEMBLE
     if (!parser.w_error) {
         jml_bytecode_disassemble(jml_bytecode_current(),
-        function->name != NULL ? function->name->chars : "__main");
+            function->name != NULL ? function->name->chars : "__main");
     }
 #endif
 
@@ -718,7 +719,6 @@ jml_indexing(bool assignable)
     jml_parser_match_line();
 
     jml_parser_consume(TOKEN_RSQARE, "Expect ']' after indexing.");
-    jml_parser_match_line();
 
     if (assignable && jml_parser_match(TOKEN_EQUAL)) {
         jml_parser_match_line();
@@ -1533,9 +1533,12 @@ jml_import_statement(void)
     uint8_t full_arg = jml_bytecode_make_const(jml_vm_peek(1));
 
     if (wildcard) {
-        if (current->type == FUNCTION_MAIN)
+        if (current->type == FUNCTION_MAIN) {
+            uint8_t name_arg = jml_bytecode_make_const(jml_vm_peek(0));
+
             jml_bytecode_emit_bytes(OP_IMPORT_WILDCARD, full_arg);
-        else
+            jml_bytecode_emit_byte(name_arg);
+        } else
             jml_parser_error("Can use wildcard import only in top-level code.");
 
     } else if (current->type == FUNCTION_MAIN) {

@@ -95,10 +95,12 @@ typedef struct {
     const char                     *start;
     uint32_t                        length;
     uint32_t                        line;
+    uint32_t                        offset;
 } jml_token_t;
 
 
 typedef struct {
+    const char                     *source;
     const char                     *start;
     const char                     *current;
     uint32_t                        line;
