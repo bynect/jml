@@ -45,7 +45,7 @@
 
 
 static int
-jml_module_std_path(char *path)
+jml_module_path(char *path)
 {
     char *temp = getenv("JML_PATH");
     if (temp == NULL)
@@ -58,6 +58,24 @@ jml_module_std_path(char *path)
 static bool
 jml_module_resolve(const char *name, size_t length, char *path)
 {
+#define TRY_PATH(path_try, ext)                         \
+    do {                                                \
+        offset2 = snprintf(path_try, JML_PATH_MAX,      \
+            "%s." ext, path);                           \
+                                                        \
+        if (offset2 < 0)                                \
+            goto err;                                   \
+        path_try[offset2] = '\0';                       \
+                                                        \
+        if (jml_file_exist(path_try)) {                 \
+            offset += sprintf(path + offset, "." ext);  \
+            path[offset] = '\0';                        \
+            jml_free(buffer);                           \
+            return true;                                \
+        }                                               \
+    } while (false);
+
+
     char            *buffer     = jml_alloc(length + 1);
     memcpy(buffer, name, length + 1);
 
@@ -76,7 +94,7 @@ jml_module_resolve(const char *name, size_t length, char *path)
         token = jml_strtok(NULL, ".", &save);
     }
 
-    int32_t          offset     = jml_module_std_path(path);
+    int32_t          offset     = jml_module_path(path);
     int32_t          offset2    = 0;
     char             path_dll[JML_PATH_MAX];
     char             path_jml[JML_PATH_MAX];
@@ -92,6 +110,9 @@ jml_module_resolve(const char *name, size_t length, char *path)
 
     path[offset] = '\0';
 
+    TRY_PATH(path_dll, SHARED_LIB_EXT);
+    TRY_PATH(path_jml, "jml");
+
     if (jml_file_isdir(path)) {
         offset += snprintf(
             path + offset,
@@ -103,29 +124,17 @@ jml_module_resolve(const char *name, size_t length, char *path)
         path[offset] = '\0';
     }
 
-    offset2 = snprintf(path_dll, JML_PATH_MAX, "%s." SHARED_LIB_EXT, path);
-    if (offset2 < 0) goto err;
-    path_dll[offset2] = '\0';
+    TRY_PATH(path_dll, SHARED_LIB_EXT);
+    TRY_PATH(path_jml, "jml");
 
-    if (jml_file_exist(path_dll)) {
-        offset += sprintf(path + offset, "." SHARED_LIB_EXT);
-        path[offset] = '\0';
-        return true;
-    }
-
-    offset2 = snprintf(path_jml, JML_PATH_MAX, "%s.jml", path);
-    if (offset2 < 0) goto err;
-    path_jml[offset2] = '\0';
-
-    if (jml_file_exist(path_jml)) {
-        offset += sprintf(path + offset, ".jml");
-        path[offset] = '\0';
-        return true;
-    }
+    goto err;
 
 err:
     jml_free(buffer);
     return false;
+
+
+#undef TRY_PATH
 }
 
 
