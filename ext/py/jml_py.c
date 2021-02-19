@@ -17,8 +17,8 @@ jml_py_version(PyObject *self, PyObject *Py_UNUSED(args))
 
 
 static PyMethodDef jml_py_methods[] = {
-    {"version", &jml_py_version,    METH_NOARGS,    "Returns a jml version tuple containing major, minor and micro."},
-    {NULL,      NULL,               0,              NULL}
+    {"version",     &jml_py_version,        METH_NOARGS,    "Returns a jml version tuple containing major, minor and micro."},
+    {NULL,          NULL,                   0,              NULL}
 };
 
 
@@ -65,7 +65,7 @@ jml_py_vm_eval(PyObject *self, PyObject *args)
 {
     char *source = NULL;
 
-    if(!PyArg_ParseTuple(args, "s", &source))
+    if (!PyArg_ParseTuple(args, "s", &source))
         return NULL;
 
     jml_value_t value = jml_vm_eval(source);
@@ -95,7 +95,7 @@ jml_py_vm_interpret(PyObject *self, PyObject *args)
 {
     char *source;
 
-    if(!PyArg_ParseTuple(args, "s", &source))
+    if (!PyArg_ParseTuple(args, "s", &source))
         return NULL;
 
     switch (jml_vm_interpret(source)) {
@@ -120,7 +120,7 @@ static PyMethodDef jml_py_vm_methods[] = {
     {"interpret",   &jml_py_vm_interpret,   METH_VARARGS,   "Interprets the given source code.\n"
                                                             "Raises CompileError if compilation fails or RuntimeError if interpretetion fails.\n"
                                                             "Returns None on succes."},
-    {NULL}
+    {NULL,          NULL,                   0,              NULL}
 };
 
 
@@ -153,7 +153,8 @@ PyInit_jml(void)
         return NULL;
 
     PyObject *mod = PyModule_Create(&jml_py_module);
-    if (mod == NULL) return NULL;
+    if (mod == NULL)
+        return NULL;
 
     Py_INCREF(&jml_py_vm_t);
 
