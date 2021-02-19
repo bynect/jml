@@ -99,7 +99,6 @@ struct jml_obj_module {
     jml_obj_string_t               *name;
     jml_module_handle_t             handle;
     jml_hashmap_t                   globals;
-    jml_value_array_t               saved;
 };
 
 

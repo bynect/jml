@@ -946,18 +946,26 @@ module_init(jml_obj_module_t *module)
     jml_module_add_class(module, "File", file_table, false);
 
     jml_value_t file_value;
-    if (jml_hashmap_get(&module->globals, jml_obj_string_copy("File", 4), &file_value))
+    if (jml_hashmap_get(&module->globals,
+        jml_obj_string_copy("File", 4), &file_value)) {
+
         file_class = AS_CLASS(file_value);
+        jml_gc_exempt(file_value);
+    }
 
     jml_module_add_class(module, "Dir", dir_table, false);
 
     jml_value_t dir_value;
-    if (jml_hashmap_get(&module->globals, jml_obj_string_copy("Dir", 3), &dir_value))
+    if (jml_hashmap_get(&module->globals,
+        jml_obj_string_copy("Dir", 3), &dir_value)) {
+
         dir_class = AS_CLASS(dir_value);
+        jml_gc_exempt(dir_value);
+    }
 
     mode_string = jml_obj_string_copy("mode", 4);
-    jml_value_array_write(&module->saved, OBJ_VAL(mode_string));
+    jml_gc_exempt(OBJ_VAL(mode_string));
 
     name_string = jml_obj_string_copy("name", 4);
-    jml_value_array_write(&module->saved, OBJ_VAL(name_string));
+    jml_gc_exempt(OBJ_VAL(name_string));
 }

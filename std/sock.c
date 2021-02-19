@@ -707,13 +707,17 @@ module_init(jml_obj_module_t *module)
 
     jml_module_add_class(module, "Socket", socket_table, false);
 
-    jml_value_t file_value;
-    if (jml_hashmap_get(&module->globals, jml_obj_string_copy("Socket", 6), &file_value))
-        socket_class = AS_CLASS(file_value);
+    jml_value_t socket_value;
+    if (jml_hashmap_get(&module->globals,
+        jml_obj_string_copy("Socket", 6), &socket_value)) {
+
+        socket_class = AS_CLASS(socket_value);
+        jml_gc_exempt(socket_value);
+    }
 
     domain_string = jml_obj_string_copy("domain", 6);
-    jml_value_array_write(&module->saved, OBJ_VAL(domain_string));
+    jml_gc_exempt(OBJ_VAL(domain_string));
 
     type_string = jml_obj_string_copy("type", 4);
-    jml_value_array_write(&module->saved, OBJ_VAL(type_string));
+    jml_gc_exempt(OBJ_VAL(type_string));
 }

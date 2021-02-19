@@ -164,6 +164,21 @@ jml_obj_map_new(void)
 }
 
 
+jml_obj_module_t *
+jml_obj_module_new(jml_obj_string_t *name, void *handle)
+{
+    jml_obj_module_t *module = ALLOCATE_OBJ(
+        jml_obj_module_t, OBJ_MODULE);
+
+    module->name    = name;
+    module->handle  = handle;
+
+    jml_hashmap_init(&module->globals);
+
+    return module;
+}
+
+
 jml_obj_class_t *
 jml_obj_class_new(jml_obj_string_t *name)
 {
@@ -318,22 +333,6 @@ jml_obj_exception_format(const char *name,
     jml_free(message);
 
     return exc;
-}
-
-
-jml_obj_module_t *
-jml_obj_module_new(jml_obj_string_t *name, void *handle)
-{
-    jml_obj_module_t *module = ALLOCATE_OBJ(
-        jml_obj_module_t, OBJ_MODULE);
-
-    module->name    = name;
-    module->handle  = handle;
-
-    jml_hashmap_init(&module->globals);
-    jml_value_array_init(&module->saved);
-
-    return module;
 }
 
 
