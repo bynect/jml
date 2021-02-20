@@ -56,7 +56,8 @@ jml_module_path(char *path)
 
 
 static bool
-jml_module_resolve(const char *name, size_t length, char *path)
+jml_module_resolve(jml_obj_string_t *qualified,
+    char *path, size_t *path_len)
 {
 #define TRY_PATH(path_try, ext)                         \
     do {                                                \
@@ -70,14 +71,16 @@ jml_module_resolve(const char *name, size_t length, char *path)
         if (jml_file_exist(path_try)) {                 \
             offset += sprintf(path + offset, "." ext);  \
             path[offset] = '\0';                        \
+            *path_len = offset;                         \
+                                                        \
             jml_free(buffer);                           \
             return true;                                \
         }                                               \
     } while (false);
 
 
-    char            *buffer     = jml_alloc(length + 1);
-    memcpy(buffer, name, length + 1);
+    char            *buffer     = jml_alloc(qualified->length + 1);
+    memcpy(buffer, qualified->chars, qualified->length + 1);
 
     char            *save       = NULL;
     char            *token      = jml_strtok(buffer, ".", &save);
@@ -86,7 +89,7 @@ jml_module_resolve(const char *name, size_t length, char *path)
     uint8_t          last       = 0;
 
     for (; token != NULL; ++last) {
-        if (last < 64)
+        if (last <= 64)
             paths[last] = token;
         else
             goto err;
@@ -131,6 +134,8 @@ jml_module_resolve(const char *name, size_t length, char *path)
 
 err:
     jml_free(buffer);
+    *path       = '\0';
+    *path_len   = 0;
     return false;
 
 
@@ -139,19 +144,18 @@ err:
 
 
 jml_obj_module_t *
-jml_module_open(jml_obj_string_t *fullname,
-    jml_obj_string_t *name, char *path)
+jml_module_open(jml_obj_string_t *qualified,
+    jml_obj_string_t *name, jml_value_t *path)
 {
-    char path_raw[JML_PATH_MAX];
+    jml_obj_module_t *module;
 
-    if (!jml_module_resolve(fullname->chars, fullname->length, path_raw)) {
-        jml_vm_error("ImportErr: Module not found.");
-        return NULL;
-    }
+    char    path_raw[JML_PATH_MAX];
+    size_t  path_len = 0;
 
-    size_t path_len = strlen(path_raw);
+    if (!jml_module_resolve(qualified, path_raw, &path_len)
+        || path_len == 0 || *path_raw == '\0'
+        || !jml_file_exist(path_raw)) {
 
-    if (path_len == 0 || !jml_file_exist(path_raw)) {
         jml_vm_error("ImportErr: Module not found.");
         return NULL;
     }
@@ -167,22 +171,39 @@ jml_module_open(jml_obj_string_t *fullname,
 #else
         jml_module_handle_t handle = SHARED_LOAD(path_raw, RTLD_NOW);
 
+#if defined JML_PLATFORM_WIN
+        if (handle == NULL) {
+            jml_vm_error("ImportErr: Loading error.");
+            return NULL;
+        }
+#else
         if (handle == NULL) {
             jml_vm_error("ImportErr: %s.", dlerror());
             return NULL;
         }
-
-        memcpy(path, path_raw, path_len + 1);
-        return jml_obj_module_new(name, handle);
 #endif
+        module = jml_obj_module_new(name, handle);
+#endif
+
     } else if (jml_strsfx(path_raw, path_len, ".jml", strlen(".jml"))) {
-        memcpy(path, path_raw, path_len + 1);
         jml_vm_error("ImportErr: Module not loadable.");
+        goto err;
 
     } else {
         jml_vm_error("ImportErr: Module not loadable.");
+        goto err;
     }
 
+    jml_vm_push(OBJ_VAL(module));
+    jml_obj_string_t *path_str = jml_obj_string_copy(path_raw, path_len);
+    jml_vm_push(OBJ_VAL(path_str));
+
+    *path = jml_vm_peek(0);
+    jml_vm_pop_two();
+    return module;
+
+err:
+    *path = NONE_VAL;
     return NULL;
 }
 
@@ -329,12 +350,13 @@ jml_module_add_value(jml_obj_module_t *module,
     if (module == NULL || name == NULL)
         return false;
 
+    jml_vm_push(value);
     jml_vm_push(jml_string_intern(name));
 
     jml_hashmap_set(&module->globals,
         AS_STRING(jml_vm_peek(0)), value);
 
-    jml_vm_pop();
+    jml_vm_pop_two();
     return true;
 }
 

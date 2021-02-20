@@ -653,41 +653,30 @@ static bool
 jml_vm_module_import(jml_obj_string_t *fullname,
     jml_obj_string_t *name)
 {
-    jml_value_t value;
+    jml_value_t value = NONE_VAL;
 
     if (!jml_hashmap_get(&vm->modules, fullname, &value)) {
-        char path[JML_PATH_MAX];
+        jml_value_t path_value;
 
-        jml_obj_module_t *module = jml_module_open(fullname, name, path);
+        jml_obj_module_t *module = jml_module_open(fullname, name, &path_value);
 
-        if (module == NULL) {
-            jml_vm_push(OBJ_VAL(vm->sentinel));
+        if (module == NULL)
             return false;
-        }
 
         jml_vm_push(OBJ_VAL(module));
+        jml_vm_push(OBJ_VAL(path_value));
 
-        if (path != NULL) {
-            jml_vm_push(jml_string_intern(path));
+        jml_hashmap_set(&vm->modules, fullname, jml_vm_peek(1));
+        jml_hashmap_set(&module->globals, vm->path_string, jml_vm_peek(0));
+        jml_hashmap_set(&module->globals, vm->module_string, OBJ_VAL(fullname));
 
-            jml_hashmap_set(&module->globals,
-                vm->path_string, jml_vm_peek(0));
-
-            jml_vm_pop();
-        } else
-            jml_hashmap_set(&module->globals,
-                vm->path_string, NONE_VAL);
-
-        jml_hashmap_set(&module->globals,
-            vm->module_string, OBJ_VAL(fullname));
+        jml_vm_pop();
 
         if (!jml_module_initialize(module)) {
             jml_vm_error("ImportErr: Importing module '%s' failed.",
                 module->name->chars);
             return false;
         }
-
-        jml_hashmap_set(&vm->modules, fullname, jml_vm_peek(0));
 
     } else
         jml_vm_push(value);

@@ -351,9 +351,9 @@ jml_scope_end(void)
 
 static inline uint8_t
 jml_identifier_const(jml_token_t *name) {
-    return jml_bytecode_make_const(
-        OBJ_VAL(jml_obj_string_copy(name->start, name->length))
-    );
+    return jml_bytecode_make_const(OBJ_VAL(
+        jml_obj_string_copy(name->start, name->length)
+    ));
 }
 
 
@@ -1487,11 +1487,9 @@ jml_import_statement(void)
 
     memcpy(fullname, parser.previous.start, parser.previous.length);
     length = parser.previous.length;
-    fullname[length] = '\0';
 
     memcpy(name, parser.previous.start, parser.previous.length);
-    name_length = parser.previous.length + 1;
-    name[parser.previous.length] = '\0';
+    name_length = parser.previous.length;
 
     if (jml_parser_match(TOKEN_DOT)) {
         do {
@@ -1508,30 +1506,27 @@ jml_import_statement(void)
                 return;
             }
 
-            REALLOC(char, fullname, size, size + parser.previous.length + 1);
+            REALLOC(char, fullname, size, length + parser.previous.length + 1);
             fullname[length++] = '.';
 
             memcpy(fullname + length, parser.previous.start, parser.previous.length);
             length += parser.previous.length;
-            fullname[length] = '\0';
 
             memcpy(name, parser.previous.start, parser.previous.length);
             name_length = parser.previous.length;
-            name[parser.previous.length] = '\0';
-
         } while (jml_parser_match(TOKEN_DOT));
     }
 
-    jml_vm_push(OBJ_VAL(
+    fullname[length]  = '\0';
+    name[name_length] = '\0';
+
+    uint8_t full_arg = jml_bytecode_make_const(OBJ_VAL(
         jml_obj_string_take(fullname, length)
     ));
 
-    jml_vm_push(OBJ_VAL(
+    uint8_t name_arg = jml_bytecode_make_const(OBJ_VAL(
         jml_obj_string_copy(name, name_length)
     ));
-
-    uint8_t full_arg = jml_bytecode_make_const(jml_vm_peek(1));
-    uint8_t name_arg = jml_bytecode_make_const(jml_vm_peek(0));
 
     if (wildcard) {
         if (current->type == FUNCTION_MAIN) {
@@ -1574,8 +1569,6 @@ jml_import_statement(void)
                 &parser.previous, sizeof(jml_token_t));
         }
     }
-
-    jml_vm_pop_two();
 }
 
 
