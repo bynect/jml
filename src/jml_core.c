@@ -302,7 +302,7 @@ jml_core_size(int arg_count, jml_value_t *args)
     if (!IS_OBJ(value))
         goto err;
 
-    switch (AS_OBJ(value)->type) {
+    switch (OBJ_TYPE(value)) {
         case OBJ_STRING:
             return NUM_VAL(AS_STRING(value)->length);
 
@@ -472,7 +472,7 @@ jml_core_attr(int arg_count, jml_value_t *args)
     if (!IS_OBJ(value))
         goto err;
 
-    switch (AS_OBJ(value)->type) {
+    switch (OBJ_TYPE(value)) {
         case OBJ_MODULE: {
             jml_obj_map_t *map      = jml_obj_map_new();
             jml_vm_push(OBJ_VAL(map));
@@ -561,7 +561,7 @@ jml_core_assert(int arg_count, jml_value_t *args)
     if (exc != NULL)
         return OBJ_VAL(exc);
 
-    if (jml_is_falsey(args[0])) {
+    if (jml_value_is_falsey(args[0])) {
         return OBJ_VAL(jml_obj_exception_new(
             "AssertErr", "Assertion failed."
         ));

@@ -161,7 +161,7 @@ jml_hashmap_entry_t *jml_hashmap_iterator(jml_hashmap_t *map);
 
 
 static inline bool
-jml_is_falsey(jml_value_t value)
+jml_value_is_falsey(jml_value_t value)
 {
     return (IS_NONE(value)
         || (IS_BOOL(value)

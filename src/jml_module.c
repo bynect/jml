@@ -27,9 +27,9 @@
 #endif
 
 
-#define SHARED_LOAD(...)            dlopen(__VA_ARGS__)
-#define SHARED_FREE(...)            dlclose(__VA_ARGS__)
-#define SHARED_SYM(...)             dlsym(__VA_ARGS__)
+#define SHARED_LOAD(a, b)           dlopen(a, b)
+#define SHARED_FREE(a)              dlclose(a)
+#define SHARED_SYM(a, b)            dlsym(a, b)
 
 #elif defined JML_PLATFORM_WIN
 
@@ -37,9 +37,9 @@
 
 #define SHARED_LIB_EXT              "dll"
 
-#define SHARED_LOAD(...)            LoadLibrary(__VA_ARGS__)
-#define SHARED_FREE(...)            FreeLibrary(__VA_ARGS__)
-#define SHARED_SYM(...)             GetProcAddress(__VA_ARGS__)
+#define SHARED_LOAD(a)              LoadLibrary(a)
+#define SHARED_FREE(a)              FreeLibrary(a)
+#define SHARED_SYM(a, b)            GetProcAddress(a, b)
 
 #endif
 
@@ -163,27 +163,30 @@ jml_module_open(jml_obj_string_t *qualified,
     if (jml_strsfx(path_raw, path_len,
         "." SHARED_LIB_EXT, strlen("." SHARED_LIB_EXT))) {
 
-#if defined JML_PLATFORM_UNK
-        jml_vm_error(
-            "ImportErr: Dll import not supported on %s.",
-            JML_PLATFORM_STRING
-        );
-#else
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
+
         jml_module_handle_t handle = SHARED_LOAD(path_raw, RTLD_NOW);
 
-#if defined JML_PLATFORM_WIN
-        if (handle == NULL) {
-            jml_vm_error("ImportErr: Loading error.");
-            return NULL;
-        }
-#else
         if (handle == NULL) {
             jml_vm_error("ImportErr: %s.", dlerror());
-            return NULL;
+            goto err;
         }
+#elif defined JML_PLATFORM_WIN
+
+        jml_module_handle_t handle = SHARED_LOAD(path_raw);
+
+        if (handle == NULL) {
+            jml_vm_error("ImportErr: Loading error.");
+            goto err;
+        }
+#else
+        jml_vm_error(
+            "ImportErr: Module loading not supported on %s.",
+            JML_PLATFORM_STRING
+        );
+        goto err;
 #endif
         module = jml_obj_module_new(name, handle);
-#endif
 
     } else if (jml_strsfx(path_raw, path_len, ".jml", strlen(".jml"))) {
         jml_vm_error("ImportErr: Module not loadable.");

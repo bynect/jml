@@ -430,10 +430,8 @@ jml_vm_invoke_instance(jml_obj_instance_t *instance,
 {
     jml_value_t method;
 
-    if (!jml_hashmap_get(&instance->klass->methods, name, &method)) {
-        jml_vm_error("Undefined property '%s'.", name->chars);
+    if (!jml_hashmap_get(&instance->klass->methods, name, &method))
         return false;
-    }
 
     if (IS_CFUNCTION(method)) {
         jml_vm_push(OBJ_VAL(instance));
@@ -458,8 +456,11 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
             return jml_vm_call_value(value, arg_count);
         }
 
-        return jml_vm_invoke_instance(
-            instance, name, arg_count);
+        if (!jml_vm_invoke_instance(instance, name, arg_count)) {
+            jml_vm_error("Undefined property '%s'.", name->chars);
+            return false;
+        }
+        return true;
 
     } else if (IS_MODULE(receiver)) {
         jml_obj_module_t *module = AS_MODULE(receiver);
@@ -1026,7 +1027,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_NOT) {
                 jml_vm_push(
-                    BOOL_VAL(jml_is_falsey(jml_vm_pop()))
+                    BOOL_VAL(jml_value_is_falsey(jml_vm_pop()))
                 );
                 END_OP();
             }
@@ -1113,7 +1114,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_JUMP_IF_FALSE) {
                 uint16_t offset = READ_SHORT();
-                if (jml_is_falsey(jml_vm_peek(0)))
+                if (jml_value_is_falsey(jml_vm_peek(0)))
                     pc += offset;
                 END_OP();
             }

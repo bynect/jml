@@ -343,6 +343,9 @@ jml_obj_exception_format(const char *name,
 bool
 jml_obj_is_sentinel(jml_value_t value)
 {
+    if (!IS_OBJ(value))
+        return false;
+
     return (AS_OBJ(value) == vm->sentinel);
 }
 

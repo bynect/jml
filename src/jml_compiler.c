@@ -1474,7 +1474,7 @@ jml_import_statement(void)
     char   *fullname    = jml_realloc(NULL, size);
     size_t  length      = 0;
 
-    char    name[size];
+    char    name[JML_PATH_MAX];
     size_t  name_length = 0;
 
     jml_parser_consume(TOKEN_NAME, "Expect identifier after 'import'.");
