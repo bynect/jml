@@ -651,19 +651,19 @@ jml_array_concatenate(void)
 
 static bool
 jml_vm_module_import(jml_obj_string_t *fullname,
-    jml_obj_string_t *name, bool global)
+    jml_obj_string_t *name)
 {
     jml_value_t value;
 
-    if (name == NULL)
-        name = fullname;
-
-    if (!jml_hashmap_get(&vm->modules, name, &value)) {
+    if (!jml_hashmap_get(&vm->modules, fullname, &value)) {
         char path[JML_PATH_MAX];
 
         jml_obj_module_t *module = jml_module_open(fullname, name, path);
-        if (module == NULL)
+
+        if (module == NULL) {
+            jml_vm_push(OBJ_VAL(vm->sentinel));
             return false;
+        }
 
         jml_vm_push(OBJ_VAL(module));
 
@@ -682,22 +682,15 @@ jml_vm_module_import(jml_obj_string_t *fullname,
             vm->module_string, OBJ_VAL(fullname));
 
         if (!jml_module_initialize(module)) {
-            jml_vm_error("ImportErr: Import of '%s' failed.",
+            jml_vm_error("ImportErr: Importing module '%s' failed.",
                 module->name->chars);
             return false;
         }
 
-        jml_hashmap_set(&vm->modules, name, jml_vm_peek(0));
+        jml_hashmap_set(&vm->modules, fullname, jml_vm_peek(0));
 
-        if (global)
-            jml_vm_global_set(name, jml_vm_peek(0));
-
-    } else {
+    } else
         jml_vm_push(value);
-
-        if (global)
-            jml_vm_global_set(name, value);
-    }
 
     return true;
 }
@@ -1307,6 +1300,7 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_GET_GLOBAL) {
                 jml_obj_string_t *name = READ_STRING();
                 jml_value_t value;
+
                 if (!jml_vm_global_get(name, &value)) {
                     SAVE_FRAME();
                     jml_vm_error("Undefined variable '%s'.", name->chars);
@@ -1607,17 +1601,22 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_string_t *name       = READ_STRING();
 
                 SAVE_FRAME();
-                if (!jml_vm_module_import(fullname, name, true)) {
+                if (!jml_vm_module_import(fullname, name)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
+
+                jml_vm_global_set(name, jml_vm_peek(0));
 
                 jml_vm_pop();
                 END_OP();
             }
 
             EXEC_OP(OP_IMPORT_LOCAL) {
+                jml_obj_string_t *fullname   = READ_STRING();
+                jml_obj_string_t *name       = READ_STRING();
+
                 SAVE_FRAME();
-                if (!jml_vm_module_import(READ_STRING(), NULL, false)) {
+                if (!jml_vm_module_import(fullname, name)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1631,7 +1630,7 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_string_t *name       = READ_STRING();
 
                 SAVE_FRAME();
-                if (!jml_vm_module_import(fullname, name, false)) {
+                if (!jml_vm_module_import(fullname, name)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 

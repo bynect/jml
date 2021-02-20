@@ -1523,7 +1523,7 @@ jml_import_statement(void)
     }
 
     jml_vm_push(OBJ_VAL(
-        jml_obj_string_copy(fullname, length)
+        jml_obj_string_take(fullname, length)
     ));
 
     jml_vm_push(OBJ_VAL(
@@ -1531,19 +1531,16 @@ jml_import_statement(void)
     ));
 
     uint8_t full_arg = jml_bytecode_make_const(jml_vm_peek(1));
+    uint8_t name_arg = jml_bytecode_make_const(jml_vm_peek(0));
 
     if (wildcard) {
         if (current->type == FUNCTION_MAIN) {
-            uint8_t name_arg = jml_bytecode_make_const(jml_vm_peek(0));
-
             jml_bytecode_emit_bytes(OP_IMPORT_WILDCARD, full_arg);
             jml_bytecode_emit_byte(name_arg);
         } else
             jml_parser_error("Can use wildcard import only in top-level code.");
 
     } else if (current->type == FUNCTION_MAIN) {
-        uint8_t name_arg = jml_bytecode_make_const(jml_vm_peek(0));
-
         jml_bytecode_emit_bytes(OP_IMPORT_GLOBAL, full_arg);
         jml_bytecode_emit_byte(name_arg);
 
@@ -1567,14 +1564,14 @@ jml_import_statement(void)
         }
 
         jml_bytecode_emit_bytes(OP_IMPORT_LOCAL, full_arg);
-        jml_bytecode_emit_byte(local);
+        jml_bytecode_emit_bytes(name_arg, local);
 
         if (jml_parser_match(TOKEN_ARROW)) {
             jml_parser_match_line();
             jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
 
             memcpy(&current->locals[local].name,
-                &token_name, sizeof(jml_token_t));
+                &parser.previous, sizeof(jml_token_t));
         }
     }
 
