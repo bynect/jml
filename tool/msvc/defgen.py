@@ -64,10 +64,16 @@ def jml_defgen() -> None:
     os.remove(out_name)
 
     for ext in [".exp", ".dll", ".lib"]:
-        os.remove(out_name2 + ext)
+        try:
+            os.remove(out_name2 + ext)
+        except:
+            pass
 
     for obj in objects:
-        os.remove(obj)
+        try:
+            os.remove(obj)
+        except:
+            pass
 
 
 if __name__ == "__main__":

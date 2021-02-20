@@ -623,9 +623,7 @@ jml_std_fs_file_write(int arg_count, jml_value_t *args)
         goto err;
 
     if (!IS_STRING(args[0])) {
-        exc = jml_core_exception_types(
-            false, 1, "string"
-        );
+        exc = jml_core_exception_types(false, 1, "string");
         goto err;
     }
 
@@ -763,8 +761,7 @@ jml_std_fs_remove(int arg_count, jml_value_t *args)
         goto err;
 
     if (!IS_STRING(args[0])) {
-        exc = jml_core_exception_types(
-            false, 1, "string");
+        exc = jml_core_exception_types(false, 1, "string");
         goto err;
     }
 
@@ -801,8 +798,7 @@ jml_std_fs_rename(int arg_count, jml_value_t *args)
         goto err;
 
     if (!IS_STRING(args[0]) || !IS_STRING(args[1])) {
-        exc = jml_core_exception_types(
-            false, 2, "string");
+        exc = jml_core_exception_types(false, 2, "string", "string");
         goto err;
     }
 
@@ -903,8 +899,7 @@ jml_std_fs_makedir(int arg_count, JML_UNUSED(jml_value_t *args))
         goto err;
 
     if (!IS_STRING(args[0])) {
-        exc = jml_core_exception_types(
-            false, 1, "string");
+        exc = jml_core_exception_types(false, 1, "string");
         goto err;
     }
 

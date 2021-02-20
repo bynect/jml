@@ -4,7 +4,6 @@
 #include <jml.h>
 
 
-
 void jml_value_print(jml_value_t value);
 
 char *jml_value_stringify(jml_value_t value);

@@ -61,5 +61,5 @@ MODULE_TABLE_HEAD module_table[] = {
 MODULE_FUNC_HEAD
 module_init(jml_obj_module_t *module)
 {
-    jml_module_add_value(module, "MAX_RAND", NUM_VAL(RAND_MAX));
+    jml_module_add_value(module, "RAND_MAX", NUM_VAL(RAND_MAX));
 }

@@ -1,6 +1,6 @@
 #ifdef __GNUC__
 
-#define _POSIX_C_SOURCE 200112L
+#define _POSIX_C_SOURCE             200112l
 
 #endif
 
@@ -28,11 +28,11 @@
 #endif
 
 
-static jml_obj_class_t *socket_class = NULL;
+static jml_obj_class_t *socket_class    = NULL;
 
-static jml_obj_string_t *domain_string = NULL;
+static jml_obj_string_t *domain_string  = NULL;
 
-static jml_obj_string_t *type_string = NULL;
+static jml_obj_string_t *type_string    = NULL;
 
 
 typedef struct {

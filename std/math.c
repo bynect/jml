@@ -60,7 +60,8 @@
     {                                                   \
         jml_obj_exception_t *exc;                       \
                                                         \
-        MATH_CHECK(arg_count, args, 2, "number");       \
+        MATH_CHECK(arg_count, args, 2,                  \
+            "number", "number");                        \
                                                         \
         return NUM_VAL(func(                            \
             AS_NUM(args[0]),                            \
@@ -77,7 +78,8 @@
     {                                                   \
         jml_obj_exception_t *exc;                       \
                                                         \
-        MATH_CHECK(arg_count, args, 3, "number");       \
+        MATH_CHECK(arg_count, args, 3,                  \
+            "number", "number", "number");              \
                                                         \
         return NUM_VAL(func(                            \
             AS_NUM(args[0]),                            \

@@ -1,6 +1,90 @@
-#include <time.h>
+#ifdef __GNUC__
+
+#define _XOPEN_SOURCE               500
+
+#endif
 
 #include <jml.h>
+
+
+#if defined JML_PLATFORM_NIX
+
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+
+#elif defined JML_PLATFORM_WIN
+
+#include <windows.h>
+#include <time.h>
+
+#endif
+
+
+static jml_value_t
+jml_std_time_sleep(int arg_count, JML_UNUSED(jml_value_t *args))
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        goto err;
+
+    if (!IS_NUM(args[0])) {
+        exc = jml_core_exception_types(
+            false, 1, "number"
+        );
+        goto err;
+    }
+
+#if defined JML_PLATFORM_NIX
+
+    sleep((uint32_t)AS_NUM(args[0]));
+
+#elif defined JML_PLATFORM_WIN
+
+    Sleep((uint32_t)AS_NUM(args[0]) * 1000);
+
+#endif
+
+    return NONE_VAL;
+
+err:
+    return OBJ_VAL(exc);
+}
+
+
+static jml_value_t
+jml_std_time_usleep(int arg_count, JML_UNUSED(jml_value_t *args))
+{
+    jml_obj_exception_t *exc = jml_core_exception_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        goto err;
+
+    if (!IS_NUM(args[0])) {
+        exc = jml_core_exception_types(
+            false, 1, "number"
+        );
+        goto err;
+    }
+
+#if defined JML_PLATFORM_NIX
+
+    usleep((uint64_t)AS_NUM(args[0]));
+
+#elif defined JML_PLATFORM_WIN
+
+    Sleep((uint32_t)AS_NUM(args[0]));
+
+#endif
+
+    return NONE_VAL;
+
+err:
+    return OBJ_VAL(exc);
+}
 
 
 static jml_value_t
@@ -40,7 +124,7 @@ jml_std_time_difftime(int arg_count, jml_value_t *args)
 
     if (!IS_NUM(args[0]) || !IS_NUM(args[1])) {
         exc = jml_core_exception_types(
-            false, 2, "number"
+            false, 2, "number", "number"
         );
         goto err;
     }
@@ -81,6 +165,8 @@ jml_std_time_localtime(int arg_count, JML_UNUSED(jml_value_t *args))
 
 /*module table*/
 MODULE_TABLE_HEAD module_table[] = {
+    {"sleep",                       &jml_std_time_sleep},
+    {"usleep",                      &jml_std_time_usleep},
     {"time",                        &jml_std_time_time},
     {"clock",                       &jml_std_time_clock},
     {"difftime",                    &jml_std_time_difftime},
