@@ -138,7 +138,7 @@ jml_parser_match(jml_token_type type)
 static bool
 jml_parser_match_line(void)
 {
-    if (!jml_parser_match(TOKEN_LINE))
+    if (!jml_parser_match(TOKEN_LINE) && !jml_parser_check(TOKEN_RBRACE))
         return false;
 
     while (jml_parser_match(TOKEN_LINE));
@@ -231,7 +231,23 @@ jml_bytecode_emit_return(void)
 {
     if (current->type == FUNCTION_INIT)
         jml_bytecode_emit_bytes(OP_GET_LOCAL, 0);
-    else if (current->type != FUNCTION_LAMBDA)
+
+    else if (current->type == FUNCTION_LAMBDA
+        && current->function->bytecode.count > 0) {
+        for (int i = jml_bytecode_current()->count - 1; i >= 0; ++i) {
+            if (jml_bytecode_current()->code[i] == OP_POP) {
+                jml_bytecode_current()->code[i] = OP_NOP;
+                jml_bytecode_emit_byte(OP_RETURN);
+                return;
+
+            } else if (jml_bytecode_current()->code[i] == OP_POP_TWO) {
+                jml_bytecode_current()->code[i] = OP_POP;
+                jml_bytecode_emit_byte(OP_RETURN);
+                return;
+            }
+        }
+
+    } else
         jml_bytecode_emit_byte(OP_NONE);
 
     jml_bytecode_emit_byte(OP_RETURN);

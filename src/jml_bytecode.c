@@ -176,6 +176,9 @@ jml_bytecode_instruction_disassemble(
 
     uint8_t instruction = bytecode->code[offset];
     switch (instruction) {
+        case OP_NOP:
+            return jml_bytecode_instruction_simple("OP_NOP", offset);
+
         case OP_POP:
             return jml_bytecode_instruction_simple("OP_POP", offset);
 

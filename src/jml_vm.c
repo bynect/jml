@@ -908,6 +908,7 @@ jml_vm_run(jml_value_t *last)
 #endif
 
     static const void *dispatcher[] = {
+        &&exec_OP_NOP,
         &&exec_OP_POP,
         &&exec_OP_POP_TWO,
         &&exec_OP_ROT,
@@ -1003,6 +1004,9 @@ jml_vm_run(jml_value_t *last)
 #ifndef JML_COMPUTED_GOTO
         switch (instruction = READ_BYTE()) {
 #endif
+            EXEC_OP(OP_NOP) {
+                END_OP();
+            }
 
             EXEC_OP(OP_POP) {
 #ifdef JML_EVAL
