@@ -212,11 +212,11 @@ jml_bytecode_instruction_disassemble(
         case OP_MUL:
             return jml_bytecode_instruction_simple("OP_MUL", offset);
 
-        case OP_DIV:
-            return jml_bytecode_instruction_simple("OP_DIV", offset);
-
         case OP_POW:
             return jml_bytecode_instruction_simple("OP_POW", offset);
+
+        case OP_DIV:
+            return jml_bytecode_instruction_simple("OP_DIV", offset);
 
         case OP_MOD:
             return jml_bytecode_instruction_simple("OP_MOD", offset);
@@ -224,8 +224,8 @@ jml_bytecode_instruction_disassemble(
         case OP_NOT:
             return jml_bytecode_instruction_simple("OP_NOT", offset);
 
-        case OP_NEGATE:
-            return jml_bytecode_instruction_simple("OP_NEGATE", offset);
+        case OP_NEG:
+            return jml_bytecode_instruction_simple("OP_NEG", offset);
 
         case OP_EQUAL:
             return jml_bytecode_instruction_simple("OP_EQUAL", offset);

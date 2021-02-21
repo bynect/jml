@@ -920,11 +920,11 @@ jml_vm_run(jml_value_t *last)
         &&exec_OP_ADD,
         &&exec_OP_SUB,
         &&exec_OP_MUL,
-        &&exec_OP_DIV,
         &&exec_OP_POW,
+        &&exec_OP_DIV,
         &&exec_OP_MOD,
         &&exec_OP_NOT,
-        &&exec_OP_NEGATE,
+        &&exec_OP_NEG,
         &&exec_OP_EQUAL,
         &&exec_OP_GREATER,
         &&exec_OP_GREATEREQ,
@@ -1079,6 +1079,13 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(OP_POW) {
+                BINARY_FN(
+                    NUM_VAL, pow, double, "exponentiate", vm->pow_string
+                );
+                END_OP();
+            }
+
             EXEC_OP(OP_DIV) {
                 BINARY_DIV(
                     NUM_VAL, /, double, "divide", vm->div_string
@@ -1093,13 +1100,6 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
-            EXEC_OP(OP_POW) {
-                BINARY_FN(
-                    NUM_VAL, pow, double, "exponentiate", vm->pow_string
-                );
-                END_OP();
-            }
-
             EXEC_OP(OP_NOT) {
                 jml_vm_push(
                     BOOL_VAL(jml_value_is_falsey(jml_vm_pop()))
@@ -1107,7 +1107,7 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
-            EXEC_OP(OP_NEGATE) {
+            EXEC_OP(OP_NEG) {
                 if (!IS_NUM(jml_vm_peek(0))) {
                     SAVE_FRAME();
                     jml_vm_error(

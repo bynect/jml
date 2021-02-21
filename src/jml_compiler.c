@@ -663,8 +663,8 @@ jml_binary(JML_UNUSED(bool assignable))
         case TOKEN_PLUS:        jml_bytecode_emit_byte(OP_ADD);         break;
         case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_SUB);         break;
         case TOKEN_STAR:        jml_bytecode_emit_byte(OP_MUL);         break;
-        case TOKEN_SLASH:       jml_bytecode_emit_byte(OP_DIV);         break;
         case TOKEN_STARSTAR:    jml_bytecode_emit_byte(OP_POW);         break;
+        case TOKEN_SLASH:       jml_bytecode_emit_byte(OP_DIV);         break;
         case TOKEN_PERCENT:     jml_bytecode_emit_byte(OP_MOD);         break;
 
         case TOKEN_EQEQUAL:     jml_bytecode_emit_byte(OP_EQUAL);       break;
@@ -675,6 +675,23 @@ jml_binary(JML_UNUSED(bool assignable))
         case TOKEN_NOTEQ:       jml_bytecode_emit_byte(OP_NOTEQ);       break;
 
         case TOKEN_IN:          jml_bytecode_emit_byte(OP_CONTAIN);     break;
+
+        default:                JML_UNREACHABLE();
+    }
+}
+
+
+static void
+jml_unary(JML_UNUSED(bool assignable))
+{
+    jml_parser_match_line();
+
+    jml_token_type type = parser.previous.type;
+    jml_parser_precedence_parse(PREC_UNARY);
+
+    switch (type) {
+        case TOKEN_NOT:         jml_bytecode_emit_byte(OP_NOT);         break;
+        case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_NEG);         break;
 
         default:                JML_UNREACHABLE();
     }
@@ -1121,23 +1138,6 @@ jml_self(JML_UNUSED(bool assignable))
         return;
     }
     jml_variable(false);
-}
-
-
-static void
-jml_unary(JML_UNUSED(bool assignable))
-{
-    jml_parser_match_line();
-
-    jml_token_type type = parser.previous.type;
-    jml_parser_precedence_parse(PREC_UNARY);
-
-    switch (type) {
-        case TOKEN_NOT:         jml_bytecode_emit_byte(OP_NOT);       break;
-        case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_NEGATE);    break;
-
-        default:                JML_UNREACHABLE();
-    }
 }
 
 
