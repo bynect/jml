@@ -22,26 +22,15 @@ jml_bytecode_current(void)
 }
 
 
-static inline void
-jml_mark_initialized(void)
-{
-    current->locals[current->local_count - 1].depth = current->scope_depth;
-}
-
-
-static inline void
-jml_unmark_initialized(int local)
-{
-    current->locals[local].depth = -1;
-}
-
-
 static jml_token_t
 jml_token_emit_synthetic(const char *text)
 {
     jml_token_t token;
     token.start     = text;
     token.length    = strlen(text);
+    token.line      = parser.current.line;
+    token.offset    = 0;
+
     return token;
 }
 
@@ -367,6 +356,20 @@ jml_identifier_equal(jml_token_t *a, jml_token_t *b)
 }
 
 
+static inline void
+jml_local_mark(void)
+{
+    current->locals[current->local_count - 1].depth = current->scope_depth;
+}
+
+
+static inline void
+jml_local_unmark(void)
+{
+    current->locals[current->local_count - 1].depth = -1;
+}
+
+
 static void
 jml_local_add(jml_token_t name)
 {
@@ -401,6 +404,16 @@ jml_local_resolve(jml_compiler_t *compiler,
     return -1;
 }
 
+
+static int
+jml_local_add_synthetic(jml_compiler_t *compiler,
+    jml_token_t *name)
+{
+    jml_local_add(*name);
+    jml_local_mark();
+
+    return jml_local_resolve(compiler, name);
+}
 
 static int
 jml_upvalue_add(jml_compiler_t *compiler,
@@ -526,7 +539,7 @@ static void
 jml_variable_definition(uint8_t global)
 {
     if (current->scope_depth > 0) {
-        jml_mark_initialized();
+        jml_local_mark();
         return;
     }
 
@@ -1395,7 +1408,7 @@ static void
 jml_function_declaration(void)
 {
     uint8_t global = jml_variable_parse("Expect function name.");
-    jml_mark_initialized();
+    jml_local_mark();
     jml_function(FUNCTION_FN);
     jml_variable_definition(global);
 }
@@ -1552,11 +1565,8 @@ jml_import_statement(void)
         jml_token_t token_name = jml_token_emit_synthetic(name);
         int local = jml_local_resolve(current, &token_name);
 
-        if (local == -1) {
-            jml_local_add(token_name);
-            jml_mark_initialized();
-            local = jml_local_resolve(current, &token_name);
-        }
+        if (local == -1)
+            local = jml_local_add_synthetic(current, &token_name);
 
         jml_bytecode_emit_bytes(OP_IMPORT_LOCAL, full_arg);
         jml_bytecode_emit_bytes(name_arg, local);

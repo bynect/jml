@@ -11,6 +11,7 @@ typedef enum {
     OP_ROT,
     OP_SAVE,
     OP_CONST,
+    OP_NUM,
     OP_NONE,
     OP_TRUE,
     OP_FALSE,

@@ -821,6 +821,7 @@ jml_vm_run(jml_value_t *last)
         &&exec_OP_ROT,
         &&exec_OP_SAVE,
         &&exec_OP_CONST,
+        &&exec_OP_NUM,
         &&exec_OP_NONE,
         &&exec_OP_TRUE,
         &&exec_OP_FALSE,
@@ -941,6 +942,11 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_CONST) {
                 jml_value_t constant = READ_CONST();
                 jml_vm_push(constant);
+                END_OP();
+            }
+
+            EXEC_OP(OP_NUM) {
+                jml_vm_push(NUM_VAL(READ_BYTE()));
                 END_OP();
             }
 
@@ -1344,10 +1350,10 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_GET_MEMBER) {
                 jml_value_t             peeked      = jml_vm_peek(0);
+                jml_obj_string_t       *name        = READ_STRING();
 
                 if (IS_INSTANCE(peeked)) {
                     jml_obj_instance_t *instance    = AS_INSTANCE(peeked);
-                    jml_obj_string_t   *name        = READ_STRING();
 
                     jml_value_t value;
                     if (jml_hashmap_get(&instance->fields, name, &value)) {
@@ -1362,7 +1368,6 @@ jml_vm_run(jml_value_t *last)
 
                 } else if (IS_MODULE(peeked)) {
                     jml_obj_module_t   *module      = AS_MODULE(peeked);
-                    jml_obj_string_t   *name        = READ_STRING();
 
                     jml_value_t value;
                     if (jml_hashmap_get(&module->globals, name, &value)) {
