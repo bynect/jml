@@ -337,8 +337,8 @@ jml_vm_call(jml_obj_closure_t *closure,
     jml_call_frame_t *frame = &vm->frames[vm->frame_count++];
     frame->closure = closure;
     frame->pc = closure->function->bytecode.code;
-
     frame->slots = vm->stack_top - arg_count - 1;
+
     return true;
 }
 

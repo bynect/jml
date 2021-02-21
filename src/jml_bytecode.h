@@ -67,8 +67,8 @@ typedef enum {
 
 
 typedef struct {
-    int                             count;
-    int                             capacity;
+    uint32_t                        count;
+    uint32_t                        capacity;
     uint8_t                        *code;
     uint16_t                       *lines;
     jml_value_array_t               constants;

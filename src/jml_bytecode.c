@@ -73,7 +73,7 @@ jml_bytecode_disassemble(jml_bytecode_t *bytecode,
         pad, "", name, pad, ""
     );
 
-    for (int offset = 0; offset < bytecode->count;) {
+    for (uint32_t offset = 0; offset < bytecode->count;) {
         offset = jml_bytecode_instruction_disassemble(
             bytecode, offset
         );
@@ -83,7 +83,7 @@ jml_bytecode_disassemble(jml_bytecode_t *bytecode,
 
 static int
 jml_bytecode_instruction_simple(const char *name,
-    int offset)
+    uint32_t offset)
 {
     printf("%s\n", name);
 

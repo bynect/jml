@@ -138,7 +138,9 @@ jml_parser_match(jml_token_type type)
 static bool
 jml_parser_match_line(void)
 {
-    if (!jml_parser_match(TOKEN_LINE) && !jml_parser_check(TOKEN_RBRACE))
+    if (!jml_parser_match(TOKEN_LINE)
+        && !jml_parser_check(TOKEN_RBRACE)
+        && !jml_parser_match(TOKEN_SEMI))
         return false;
 
     while (jml_parser_match(TOKEN_LINE));
@@ -149,7 +151,8 @@ jml_parser_match_line(void)
 static void
 jml_parser_newline(const char *message)
 {
-    if (!jml_parser_check(TOKEN_RBRACE))
+    if (!jml_parser_check(TOKEN_RBRACE)
+        && !jml_parser_match(TOKEN_SEMI))
         jml_parser_consume(TOKEN_LINE, message);
 
     jml_parser_match_line();
@@ -481,10 +484,9 @@ jml_upvalue_resolve(jml_compiler_t *compiler,
 
 
 static void
-jml_loop_begin(int start, int body, int exit)
+jml_loop_begin(jml_loop_t *loop,
+    int start, int body, int exit)
 {
-    jml_loop_t  *loop   = jml_alloc(sizeof(jml_loop_t));
-
     loop->enclosing     = current->loop;
     loop->start         = start;
     loop->body          = body;
@@ -511,7 +513,6 @@ jml_loop_end(void)
         }
 
         current->loop   = loop->enclosing;
-        jml_free(loop);
     }
 }
 
@@ -1661,7 +1662,11 @@ jml_while_statement(void)
     jml_parser_match_line();
 
     int exit = jml_bytecode_emit_jump(OP_JUMP_IF_FALSE);
-    jml_loop_begin(start, jml_bytecode_current()->count, exit);
+
+    jml_loop_t loop;
+    jml_loop_begin(
+        &loop, start, jml_bytecode_current()->count, exit
+    );
 
     jml_bytecode_emit_byte(OP_POP);
 
@@ -1741,7 +1746,11 @@ jml_for_statement(void)
         jml_bytecode_patch_jump(body);
     }
 
-    jml_loop_begin(start, jml_bytecode_current()->count, exit);
+    jml_loop_t loop;
+    jml_loop_begin(
+        &loop, start, jml_bytecode_current()->count, exit
+    );
+
     jml_statement();
 
     jml_bytecode_emit_loop(start);
