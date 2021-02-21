@@ -54,9 +54,19 @@ jml_vm_init(jml_vm_t *vm)
     vm->init_string         = NULL;
     vm->call_string         = NULL;
     vm->free_string         = NULL;
+    vm->add_string          = NULL;
+    vm->sub_string          = NULL;
+    vm->mul_string          = NULL;
+    vm->pow_string          = NULL;
+    vm->div_string          = NULL;
+    vm->mod_string          = NULL;
+    vm->gt_string           = NULL;
+    vm->ge_string           = NULL;
+    vm->lt_string           = NULL;
+    vm->le_string           = NULL;
+    vm->concat_string       = NULL;
     vm->get_string          = NULL;
     vm->set_string          = NULL;
-    vm->concat_string       = NULL;
     vm->module_string       = NULL;
     vm->path_string         = NULL;
 
@@ -64,9 +74,19 @@ jml_vm_init(jml_vm_t *vm)
     vm->init_string         = jml_obj_string_copy("__init", 6);
     vm->call_string         = jml_obj_string_copy("__call", 6);
     vm->free_string         = jml_obj_string_copy("__free", 6);
+    vm->add_string          = jml_obj_string_copy("__add", 5);
+    vm->sub_string          = jml_obj_string_copy("__sub", 5);
+    vm->mul_string          = jml_obj_string_copy("__mul", 5);
+    vm->pow_string          = jml_obj_string_copy("__pow", 5);
+    vm->div_string          = jml_obj_string_copy("__div", 5);
+    vm->mod_string          = jml_obj_string_copy("__mod", 5);
+    vm->gt_string           = jml_obj_string_copy("__gt", 4);
+    vm->ge_string           = jml_obj_string_copy("__ge", 4);
+    vm->lt_string           = jml_obj_string_copy("__lt", 4);
+    vm->le_string           = jml_obj_string_copy("__le", 4);
+    vm->concat_string       = jml_obj_string_copy("__concat", 8);
     vm->get_string          = jml_obj_string_copy("__get", 5);
     vm->set_string          = jml_obj_string_copy("__set", 5);
-    vm->concat_string       = jml_obj_string_copy("__concat", 8);
     vm->module_string       = jml_obj_string_copy("__module", 8);
     vm->path_string         = jml_obj_string_copy("__path", 6);
 
@@ -89,15 +109,25 @@ jml_vm_free(jml_vm_t *vm)
     vm->init_string         = NULL;
     vm->call_string         = NULL;
     vm->free_string         = NULL;
+    vm->add_string          = NULL;
+    vm->sub_string          = NULL;
+    vm->mul_string          = NULL;
+    vm->pow_string          = NULL;
+    vm->div_string          = NULL;
+    vm->mod_string          = NULL;
+    vm->gt_string           = NULL;
+    vm->ge_string           = NULL;
+    vm->lt_string           = NULL;
+    vm->le_string           = NULL;
+    vm->concat_string       = NULL;
     vm->get_string          = NULL;
     vm->set_string          = NULL;
-    vm->concat_string       = NULL;
     vm->module_string       = NULL;
     vm->path_string         = NULL;
 
     JML_ASSERT(
         vm->allocated == 0,
-        "[VM]  |%zd bytes not freed|\n",
+        "[VM]  |%zu bytes not freed|\n",
         vm->allocated
     );
 
@@ -371,7 +401,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
                 } else {
                     jml_vm_error(
-                        "Instance of '%s' is not callable.",
+                        "Can't call instance of '%s'.",
                         instance->klass->name->chars
                     );
                     return false;
@@ -752,58 +782,117 @@ jml_vm_run(jml_value_t *last)
     (frame->closure->function->bytecode.constants.values[READ_BYTE()])
 
 
-#define BINARY_OP(type, op, num_type)                   \
+#define BINARY_OP(type, op, num_type, verb, string)     \
     do {                                                \
-        if (!IS_NUM(jml_vm_peek(0))                     \
-            || !IS_NUM(jml_vm_peek(1))) {               \
+        jml_value_t a = jml_vm_peek(1);                 \
+        jml_value_t b = jml_vm_peek(0);                 \
+                                                        \
+        if (IS_NUM(a) && IS_NUM(b)) {                   \
+            jml_vm_pop_two();                           \
+            jml_vm_push(type(                           \
+                (num_type)AS_NUM(a)                     \
+                op                                      \
+                (num_type)AS_NUM(b)                     \
+            ));                                         \
+                                                        \
+        } else if (IS_INSTANCE(a)) {                    \
+            SAVE_FRAME();                               \
+            if (!jml_vm_invoke_instance(                \
+                AS_INSTANCE(a), string, 1)) {           \
+                jml_vm_error(                           \
+                    "Can't " verb " instance of '%s'.", \
+                    AS_INSTANCE(a)->klass->name->chars  \
+                );                                      \
+                return INTERPRET_RUNTIME_ERROR;         \
+            }                                           \
+            LOAD_FRAME();                               \
+            END_OP();                                   \
+                                                        \
+        } else {                                        \
             SAVE_FRAME();                               \
             jml_vm_error(                               \
-                "Operands must be numbers."             \
+                "Operands must be numbers or instances."\
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
         }                                               \
-        num_type b = AS_NUM(jml_vm_pop());              \
-        num_type a = AS_NUM(jml_vm_pop());              \
-        jml_vm_push(type(a op b));                      \
     } while (false)
 
 
-#define BINARY_DIV(type, op, num_type)                  \
+#define BINARY_DIV(type, op, num_type, verb, string)    \
     do {                                                \
-        if (!IS_NUM(jml_vm_peek(0))                     \
-            || !IS_NUM(jml_vm_peek(1))) {               \
+        jml_value_t a = jml_vm_peek(1);                 \
+        jml_value_t b = jml_vm_peek(0);                 \
+                                                        \
+        if (IS_NUM(a) && IS_NUM(b)) {                   \
+            jml_vm_pop_two();                           \
+            if (AS_NUM(b) == 0) {                       \
+                SAVE_FRAME();                           \
+                jml_vm_error(                           \
+                    "Can't divide by zero."             \
+                );                                      \
+                return INTERPRET_RUNTIME_ERROR;         \
+            }                                           \
+            jml_vm_push(type(                           \
+                (num_type)AS_NUM(a)                     \
+                op                                      \
+                (num_type)AS_NUM(b)                     \
+            ));                                         \
+                                                        \
+        } else if (IS_INSTANCE(a)) {                    \
+            SAVE_FRAME();                               \
+            if (!jml_vm_invoke_instance(                \
+                AS_INSTANCE(a), string, 1)) {           \
+                jml_vm_error(                           \
+                    "Can't " verb " instance of '%s'.", \
+                    AS_INSTANCE(a)->klass->name->chars  \
+                );                                      \
+                return INTERPRET_RUNTIME_ERROR;         \
+            }                                           \
+            LOAD_FRAME();                               \
+            END_OP();                                   \
+                                                        \
+        } else {                                        \
             SAVE_FRAME();                               \
             jml_vm_error(                               \
-                "Operands must be numbers."             \
+                "Operands must be numbers or instances."\
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
         }                                               \
-        num_type b = AS_NUM(jml_vm_pop());              \
-        num_type a = AS_NUM(jml_vm_pop());              \
-        if (b == 0) {                                   \
-            SAVE_FRAME();                               \
-            jml_vm_error(                               \
-                "Can't divide by zero."                 \
-            );                                          \
-            return INTERPRET_RUNTIME_ERROR;             \
-        }                                               \
-        jml_vm_push(type(a op b));                      \
     } while (false)
 
 
-#define BINARY_FN(type, fn, num_type)                   \
+#define BINARY_FN(type, fn, num_type, verb, string)     \
     do {                                                \
-        if (!IS_NUM(jml_vm_peek(0))                     \
-            || !IS_NUM(jml_vm_peek(1))) {               \
+        jml_value_t a = jml_vm_peek(1);                 \
+        jml_value_t b = jml_vm_peek(0);                 \
+                                                        \
+        if (IS_NUM(a) && IS_NUM(b)) {                   \
+            jml_vm_pop_two();                           \
+            jml_vm_push(type(fn(                        \
+                (num_type)AS_NUM(a),                    \
+                (num_type)AS_NUM(b)                     \
+            )));                                        \
+                                                        \
+        } else if (IS_INSTANCE(a)) {                    \
+            SAVE_FRAME();                               \
+            if (!jml_vm_invoke_instance(                \
+                AS_INSTANCE(a), string, 1)) {           \
+                jml_vm_error(                           \
+                    "Can't " verb " instance of '%s'.", \
+                    AS_INSTANCE(a)->klass->name->chars  \
+                );                                      \
+                return INTERPRET_RUNTIME_ERROR;         \
+            }                                           \
+            LOAD_FRAME();                               \
+            END_OP();                                   \
+                                                        \
+        } else {                                        \
             SAVE_FRAME();                               \
             jml_vm_error(                               \
-                "Operands must be numbers."             \
+                "Operands must be numbers or instances."\
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
         }                                               \
-        num_type b = AS_NUM(jml_vm_pop());              \
-        num_type a = AS_NUM(jml_vm_pop());              \
-        jml_vm_push(type(fn(a, b)));                    \
     } while (false)
 
 
@@ -970,32 +1059,44 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_ADD) {
-                BINARY_OP(NUM_VAL, +, double);
+                BINARY_OP(
+                    NUM_VAL, +, double, "add to", vm->add_string
+                );
                 END_OP();
             }
 
             EXEC_OP(OP_SUB) {
-                BINARY_OP(NUM_VAL, -, double);
+                BINARY_OP(
+                    NUM_VAL, -, double, "subtract from", vm->sub_string
+                );
                 END_OP();
             }
 
             EXEC_OP(OP_MUL) {
-                BINARY_OP(NUM_VAL, *, double);
+                BINARY_OP(
+                    NUM_VAL, *, double, "multiply", vm->mul_string
+                );
                 END_OP();
             }
 
             EXEC_OP(OP_DIV) {
-                BINARY_DIV(NUM_VAL, /, double);
+                BINARY_DIV(
+                    NUM_VAL, /, double, "divide", vm->div_string
+                );
                 END_OP();
             }
 
             EXEC_OP(OP_MOD) {
-                BINARY_DIV(NUM_VAL, %, uint64_t);
+                BINARY_DIV(
+                    NUM_VAL, %, uint64_t, "divide (modulo)", vm->mod_string
+                );
                 END_OP();
             }
 
             EXEC_OP(OP_POW) {
-                BINARY_FN(NUM_VAL, pow, double);
+                BINARY_FN(
+                    NUM_VAL, pow, double, "exponentiate", vm->pow_string
+                );
                 END_OP();
             }
 
@@ -1014,6 +1115,7 @@ jml_vm_run(jml_value_t *last)
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
+
                 jml_vm_push(
                     NUM_VAL(-AS_NUM(jml_vm_pop()))
                 );
@@ -1030,22 +1132,30 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_GREATER) {
-                BINARY_OP(BOOL_VAL, >, double);
+                BINARY_OP(
+                    BOOL_VAL, >, double, "compare (gt)", vm->gt_string
+                );
                 END_OP();
             }
 
             EXEC_OP(OP_GREATEREQ) {
-                BINARY_OP(BOOL_VAL, >=, double);
+                BINARY_OP(
+                    BOOL_VAL, >=, double, "compare (ge)", vm->ge_string
+                );
                 END_OP();
             }
 
             EXEC_OP(OP_LESS) {
-                BINARY_OP(BOOL_VAL, <, double);
+                BINARY_OP(
+                    BOOL_VAL, <, double, "compare (lt)", vm->lt_string
+                );
                 END_OP();
             }
 
             EXEC_OP(OP_LESSEQ) {
-                BINARY_OP(BOOL_VAL, <=, double);
+                BINARY_OP(
+                    BOOL_VAL, <=, double, "compare (le)", vm->le_string
+                );
                 END_OP();
             }
 
@@ -1080,7 +1190,7 @@ jml_vm_run(jml_value_t *last)
                     SAVE_FRAME();
                     if (!jml_vm_invoke_instance(AS_INSTANCE(head), vm->concat_string, 1)) {
                         jml_vm_error(
-                            "Instance of '%s' is not concatenable.",
+                            "Can't concatenate instance of '%s'.",
                             AS_INSTANCE(head)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -1443,7 +1553,7 @@ jml_vm_run(jml_value_t *last)
                     SAVE_FRAME();
                     if (!jml_vm_invoke_instance(AS_INSTANCE(box), vm->set_string, 2)) {
                         jml_vm_error(
-                            "Instance of '%s' is not indexable.",
+                            "Can't index instance of '%s'.",
                             AS_INSTANCE(box)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -1501,7 +1611,7 @@ jml_vm_run(jml_value_t *last)
                     SAVE_FRAME();
                     if (!jml_vm_invoke_instance(AS_INSTANCE(box), vm->get_string, 1)) {
                         jml_vm_error(
-                            "Instance of '%s' is not indexable.",
+                            "Can't index instance of '%s'.",
                             AS_INSTANCE(box)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;

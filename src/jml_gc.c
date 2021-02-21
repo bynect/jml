@@ -154,9 +154,19 @@ jml_gc_mark_roots(void)
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
     jml_gc_mark_obj((jml_obj_t*)vm->call_string);
     jml_gc_mark_obj((jml_obj_t*)vm->free_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->add_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->sub_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->mul_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->pow_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->div_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->mod_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->gt_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->ge_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->lt_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->le_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->concat_string);
     jml_gc_mark_obj((jml_obj_t*)vm->get_string);
     jml_gc_mark_obj((jml_obj_t*)vm->set_string);
-    jml_gc_mark_obj((jml_obj_t*)vm->concat_string);
     jml_gc_mark_obj((jml_obj_t*)vm->module_string);
     jml_gc_mark_obj((jml_obj_t*)vm->path_string);
 

@@ -21,9 +21,19 @@ struct jml_vm {
     jml_obj_string_t               *init_string;
     jml_obj_string_t               *call_string;
     jml_obj_string_t               *free_string;
+    jml_obj_string_t               *add_string;
+    jml_obj_string_t               *sub_string;
+    jml_obj_string_t               *mul_string;
+    jml_obj_string_t               *pow_string;
+    jml_obj_string_t               *div_string;
+    jml_obj_string_t               *mod_string;
+    jml_obj_string_t               *gt_string;
+    jml_obj_string_t               *ge_string;
+    jml_obj_string_t               *lt_string;
+    jml_obj_string_t               *le_string;
+    jml_obj_string_t               *concat_string;
     jml_obj_string_t               *get_string;
     jml_obj_string_t               *set_string;
-    jml_obj_string_t               *concat_string;
     jml_obj_string_t               *module_string;
     jml_obj_string_t               *path_string;
 
@@ -32,8 +42,8 @@ struct jml_vm {
     jml_obj_t                      *objects;
     size_t                          allocated;
     size_t                          next_gc;
-    int                             gray_count;
-    int                             gray_capacity;
+    int64_t                         gray_count;
+    int64_t                         gray_capacity;
     jml_obj_t                     **gray_stack;
 };
 
