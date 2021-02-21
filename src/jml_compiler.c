@@ -231,7 +231,7 @@ jml_bytecode_emit_return(void)
 {
     if (current->type == FUNCTION_INIT)
         jml_bytecode_emit_bytes(OP_GET_LOCAL, 0);
-    else
+    else if (current->type != FUNCTION_LAMBDA)
         jml_bytecode_emit_byte(OP_NONE);
 
     jml_bytecode_emit_byte(OP_RETURN);
@@ -262,7 +262,11 @@ jml_compiler_init(jml_compiler_t *compiler, jml_function_type type,
     compiler->function      = jml_obj_function_new();
     current                 = compiler;
 
-    if (type != FUNCTION_MAIN) {
+    if (type == FUNCTION_LAMBDA) {
+        current->function->name = jml_obj_string_copy(
+            "lambda", 6
+        );
+    } else if (type != FUNCTION_MAIN) {
         current->function->name = jml_obj_string_copy(
             parser.previous.start, parser.previous.length
         );
@@ -558,6 +562,8 @@ static jml_parser_rule *jml_parser_rule_get(jml_token_type type);
 
 static void jml_parser_precedence_parse(jml_parser_precedence precedence);
 
+static void jml_block(void);
+
 
 static void
 jml_parser_synchronize(void)
@@ -575,6 +581,7 @@ jml_parser_synchronize(void)
             case TOKEN_WHILE:
             case TOKEN_BREAK:
             case TOKEN_SKIP:
+            case TOKEN_WITH:
             case TOKEN_IF:
             case TOKEN_CLASS:
             case TOKEN_LET:
@@ -1141,6 +1148,44 @@ jml_self(JML_UNUSED(bool assignable))
 }
 
 
+static void
+jml_lambda(JML_UNUSED(bool assignable))
+{
+    jml_compiler_t compiler;
+    jml_compiler_init(&compiler, FUNCTION_LAMBDA,
+        current->module, current->output);
+    jml_scope_begin();
+
+    if (!jml_parser_check(TOKEN_PIPE)) {
+        do {
+            current->function->arity++;
+            if (current->function->arity > 255) {
+                jml_parser_error_current(
+                    "Can't have more than 255 parameters."
+                );
+            }
+
+            uint8_t param_const = jml_variable_parse("Expect parameter name.");
+            jml_variable_definition(param_const);
+        } while (jml_parser_match(TOKEN_COMMA));
+    }
+
+    jml_parser_consume(TOKEN_PIPE, "Expect '|' after parameters.");
+    jml_parser_consume(TOKEN_LBRACE, "Expect '{' before lambda body.");
+    jml_block();
+
+    jml_obj_function_t *function = jml_compiler_end();
+    jml_bytecode_emit_bytes(
+        OP_CLOSURE, jml_bytecode_make_const(OBJ_VAL(function))
+    );
+
+    for (int i = 0; i < function->upvalue_count; i++) {
+        jml_bytecode_emit_byte(compiler.upvalues[i].local ? 1 : 0);
+        jml_bytecode_emit_byte(compiler.upvalues[i].index);
+    }
+}
+
+
 static jml_parser_rule rules[] = {
     /*TOKEN_RPAREN*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_LPAREN*/    {&jml_grouping, &jml_call,      PREC_CALL},
@@ -1153,7 +1198,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_DOT*/       {NULL,          &jml_dot,       PREC_CALL},
 
     /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
-    /*TOKEN_PIPE*/      {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_PIPE*/      {&jml_lambda,   NULL,           PREC_NONE},
     /*TOKEN_CARET*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AMP*/       {NULL,          NULL,           PREC_NONE},
     /*TOKEN_TILDE*/     {NULL,          NULL,           PREC_NONE},

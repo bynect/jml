@@ -34,6 +34,7 @@ typedef enum {
 
 typedef enum {
     FUNCTION_FN,
+    FUNCTION_LAMBDA,
     FUNCTION_METHOD,
     FUNCTION_MAIN,
     FUNCTION_INIT
