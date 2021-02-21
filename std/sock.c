@@ -25,10 +25,14 @@
 #include <unistd.h>
 #include <netdb.h>
 
+#else
+
+#error Current platform not supported.
+
 #endif
 
 
-static jml_obj_class_t *socket_class    = NULL;
+static jml_obj_class_t  *socket_class   = NULL;
 
 static jml_obj_string_t *domain_string  = NULL;
 

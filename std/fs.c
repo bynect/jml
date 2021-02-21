@@ -12,6 +12,10 @@
 #include <unistd.h>
 #include <dirent.h>
 
+#else
+
+#error Current platform not supported.
+
 #endif
 
 

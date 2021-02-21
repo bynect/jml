@@ -1,8 +1,18 @@
-#include <regex.h>
 #include <string.h>
 #include <stdio.h>
 
 #include <jml.h>
+
+
+#if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
+
+#include <regex.h>
+
+#else
+
+#error Current platform not supported.
+
+#endif
 
 
 static regex_t                      last_rule;
