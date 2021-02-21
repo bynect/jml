@@ -56,6 +56,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->free_string         = NULL;
     vm->get_string          = NULL;
     vm->set_string          = NULL;
+    vm->concat_string       = NULL;
     vm->module_string       = NULL;
     vm->path_string         = NULL;
 
@@ -65,6 +66,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->free_string         = jml_obj_string_copy("__free", 6);
     vm->get_string          = jml_obj_string_copy("__get", 5);
     vm->set_string          = jml_obj_string_copy("__set", 5);
+    vm->concat_string       = jml_obj_string_copy("__concat", 8);
     vm->module_string       = jml_obj_string_copy("__module", 8);
     vm->path_string         = jml_obj_string_copy("__path", 6);
 
@@ -89,6 +91,7 @@ jml_vm_free(jml_vm_t *vm)
     vm->free_string         = NULL;
     vm->get_string          = NULL;
     vm->set_string          = NULL;
+    vm->concat_string       = NULL;
     vm->module_string       = NULL;
     vm->path_string         = NULL;
 
@@ -368,7 +371,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
                 } else {
                     jml_vm_error(
-                        "Instance of class '%s' is not callable.",
+                        "Instance of '%s' is not callable.",
                         instance->klass->name->chars
                     );
                     return false;
@@ -839,6 +842,7 @@ jml_vm_run(jml_value_t *last)
         &&exec_OP_LESS,
         &&exec_OP_LESSEQ,
         &&exec_OP_NOTEQ,
+        &&exec_OP_CONCAT,
         &&exec_OP_CONTAIN,
         &&exec_OP_JUMP,
         &&exec_OP_JUMP_IF_FALSE,
@@ -966,43 +970,7 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_ADD) {
-                if (IS_STRING(jml_vm_peek(1))) {
-                    if (IS_STRING(jml_vm_peek(0))) {
-                        jml_string_concatenate();
-
-                    } else if (IS_NUM(jml_vm_peek(0))) {
-                        char *temp = jml_value_stringify(jml_vm_pop());
-                        jml_vm_push(OBJ_VAL(
-                            jml_obj_string_take(temp, strlen(temp))
-                        ));
-
-                        jml_string_concatenate();
-
-                    } else {
-                        SAVE_FRAME();
-                        jml_vm_error(
-                            "Can't concatenate string to %s.",
-                            jml_value_stringify_type(jml_vm_peek(0))
-                        );
-                        return INTERPRET_RUNTIME_ERROR;
-                    }
-
-                } else if (IS_NUM(jml_vm_peek(0))
-                        && IS_NUM(jml_vm_peek(1))) {
-
-                    BINARY_OP(NUM_VAL, +, double);
-
-                } else if (IS_ARRAY(jml_vm_peek(1))) {
-
-                    jml_array_concatenate();
-
-                } else {
-                    SAVE_FRAME();
-                    jml_vm_error(
-                        "Operands must be numbers, strings or array."
-                    );
-                    return INTERPRET_RUNTIME_ERROR;
-                }
+                BINARY_OP(NUM_VAL, +, double);
                 END_OP();
             }
 
@@ -1022,7 +990,7 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_MOD) {
-                BINARY_DIV(NUM_VAL, %, int);
+                BINARY_DIV(NUM_VAL, %, uint64_t);
                 END_OP();
             }
 
@@ -1085,19 +1053,61 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t b = jml_vm_pop();
                 jml_value_t a = jml_vm_pop();
                 jml_vm_push(
-                    BOOL_VAL(!jml_value_equal(a, b)));
+                    BOOL_VAL(!jml_value_equal(a, b))
+                );
+                END_OP();
+            }
 
+            EXEC_OP(OP_CONCAT) {
+                jml_value_t head    = jml_vm_peek(1);
+                jml_value_t tail    = jml_vm_peek(0);
+
+                if (IS_STRING(head)) {
+                    if (!IS_STRING(tail)) {
+                        SAVE_FRAME();
+                        jml_vm_error(
+                            "Can't concatenate string to %s.",
+                            jml_value_stringify_type(tail)
+                        );
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    jml_string_concatenate();
+
+                } else if (IS_ARRAY(jml_vm_peek(1)))
+                    jml_array_concatenate();
+
+                else if (IS_INSTANCE(head)) {
+                    SAVE_FRAME();
+                    if (!jml_vm_invoke_instance(AS_INSTANCE(head), vm->concat_string, 1)) {
+                        jml_vm_error(
+                            "Instance of '%s' is not concatenable.",
+                            AS_INSTANCE(head)->klass->name->chars
+                        );
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    LOAD_FRAME();
+                    END_OP();
+
+                } else {
+                    SAVE_FRAME();
+                    jml_vm_error(
+                        "Operands must be strings, array or instances."
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+                }
                 END_OP();
             }
 
             EXEC_OP(OP_CONTAIN) {
-                jml_value_t box     = jml_vm_pop();
-                jml_value_t value   = jml_vm_pop();
+                jml_value_t box     = jml_vm_peek(0);
+                jml_value_t value   = jml_vm_peek(1);
 
                 if (IS_ARRAY(box)) {
                     jml_obj_array_t *array = AS_ARRAY(box);
                     for (int i = 0; i < array->values.count; ++i) {
                         if (jml_value_equal(value, array->values.values[i])) {
+                            jml_vm_pop_two();
                             jml_vm_push(TRUE_VAL);
                             END_OP();
                         }
@@ -1108,6 +1118,7 @@ jml_vm_run(jml_value_t *last)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
+                jml_vm_pop_two();
                 jml_vm_push(FALSE_VAL);
                 END_OP();
             }
@@ -1432,7 +1443,7 @@ jml_vm_run(jml_value_t *last)
                     SAVE_FRAME();
                     if (!jml_vm_invoke_instance(AS_INSTANCE(box), vm->set_string, 2)) {
                         jml_vm_error(
-                            "Instance of class '%s' is not indexable.",
+                            "Instance of '%s' is not indexable.",
                             AS_INSTANCE(box)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -1490,7 +1501,7 @@ jml_vm_run(jml_value_t *last)
                     SAVE_FRAME();
                     if (!jml_vm_invoke_instance(AS_INSTANCE(box), vm->get_string, 1)) {
                         jml_vm_error(
-                            "Instance of class '%s' is not indexable.",
+                            "Instance of '%s' is not indexable.",
                             AS_INSTANCE(box)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;

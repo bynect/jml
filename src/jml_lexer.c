@@ -342,11 +342,13 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
         case  '[':  return  jml_token_emit(TOKEN_LSQARE, lexer);
         case  '}':  return  jml_token_emit(TOKEN_RBRACE, lexer);
         case  '{':  return  jml_token_emit(TOKEN_LBRACE, lexer);
-
-        case  ':':  return  jml_token_emit(TOKEN_COLON, lexer);
         case  ';':  return  jml_token_emit(TOKEN_SEMI, lexer);
         case  ',':  return  jml_token_emit(TOKEN_COMMA, lexer);
         case  '.':  return  jml_token_emit(TOKEN_DOT, lexer);
+
+        case  ':':  return  jml_token_emit(jml_lexer_match(':', lexer)
+                        ? jml_lexer_match('=', lexer) ? TOKEN_COLCOLONEQ
+                        : TOKEN_COLCOLON : TOKEN_COLON, lexer);
 
         case  '+':  return  jml_token_emit(jml_lexer_match('=', lexer)
                         ? TOKEN_PLUSEQ : TOKEN_PLUS, lexer);
@@ -354,7 +356,6 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
         case  '-':  return  jml_token_emit(jml_lexer_match('>', lexer)
                         ? TOKEN_ARROW : jml_lexer_match('=', lexer)
                         ? TOKEN_MINUSEQ : TOKEN_MINUS, lexer);
-
 
         case  '*':  return  jml_token_emit(jml_lexer_match('*', lexer)
                         ? jml_lexer_match('=', lexer) ? TOKEN_STARSTAREQ
@@ -391,6 +392,9 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
         case  '^':  return  jml_token_emit(TOKEN_CARET, lexer);
         case  '?':  return  jml_token_emit(TOKEN_QUEST, lexer);
         case  '#':  return  jml_token_emit(TOKEN_HASH, lexer);
+
+        default:
+            break;
     }
 
     return jml_token_emit_error("Unexpected character.", lexer);
@@ -400,253 +404,91 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
 void
 jml_token_type_print(jml_token_type type)
 {
+#define PRINT_TOKEN(type)           type: printf("%s", #type); break
+
+
     switch(type) {
-        case TOKEN_RPAREN:
-            printf("%s", "TOKEN_RPAREN");
-            break;
+        case PRINT_TOKEN(TOKEN_RPAREN);
+        case PRINT_TOKEN(TOKEN_LPAREN);
+        case PRINT_TOKEN(TOKEN_RSQARE);
+        case PRINT_TOKEN(TOKEN_LSQARE);
+        case PRINT_TOKEN(TOKEN_RBRACE);
+        case PRINT_TOKEN(TOKEN_LBRACE);
+        case PRINT_TOKEN(TOKEN_SEMI);
+        case PRINT_TOKEN(TOKEN_COMMA);
+        case PRINT_TOKEN(TOKEN_DOT);
 
-        case TOKEN_LPAREN:
-            printf("%s", "TOKEN_LPAREN");
-            break;
+        case PRINT_TOKEN(TOKEN_COLON);
+        case PRINT_TOKEN(TOKEN_PIPE);
+        case PRINT_TOKEN(TOKEN_CARET);
+        case PRINT_TOKEN(TOKEN_AMP);
+        case PRINT_TOKEN(TOKEN_TILDE);
+        case PRINT_TOKEN(TOKEN_QUEST);
+        case PRINT_TOKEN(TOKEN_BANG);
+        case PRINT_TOKEN(TOKEN_HASH);
+        case PRINT_TOKEN(TOKEN_AT);
+        case PRINT_TOKEN(TOKEN_ARROW);
 
-        case TOKEN_RSQARE:
-            printf("%s", "TOKEN_RSQARE");
-            break;
+        case PRINT_TOKEN(TOKEN_COLCOLON);
+        case PRINT_TOKEN(TOKEN_COLCOLONEQ);
+        case PRINT_TOKEN(TOKEN_PLUS);
+        case PRINT_TOKEN(TOKEN_PLUSEQ);
+        case PRINT_TOKEN(TOKEN_MINUS);
+        case PRINT_TOKEN(TOKEN_MINUSEQ);
+        case PRINT_TOKEN(TOKEN_STAR);
+        case PRINT_TOKEN(TOKEN_STAREQ);
+        case PRINT_TOKEN(TOKEN_STARSTAR);
+        case PRINT_TOKEN(TOKEN_STARSTAREQ);
+        case PRINT_TOKEN(TOKEN_SLASH);
+        case PRINT_TOKEN(TOKEN_SLASHEQ);
+        case PRINT_TOKEN(TOKEN_PERCENT);
+        case PRINT_TOKEN(TOKEN_PERCENTEQ);
+        case PRINT_TOKEN(TOKEN_EQUAL);
 
-        case TOKEN_LSQARE:
-            printf("%s", "TOKEN_LSQARE");
-            break;
+        case PRINT_TOKEN(TOKEN_EQEQUAL);
+        case PRINT_TOKEN(TOKEN_GREATER);
+        case PRINT_TOKEN(TOKEN_GREATEREQ);
+        case PRINT_TOKEN(TOKEN_LESS);
+        case PRINT_TOKEN(TOKEN_LESSEQ);
+        case PRINT_TOKEN(TOKEN_NOTEQ);
 
-        case TOKEN_RBRACE:
-            printf("%s", "TOKEN_RBRACE");
-            break;
+        case PRINT_TOKEN(TOKEN_FOR);
+        case PRINT_TOKEN(TOKEN_WHILE);
+        case PRINT_TOKEN(TOKEN_BREAK);
+        case PRINT_TOKEN(TOKEN_SKIP);
+        case PRINT_TOKEN(TOKEN_IN);
+        case PRINT_TOKEN(TOKEN_WITH);
+        case PRINT_TOKEN(TOKEN_IF);
+        case PRINT_TOKEN(TOKEN_ELSE);
+        case PRINT_TOKEN(TOKEN_CLASS);
+        case PRINT_TOKEN(TOKEN_SELF);
+        case PRINT_TOKEN(TOKEN_SUPER);
+        case PRINT_TOKEN(TOKEN_LET);
+        case PRINT_TOKEN(TOKEN_FN);
+        case PRINT_TOKEN(TOKEN_RETURN);
+        case PRINT_TOKEN(TOKEN_IMPORT);
+        case PRINT_TOKEN(TOKEN_ASYNC);
+        case PRINT_TOKEN(TOKEN_AWAIT);
+        case PRINT_TOKEN(TOKEN_AND);
+        case PRINT_TOKEN(TOKEN_NOT);
+        case PRINT_TOKEN(TOKEN_OR);
 
-        case TOKEN_LBRACE:
-            printf("%s", "TOKEN_LBRACE");
-            break;
+        case PRINT_TOKEN(TOKEN_TRUE);
+        case PRINT_TOKEN(TOKEN_FALSE);
+        case PRINT_TOKEN(TOKEN_NONE);
+        case PRINT_TOKEN(TOKEN_NAME);
+        case PRINT_TOKEN(TOKEN_NUMBER);
+        case PRINT_TOKEN(TOKEN_STRING);
 
-        case TOKEN_COLON:
-            printf("%s", "TOKEN_COLON");
-            break;
-
-        case TOKEN_SEMI:
-            printf("%s", "TOKEN_SEMI");
-            break;
-
-        case TOKEN_COMMA:
-            printf("%s", "TOKEN_COMMA");
-            break;
-
-        case TOKEN_DOT:
-            printf("%s", "TOKEN_DOT");
-            break;
-
-        case TOKEN_PIPE:
-            printf("%s", "TOKEN_PIPE");
-            break;
-
-        case TOKEN_CARET:
-            printf("%s", "TOKEN_CARET");
-            break;
-
-        case TOKEN_AMP:
-            printf("%s", "TOKEN_AMP");
-            break;
-
-        case TOKEN_TILDE:
-            printf("%s", "TOKEN_TILDE");
-            break;
-
-        case TOKEN_QUEST:
-            printf("%s", "TOKEN_QUEST");
-            break;
-
-        case TOKEN_BANG:
-            printf("%s", "TOKEN_BANG");
-            break;
-
-        case TOKEN_HASH:
-            printf("%s", "TOKEN_HASH");
-            break;
-
-        case TOKEN_AT:
-            printf("%s", "TOKEN_AT");
-            break;
-
-        case TOKEN_ARROW:
-            printf("%s", "TOKEN_ARROW");
-            break;
-
-        case TOKEN_PLUS:
-            printf("%s", "TOKEN_PLUS");
-            break;
-
-        case TOKEN_MINUS:
-            printf("%s", "TOKEN_MINUS");
-            break;
-
-        case TOKEN_STAR:
-            printf("%s", "TOKEN_STAR");
-            break;
-
-        case TOKEN_STARSTAR:
-            printf("%s", "TOKEN_STARSTAR");
-            break;
-
-        case TOKEN_SLASH:
-            printf("%s", "TOKEN_SLASH");
-            break;
-
-        case TOKEN_PERCENT:
-            printf("%s", "TOKEN_PERCENT");
-            break;
-
-        case TOKEN_EQUAL:
-            printf("%s", "TOKEN_EQUAL");
-            break;
-
-        case TOKEN_EQEQUAL:
-            printf("%s", "TOKEN_EQEQUAL");
-            break;
-
-        case TOKEN_GREATER:
-            printf("%s", "TOKEN_GREATER");
-            break;
-
-        case TOKEN_GREATEREQ:
-            printf("%s", "TOKEN_GREATEREQ");
-            break;
-
-        case TOKEN_LESS:
-            printf("%s", "TOKEN_LESS");
-            break;
-
-        case TOKEN_LESSEQ:
-            printf("%s", "TOKEN_LESSEQ");
-            break;
-
-        case TOKEN_NOTEQ:
-            printf("%s", "TOKEN_NOTEQ");
-            break;
-
-        case TOKEN_FOR:
-            printf("%s", "TOKEN_FOR");
-            break;
-
-        case TOKEN_WHILE:
-            printf("%s", "TOKEN_WHILE");
-            break;
-
-        case TOKEN_BREAK:
-            printf("%s", "TOKEN_BREAK");
-            break;
-
-        case TOKEN_SKIP:
-            printf("%s", "TOKEN_SKIP");
-            break;
-
-        case TOKEN_IN:
-            printf("%s", "TOKEN_IN");
-            break;
-
-        case TOKEN_WITH:
-            printf("%s", "TOKEN_WITH");
-            break;
-
-        case TOKEN_IF:
-            printf("%s", "TOKEN_IF");
-            break;
-
-        case TOKEN_ELSE:
-            printf("%s", "TOKEN_ELSE");
-            break;
-
-        case TOKEN_CLASS:
-            printf("%s", "TOKEN_CLASS");
-            break;
-
-        case TOKEN_SELF:
-            printf("%s", "TOKEN_SELF");
-            break;
-
-        case TOKEN_SUPER:
-            printf("%s", "TOKEN_SUPER");
-            break;
-
-        case TOKEN_LET:
-            printf("%s", "TOKEN_LET");
-            break;
-
-        case TOKEN_FN:
-            printf("%s", "TOKEN_FN");
-            break;
-
-        case TOKEN_RETURN:
-            printf("%s", "TOKEN_RETURN");
-            break;
-
-        case TOKEN_IMPORT:
-            printf("%s", "TOKEN_IMPORT");
-            break;
-
-        case TOKEN_ASYNC:
-            printf("%s", "TOKEN_ASYNC");
-            break;
-
-        case TOKEN_AWAIT:
-            printf("%s", "TOKEN_AWAIT");
-            break;
-
-        case TOKEN_AND:
-            printf("%s", "TOKEN_AND");
-            break;
-
-        case TOKEN_NOT:
-            printf("%s", "TOKEN_NOT");
-            break;
-
-        case TOKEN_OR:
-            printf("%s", "TOKEN_OR");
-            break;
-
-        case TOKEN_TRUE:
-            printf("%s", "TOKEN_TRUE");
-            break;
-
-        case TOKEN_FALSE:
-            printf("%s", "TOKEN_FALSE");
-            break;
-
-        case TOKEN_NONE:
-            printf("%s", "TOKEN_NONE");
-            break;
-
-        case TOKEN_NAME:
-            printf("%s", "TOKEN_NAME");
-            break;
-
-        case TOKEN_NUMBER:
-            printf("%s", "TOKEN_NUMBER");
-            break;
-
-        case TOKEN_STRING:
-            printf("%s", "TOKEN_STRING");
-            break;
-
-        case TOKEN_LINE:
-            printf("%s", "TOKEN_LINE");
-            break;
-
-        case TOKEN_ERROR:
-            printf("%s", "TOKEN_ERROR");
-            break;
-
-        case TOKEN_EOF:
-            printf("%s", "TOKEN_EOF");
-            break;
+        case PRINT_TOKEN(TOKEN_LINE);
+        case PRINT_TOKEN(TOKEN_ERROR);
+        case PRINT_TOKEN(TOKEN_EOF);
 
         default:
             printf("%s", "unknown token type");
             break;
     }
+
+
+#undef PRINT_TOKEN
 }

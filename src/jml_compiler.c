@@ -659,6 +659,7 @@ jml_binary(JML_UNUSED(bool assignable))
     );
 
     switch (operator_token) {
+        case TOKEN_COLCOLON:    jml_bytecode_emit_byte(OP_CONCAT);      break;
         case TOKEN_PLUS:        jml_bytecode_emit_byte(OP_ADD);         break;
         case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_SUB);         break;
         case TOKEN_STAR:        jml_bytecode_emit_byte(OP_MUL);         break;
@@ -1016,6 +1017,11 @@ jml_variable_named(jml_token_t name, bool assignable)
         else
             jml_bytecode_emit_bytes(set_op, (uint8_t)arg);
 
+    } else if (assignable && jml_parser_match(TOKEN_COLCOLONEQ)) {
+        jml_variable_assignment(
+            index, get_op, set_op, (uint8_t)arg, OP_CONCAT
+        );
+
     } else if (assignable && jml_parser_match(TOKEN_PLUSEQ)) {
         jml_variable_assignment(
             index, get_op, set_op, (uint8_t)arg, OP_ADD
@@ -1142,12 +1148,11 @@ static jml_parser_rule rules[] = {
     /*TOKEN_LSQARE*/    {&jml_array,    &jml_indexing,  PREC_CALL},
     /*TOKEN_RBRACE*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_LBRACE*/    {&jml_map,      NULL,           PREC_NONE},
-
-    /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_SEMI*/      {NULL,          NULL,           PREC_NONE},
     /*TOKEN_COMMA*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_DOT*/       {NULL,          &jml_dot,       PREC_CALL},
 
+    /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_PIPE*/      {NULL,          NULL,           PREC_NONE},
     /*TOKEN_CARET*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AMP*/       {NULL,          NULL,           PREC_NONE},
@@ -1158,6 +1163,8 @@ static jml_parser_rule rules[] = {
     /*TOKEN_AT*/        {NULL,          NULL,           PREC_NONE},
     /*TOKEN_ARROW*/     {NULL,          NULL,           PREC_NONE},
 
+    /*TOKEN_COLCOLON*/  {NULL,          &jml_binary,    PREC_TERM},
+    /*TOKEN_COLCOLONRQ*/{NULL,          NULL,           PREC_NONE},
     /*TOKEN_PLUS*/      {NULL,          &jml_binary,    PREC_TERM},
     /*TOKEN_PLUSEQ*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_MINUS*/     {&jml_unary,    &jml_binary,    PREC_TERM},
@@ -1249,6 +1256,7 @@ jml_parser_precedence_parse(
 
     if (assignable
         && (jml_parser_match(TOKEN_EQUAL)
+        || jml_parser_match(TOKEN_COLCOLONEQ)
         || jml_parser_match(TOKEN_PLUSEQ)
         || jml_parser_match(TOKEN_MINUSEQ)
         || jml_parser_match(TOKEN_STAREQ)

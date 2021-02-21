@@ -5,21 +5,19 @@
 
 
 typedef enum {
-    /* bracket delimiters */
+    /* delimiters */
     TOKEN_RPAREN,
     TOKEN_LPAREN,
     TOKEN_RSQARE,
     TOKEN_LSQARE,
     TOKEN_RBRACE,
     TOKEN_LBRACE,
-
-    /* dotted delimiters */
-    TOKEN_COLON,
     TOKEN_SEMI,
     TOKEN_COMMA,
     TOKEN_DOT,
 
     /* special characters */
+    TOKEN_COLON,
     TOKEN_PIPE,
     TOKEN_CARET,
     TOKEN_AMP,
@@ -31,6 +29,8 @@ typedef enum {
     TOKEN_ARROW,
 
     /* arithmetic operators */
+    TOKEN_COLCOLON,
+    TOKEN_COLCOLONEQ,
     TOKEN_PLUS,
     TOKEN_PLUSEQ,
     TOKEN_MINUS,
