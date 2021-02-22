@@ -27,6 +27,7 @@ typedef uint64_t                    jml_value_t;
 #define OBJ_VAL(obj)                                    \
     (jml_value_t)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
 
+
 static inline jml_value_t
 jml_num_to_val(double num)
 {
@@ -40,6 +41,7 @@ jml_num_to_val(double num)
 #define AS_NUM(value)               jml_value_to_num(value)
 #define AS_OBJ(value)                                   \
     ((jml_obj_t*)(uintptr_t)((value) & ~(SIGN_BIT | QNAN)))
+
 
 static inline double
 jml_value_to_num(jml_value_t value)
@@ -102,9 +104,6 @@ typedef struct {
 } jml_call_frame_t;
 
 
-bool jml_value_equal(jml_value_t a, jml_value_t b);
-
-
 typedef struct {
     int                             capacity;
     int                             count;
@@ -160,8 +159,12 @@ void jml_hashmap_mark(jml_hashmap_t *map);
 jml_hashmap_entry_t *jml_hashmap_iterator(jml_hashmap_t *map);
 
 
+bool jml_value_sentinel(jml_value_t value);
+
+bool jml_value_equal(jml_value_t a, jml_value_t b);
+
 static inline bool
-jml_value_is_falsey(jml_value_t value)
+jml_value_falsey(jml_value_t value)
 {
     return (IS_NONE(value)
         || (IS_BOOL(value)

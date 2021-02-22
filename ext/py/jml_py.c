@@ -70,7 +70,7 @@ jml_py_vm_eval(PyObject *self, PyObject *args)
 
     jml_value_t value = jml_vm_eval(source);
 
-    if (!jml_obj_is_sentinel(value)) {
+    if (!jml_value_sentinel(value)) {
         if (IS_NUM(value))
             return PyFloat_FromDouble(AS_NUM(value));
 

@@ -338,20 +338,3 @@ jml_obj_exception_format(const char *name,
 
     return exc;
 }
-
-
-bool
-jml_obj_is_sentinel(jml_value_t value)
-{
-    if (!IS_OBJ(value))
-        return false;
-
-    return (AS_OBJ(value) == vm->sentinel);
-}
-
-
-jml_value_t
-jml_obj_get_sentinel(void)
-{
-    return OBJ_VAL(vm->sentinel);
-}

@@ -91,7 +91,8 @@ jml_cli_repl(void)
 #ifdef JML_EVAL
         jml_value_t result = jml_vm_eval(line);
 
-        if (!jml_obj_is_sentinel(result) && !IS_NONE(result)) {
+        if (!jml_value_sentinel(result) && !IS_NONE(result)) {
+            printf("   ");
             jml_value_print(result);
             printf("\n");
         }

@@ -10,58 +10,6 @@
 #include <jml_vm.h>
 
 
-bool
-jml_value_equal(jml_value_t a, jml_value_t b)
-{
-#ifdef JML_NAN_TAGGING
-    if (IS_NUM(a) && IS_NUM(b)) {
-        return AS_NUM(a) == AS_NUM(b);
-    }
-
-    if (IS_ARRAY(a) && IS_ARRAY(b)) {
-        if (AS_ARRAY(a)->values.count != AS_ARRAY(b)->values.count)
-            return false;
-
-        for (int i = 0; i < AS_ARRAY(a)->values.count; ++i) {
-            if (!jml_value_equal(AS_ARRAY(a)->values.values[i],
-                AS_ARRAY(b)->values.values[i]))
-                return false;
-        }
-        return true;
-    }
-
-    return a == b;
-
-#else
-    if (a.type != b.type)   return false;
-
-    switch (a.type) {
-        case VAL_BOOL:      return AS_BOOL(a) == AS_BOOL(b);
-        case VAL_NONE:      return true;
-        case VAL_NUM:       return AS_NUM(a) == AS_NUM(b);
-
-        case VAL_OBJ: {
-            if (IS_ARRAY(a)) {
-                if (AS_ARRAY(a)->values.count != AS_ARRAY(b)->values.count)
-                    return false;
-
-                for (int i = 0; i < AS_ARRAY(a)->values.count; ++i) {
-                    if (!jml_value_equal(AS_ARRAY(a)->values.values[i],
-                        AS_ARRAY(b)->values.values[i]))
-                        return false;
-                }
-                return true;
-            }
-
-            return AS_OBJ(a) == AS_OBJ(b);
-        }
-
-        default:            return false;
-    }
-#endif
-}
-
-
 void
 jml_value_array_init(jml_value_array_t *array)
 {
@@ -329,4 +277,73 @@ jml_hashmap_iterator(jml_hashmap_t *map)
     }
 
     return entries;
+}
+
+
+bool
+jml_value_sentinel(jml_value_t value)
+{
+    if (!IS_OBJ(value))
+        return false;
+
+    return (AS_OBJ(value) == vm->sentinel);
+}
+
+
+bool
+jml_value_equal(jml_value_t a, jml_value_t b)
+{
+#ifdef JML_NAN_TAGGING
+    if (IS_NUM(a) && IS_NUM(b)) {
+        return AS_NUM(a) == AS_NUM(b);
+    }
+
+    if (IS_ARRAY(a) && IS_ARRAY(b)) {
+        if (AS_ARRAY(a)->values.count != AS_ARRAY(b)->values.count)
+            return false;
+
+        for (int i = 0; i < AS_ARRAY(a)->values.count; ++i) {
+            if (!jml_value_equal(AS_ARRAY(a)->values.values[i],
+                AS_ARRAY(b)->values.values[i]))
+                return false;
+        }
+        return true;
+    }
+
+    return a == b;
+
+#else
+    if (a.type != b.type)
+        return false;
+
+    switch (a.type) {
+        case VAL_BOOL:
+            return AS_BOOL(a) == AS_BOOL(b);
+
+        case VAL_NONE:
+            return true;
+
+        case VAL_NUM:
+            return AS_NUM(a) == AS_NUM(b);
+
+        case VAL_OBJ: {
+            if (IS_ARRAY(a)) {
+                if (AS_ARRAY(a)->values.count != AS_ARRAY(b)->values.count)
+                    return false;
+
+                for (int i = 0; i < AS_ARRAY(a)->values.count; ++i) {
+                    if (!jml_value_equal(AS_ARRAY(a)->values.values[i],
+                        AS_ARRAY(b)->values.values[i]))
+                        return false;
+                }
+                return true;
+            }
+
+            return AS_OBJ(a) == AS_OBJ(b);
+        }
+
+        default:
+            return false;
+    }
+#endif
 }

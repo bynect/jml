@@ -1106,7 +1106,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_NOT) {
                 jml_vm_push(
-                    BOOL_VAL(jml_value_is_falsey(jml_vm_pop()))
+                    BOOL_VAL(jml_value_falsey(jml_vm_pop()))
                 );
                 END_OP();
             }
@@ -1245,7 +1245,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_JUMP_IF_FALSE) {
                 uint16_t offset = READ_SHORT();
-                if (jml_value_is_falsey(jml_vm_peek(0)))
+                if (jml_value_falsey(jml_vm_peek(0)))
                     pc += offset;
                 END_OP();
             }

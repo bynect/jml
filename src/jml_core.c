@@ -561,7 +561,7 @@ jml_core_assert(int arg_count, jml_value_t *args)
     if (exc != NULL)
         return OBJ_VAL(exc);
 
-    if (jml_value_is_falsey(args[0])) {
+    if (jml_value_falsey(args[0])) {
         return OBJ_VAL(jml_obj_exception_new(
             "AssertErr", "Assertion failed."
         ));
