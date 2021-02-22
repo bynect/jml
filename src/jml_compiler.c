@@ -235,7 +235,7 @@ jml_bytecode_emit_return(void)
     if (current->type == FUNCTION_INIT)
         jml_bytecode_emit_bytes(OP_GET_LOCAL, 0);
 
-    else if (current->type == FUNCTION_LAMBDA
+    else if (current->type != FUNCTION_MAIN
         && current->function->bytecode.count > 0) {
         for (int i = jml_bytecode_current()->count - 1; i >= 0; ++i) {
             if (jml_bytecode_current()->code[i] == OP_POP) {
@@ -249,6 +249,7 @@ jml_bytecode_emit_return(void)
                 return;
             }
         }
+        jml_bytecode_emit_byte(OP_NONE);
 
     } else
         jml_bytecode_emit_byte(OP_NONE);
