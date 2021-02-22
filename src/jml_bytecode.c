@@ -34,7 +34,7 @@ jml_bytecode_write(jml_bytecode_t *bytecode,
 
     bytecode->code[bytecode->count] = byte;
     bytecode->lines[bytecode->count] = line;
-    bytecode->count++;
+    ++bytecode->count;
 }
 
 
@@ -276,7 +276,7 @@ jml_bytecode_instruction_disassemble(
             return jml_bytecode_instruction_invoke("OP_SUPER_INVOKE", bytecode, offset);
 
         case OP_CLOSURE: {
-            offset++;
+            ++offset;
             uint8_t constant = bytecode->code[offset++];
             printf("%-16s %4d   ", "OP_CLOSURE", constant);
             jml_value_print(bytecode->constants.values[constant]);

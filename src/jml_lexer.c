@@ -51,7 +51,7 @@ jml_lexer_peek_previous(jml_lexer_t *lexer)
 static inline char
 jml_lexer_advance(jml_lexer_t *lexer)
 {
-    lexer->current++;
+    ++lexer->current;
     return lexer->current[-1];
 }
 
@@ -59,7 +59,7 @@ jml_lexer_advance(jml_lexer_t *lexer)
 static inline void
 jml_lexer_newline(jml_lexer_t *lexer)
 {
-    lexer->line++;
+    ++lexer->line;
 }
 
 
@@ -69,7 +69,7 @@ jml_lexer_match(char expected, jml_lexer_t *lexer)
     if (jml_lexer_eof(lexer))           return false;
     if (*lexer->current != expected)    return false;
 
-    lexer->current++;
+    ++lexer->current;
     return true;
 }
 

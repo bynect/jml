@@ -60,6 +60,8 @@
 
 #else
 
+#warning Current platform not determinated.
+
 #define JML_PLATFORM_UNK
 
 #define JML_PLATFORM_STRING         "other"

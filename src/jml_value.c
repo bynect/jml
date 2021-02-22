@@ -147,13 +147,13 @@ jml_hashmap_adjust_capacity(jml_hashmap_t *map,
     jml_hashmap_entry_t *entries = ALLOCATE(jml_hashmap_entry_t,
         capacity + 1);
 
-    for (int i = 0; i <= capacity; i++) {
+    for (int i = 0; i <= capacity; ++i) {
         entries[i].key = NULL;
         entries[i].value = NONE_VAL;
     }
 
     map->count = 0;
-    for (int i = 0; i <= map->capacity; i++) {
+    for (int i = 0; i <= map->capacity; ++i) {
         jml_hashmap_entry_t *entry = &map->entries[i];
         if (entry->key == NULL) continue;
 
@@ -162,7 +162,7 @@ jml_hashmap_adjust_capacity(jml_hashmap_t *map,
         );
         dest->key = entry->key;
         dest->value = entry->value;
-        map->count++;
+        ++map->count;
     }
 
     FREE_ARRAY(jml_hashmap_entry_t, map->entries, map->capacity + 1);
@@ -201,7 +201,8 @@ jml_hashmap_set(jml_hashmap_t *map,
     );
 
     bool new_key = entry->key == NULL;
-    if (new_key && IS_NONE(entry->value)) map->count++;
+    if (new_key && IS_NONE(entry->value))
+        ++map->count;
 
     entry->key = key;
     entry->value = value;
@@ -254,7 +255,7 @@ void
 jml_hashmap_add(jml_hashmap_t *source,
     jml_hashmap_t *dest)
 {
-    for (int i = 0; i <= source->capacity; i++) {
+    for (int i = 0; i <= source->capacity; ++i) {
         jml_hashmap_entry_t *entry = &source->entries[i];
 
         if (entry->key != NULL) {
@@ -291,7 +292,7 @@ jml_hashmap_find(jml_hashmap_t *map, const char *chars,
 void
 jml_hashmap_remove_white(jml_hashmap_t *map)
 {
-    for (int i = 0; i <= map->capacity; i++) {
+    for (int i = 0; i <= map->capacity; ++i) {
         jml_hashmap_entry_t *entry = &map->entries[i];
         if (entry->key != NULL && !(entry->key->obj.marked)) {
             jml_hashmap_del(map, entry->key);
@@ -303,7 +304,7 @@ jml_hashmap_remove_white(jml_hashmap_t *map)
 void
 jml_hashmap_mark(jml_hashmap_t *map)
 {
-    for (int i = 0; i <= map->capacity; i++) {
+    for (int i = 0; i <= map->capacity; ++i) {
         jml_hashmap_entry_t *entry = &map->entries[i];
         jml_gc_mark_obj((jml_obj_t*)entry->key);
         jml_gc_mark_value(entry->value);
@@ -318,7 +319,7 @@ jml_hashmap_iterator(jml_hashmap_t *map)
         map->count * sizeof(jml_hashmap_entry_t));
 
     int count = 0;
-    for (int i = 0; i <= map->capacity; i++) {
+    for (int i = 0; i <= map->capacity; ++i) {
         jml_hashmap_entry_t entry = map->entries[i];
 
         if (entry.key == NULL)      continue;

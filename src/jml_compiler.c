@@ -335,21 +335,21 @@ jml_compiler_end(void)
 }
 
 
-static void
+static inline void
 jml_scope_begin(void)
 {
-    current->scope_depth++;
+    ++current->scope_depth;
 }
 
 
-static void
+static inline void
 jml_scope_end(void)
 {
-    current->scope_depth--;
+    --current->scope_depth;
 
     while (current->local_count > 0
         && current->locals[current->local_count - 1].depth >
-            current->scope_depth) {
+        current->scope_depth) {
 
         if (current->locals[current->local_count - 1].captured) {
             jml_bytecode_emit_byte(OP_CLOSE_UPVALUE);
@@ -444,7 +444,7 @@ jml_upvalue_add(jml_compiler_t *compiler,
     uint8_t index, bool local)
 {
     int upvalue_count = compiler->function->upvalue_count;
-    for (int i = 0; i < upvalue_count; i++) {
+    for (int i = 0; i < upvalue_count; ++i) {
         jml_upvalue_t *upvalue = &compiler->upvalues[i];
         if (upvalue->index == index && upvalue->local == local) {
             return i;
@@ -631,7 +631,7 @@ jml_arguments_list(void)
             if (arg_count == 255)
                 jml_parser_error("Can't have more than 255 arguments.");
 
-            arg_count++;
+            ++arg_count;
         } while (jml_parser_match(TOKEN_COMMA));
     }
 
@@ -826,14 +826,15 @@ jml_string(JML_UNUSED(bool assignable))
             }
 
             switch (raw[i + 1]) {
-                case '\'':              c = '\''; ++i;                          break;
-                case  '"':              c = '"';  ++i;                          break;
-                case '\\':              c = '\\'; ++i;                          break;
-                case  'n':              c = '\n'; ++i;                          break;
-                case  'r':              c = '\r'; ++i;                          break;
-                case  't':              c = '\t'; ++i;                          break;
+                case '\'':              c =   '\''; ++i;                break;
+                case  '"':              c =    '"'; ++i;                break;
+                case '\\':              c =   '\\'; ++i;                break;
+                case  'n':              c =   '\n'; ++i;                break;
+                case  'r':              c =   '\r'; ++i;                break;
+                case  't':              c =   '\t'; ++i;                break;
+                case  'e':              c = '\x1b'; ++i;                break;
 
-                case 'x': {
+                case  'x': {
                     if (i + 3 >= length) {
                         jml_parser_error_current("Invalid string escape sequence.");
                         break;
@@ -862,7 +863,7 @@ jml_string(JML_UNUSED(bool assignable))
                     continue;
                 }
 
-                case 'u':  {
+                case  'u':  {
                     if (i + 5 >= length) {
                         jml_parser_error_current("Invalid string escape sequence.");
                         break;
@@ -888,7 +889,7 @@ jml_string(JML_UNUSED(bool assignable))
                     continue;
                 }
 
-                case 'U':  {
+                case  'U':  {
                     if (i + 9 >= length) {
                         jml_parser_error_current("Invalid string escape sequence.");
                         break;
@@ -1176,7 +1177,7 @@ jml_lambda(JML_UNUSED(bool assignable))
 
     if (!jml_parser_check(TOKEN_PIPE)) {
         do {
-            current->function->arity++;
+            ++current->function->arity;
             if (current->function->arity > 255) {
                 jml_parser_error_current(
                     "Can't have more than 255 parameters."
@@ -1197,7 +1198,7 @@ jml_lambda(JML_UNUSED(bool assignable))
         OP_CLOSURE, jml_bytecode_make_const(OBJ_VAL(function))
     );
 
-    for (int i = 0; i < function->upvalue_count; i++) {
+    for (int i = 0; i < function->upvalue_count; ++i) {
         jml_bytecode_emit_byte(compiler.upvalues[i].local ? 1 : 0);
         jml_bytecode_emit_byte(compiler.upvalues[i].index);
     }
@@ -1362,7 +1363,7 @@ jml_function(jml_function_type type)
     jml_parser_consume(TOKEN_LPAREN, "Expect '(' after function name.");
     if (!jml_parser_check(TOKEN_RPAREN)) {
         do {
-            current->function->arity++;
+            ++current->function->arity;
             if (current->function->arity > 255) {
                 jml_parser_error_current(
                     "Can't have more than 255 parameters."
@@ -1384,7 +1385,7 @@ jml_function(jml_function_type type)
         OP_CLOSURE, jml_bytecode_make_const(OBJ_VAL(function))
     );
 
-    for (int i = 0; i < function->upvalue_count; i++) {
+    for (int i = 0; i < function->upvalue_count; ++i) {
         jml_bytecode_emit_byte(compiler.upvalues[i].local ? 1 : 0);
         jml_bytecode_emit_byte(compiler.upvalues[i].index);
     }
@@ -1815,10 +1816,14 @@ jml_if_statement(void)
     if (jml_parser_match(TOKEN_ELSE)) {
         jml_parser_match_line();
 
-        jml_parser_consume(TOKEN_LBRACE, "Expect '{' after 'if'.");
-        jml_block();
-        jml_parser_newline("Expect newline after 'else' block.");
+        if (jml_parser_match(TOKEN_IF))
+            jml_if_statement();
 
+        else {
+            jml_parser_consume(TOKEN_LBRACE, "Expect '{' after 'else'.");
+            jml_block();
+            jml_parser_newline("Expect newline after 'else' block.");
+        }
     } else
         jml_parser_newline("Expect newline after 'if' block.");
 

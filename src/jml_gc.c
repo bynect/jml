@@ -131,12 +131,12 @@ static void
 jml_gc_mark_roots(void)
 {
     for (jml_value_t *slot = vm->stack;
-        slot < vm->stack_top; slot++) {
+        slot < vm->stack_top; ++slot) {
 
         jml_gc_mark_value(*slot);
     }
 
-    for (int i = 0; i < vm->frame_count; i++)
+    for (int i = 0; i < vm->frame_count; ++i)
         jml_gc_mark_obj((jml_obj_t*)vm->frames[i].closure);
 
     for (jml_obj_upvalue_t *upvalue = vm->open_upvalues;
@@ -212,7 +212,7 @@ jml_gc_mark_value(jml_value_t value)
 static void
 jml_gc_mark_array(jml_value_array_t *array)
 {
-    for (int i = 0; i < array->count; i++) {
+    for (int i = 0; i < array->count; ++i) {
         jml_gc_mark_value(array->values[i]);
     }
 }
@@ -432,7 +432,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
         case OBJ_CLOSURE: {
             jml_obj_closure_t *closure = (jml_obj_closure_t*)object;
             jml_gc_mark_obj((jml_obj_t*)closure->function);
-            for (int i = 0; i < closure->upvalue_count; i++) {
+            for (int i = 0; i < closure->upvalue_count; ++i) {
                 jml_gc_mark_obj((jml_obj_t*)closure->upvalues[i]);
             }
             break;
@@ -509,6 +509,6 @@ jml_gc_collect(void)
         after, before - after, vm->next_gc, (long)elapsed
     );
 
-    generation++;
+    ++generation;
 #endif
 }
