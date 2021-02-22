@@ -711,12 +711,12 @@ module_init(jml_obj_module_t *module)
 
     jml_module_add_class(module, "Socket", socket_table, false);
 
-    jml_value_t socket_value;
+    jml_value_t *socket_value;
     if (jml_hashmap_get(&module->globals,
         jml_obj_string_copy("Socket", 6), &socket_value)) {
 
-        socket_class = AS_CLASS(socket_value);
-        jml_gc_exempt(socket_value);
+        socket_class = AS_CLASS(*socket_value);
+        jml_gc_exempt(*socket_value);
     }
 
     domain_string = jml_obj_string_copy("domain", 6);

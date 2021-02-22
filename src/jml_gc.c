@@ -269,15 +269,15 @@ jml_gc_free_object(jml_obj_t *object)
             jml_obj_instance_t *instance = (jml_obj_instance_t*)object;
 
             if (vm->free_string != NULL) {
-                jml_value_t destructor;
+                jml_value_t *destructor;
                 if (jml_hashmap_get(&instance->klass->methods,
                     vm->free_string, &destructor)) {
 
-                    if (IS_CFUNCTION(destructor)) {
-                        jml_vm_push(OBJ_VAL(destructor));
+                    if (IS_CFUNCTION(*destructor)) {
+                        jml_vm_push(OBJ_VAL(*destructor));
                         jml_vm_push(OBJ_VAL(instance));
 
-                        jml_vm_call_value(destructor, 1);
+                        jml_vm_call_value(*destructor, 1);
                         jml_vm_pop();
                     } else {
                         /*TODO*/

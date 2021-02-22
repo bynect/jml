@@ -137,7 +137,7 @@ void jml_hashmap_init(jml_hashmap_t *map);
 void jml_hashmap_free(jml_hashmap_t *map);
 
 bool jml_hashmap_get(jml_hashmap_t *map, jml_obj_string_t *key,
-    jml_value_t *value);
+    jml_value_t **value);
 
 bool jml_hashmap_set(jml_hashmap_t *map, jml_obj_string_t *key,
     jml_value_t value);

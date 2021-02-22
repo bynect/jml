@@ -121,16 +121,19 @@ jml_hashmap_adjust_capacity(jml_hashmap_t *map,
 
 bool
 jml_hashmap_get(jml_hashmap_t *map,
-    jml_obj_string_t *key, jml_value_t *value)
+    jml_obj_string_t *key, jml_value_t **value)
 {
-    if (map->count == 0)    return false;
+    if (map->count == 0)
+        return false;
 
     jml_hashmap_entry_t *entry = jml_hashmap_find_entry(
         map->entries, map->capacity, key
     );
-    if (entry->key == NULL) return false;
 
-    *value = entry->value;
+    if (entry->key == NULL)
+        return false;
+
+    *value = &entry->value;
     return true;
 }
 

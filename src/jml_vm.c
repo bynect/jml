@@ -280,7 +280,7 @@ jml_vm_peek(int distance)
 
 static inline bool
 jml_vm_global_get(jml_obj_string_t *name,
-    jml_value_t *value)
+    jml_value_t **value)
 {
     return jml_hashmap_get(&vm->globals, name, value);
 }
@@ -364,18 +364,16 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                     jml_obj_instance_new(klass));
 
                 vm->stack_top[-arg_count - 1]   = instance;
-                jml_value_t initializer;
+                jml_value_t *initializer;
 
-                if (jml_hashmap_get(&klass->methods,
-                    vm->init_string, &initializer)) {
-
-                    if (IS_CFUNCTION(initializer)) {
-                        bool result = jml_vm_call_value(initializer, arg_count + 1);
+                if (jml_hashmap_get(&klass->methods, vm->init_string, &initializer)) {
+                    if (IS_CFUNCTION(*initializer)) {
+                        bool result = jml_vm_call_value(*initializer, arg_count + 1);
                         jml_vm_push(instance);
                         return result;
 
                     } else
-                        return jml_vm_call(AS_CLOSURE(initializer), arg_count);
+                        return jml_vm_call(AS_CLOSURE(*initializer), arg_count);
 
                 } else if (arg_count != 0) {
                     jml_vm_error(
@@ -388,16 +386,14 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
             case OBJ_INSTANCE: {
                 jml_obj_instance_t *instance    = AS_INSTANCE(callee);
-                jml_value_t caller;
+                jml_value_t *caller;
 
-                if (jml_hashmap_get(&instance->klass->methods,
-                    vm->call_string, &caller)) {
-
-                    if (IS_CFUNCTION(caller)) {
+                if (jml_hashmap_get(&instance->klass->methods, vm->call_string, &caller)) {
+                    if (IS_CFUNCTION(*caller)) {
                         jml_vm_push(callee);
-                        return jml_vm_call_value(caller, arg_count + 1);
-                    } else
-                        return jml_vm_call(AS_CLOSURE(caller), arg_count);
+                        return jml_vm_call_value(*caller, arg_count + 1);
+                    }
+                    return jml_vm_call(AS_CLOSURE(*caller), arg_count);
 
                 } else {
                     jml_vm_error(
@@ -443,17 +439,17 @@ static bool
 jml_vm_invoke_class(jml_obj_class_t *klass,
     jml_obj_string_t *name, int arg_count)
 {
-    jml_value_t method;
+    jml_value_t *method;
 
     if (!jml_hashmap_get(&klass->methods, name, &method)) {
         jml_vm_error("Undefined property '%s'.", name->chars);
         return false;
     }
 
-    if (IS_CFUNCTION(method))
-        return jml_vm_call_value(method, arg_count + 1);
+    if (IS_CFUNCTION(*method))
+        return jml_vm_call_value(*method, arg_count + 1);
     else
-        return jml_vm_call(AS_CLOSURE(method), arg_count);
+        return jml_vm_call(AS_CLOSURE(*method), arg_count);
 }
 
 
@@ -461,17 +457,17 @@ static bool
 jml_vm_invoke_instance(jml_obj_instance_t *instance,
     jml_obj_string_t *name, int arg_count)
 {
-    jml_value_t method;
+    jml_value_t *method;
 
     if (!jml_hashmap_get(&instance->klass->methods, name, &method))
         return false;
 
-    if (IS_CFUNCTION(method)) {
+    if (IS_CFUNCTION(*method)) {
         jml_vm_push(OBJ_VAL(instance));
-        return jml_vm_call_value(method, arg_count + 1);
+        return jml_vm_call_value(*method, arg_count + 1);
 
     } else
-        return jml_vm_call(AS_CLOSURE(method), arg_count);
+        return jml_vm_call(AS_CLOSURE(*method), arg_count);
 }
 
 
@@ -482,11 +478,11 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
     if (IS_INSTANCE(receiver)) {
         jml_obj_instance_t *instance = AS_INSTANCE(receiver);
-        jml_value_t         value;
+        jml_value_t        *value;
 
         if (jml_hashmap_get(&instance->fields, name, &value)) {
-            vm->stack_top[-arg_count - 1] = value;
-            return jml_vm_call_value(value, arg_count);
+            vm->stack_top[-arg_count - 1] = *value;
+            return jml_vm_call_value(*value, arg_count);
         }
 
         if (!jml_vm_invoke_instance(instance, name, arg_count)) {
@@ -497,10 +493,10 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
     } else if (IS_MODULE(receiver)) {
         jml_obj_module_t *module = AS_MODULE(receiver);
-        jml_value_t value;
+        jml_value_t      *value;
 
         if (jml_hashmap_get(&module->globals, name, &value))
-            return jml_vm_call_value(value, arg_count);
+            return jml_vm_call_value(*value, arg_count);
 
 #ifndef JML_LAZY_IMPORT
         else {
@@ -517,11 +513,10 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
                 return false;
             }
 
-            value = OBJ_VAL(cfunction);
-            jml_vm_push(value);
+            jml_vm_push(OBJ_VAL(cfunction));
             jml_hashmap_set(&module->globals, name, jml_vm_peek(0));
             jml_vm_pop();
-            return jml_vm_call_value(value, arg_count);
+            return jml_vm_call_value(OBJ_VAL(cfunction), arg_count);
         }
 #endif
     }
@@ -535,7 +530,8 @@ static bool
 jml_vm_method_bind(jml_obj_class_t *klass,
     jml_obj_string_t *name)
 {
-    jml_value_t method;
+    jml_value_t *method;
+
     if (!jml_hashmap_get(&klass->methods, name, &method)) {
         jml_vm_error(
             "Undefined property '%s'.", name->chars
@@ -544,12 +540,14 @@ jml_vm_method_bind(jml_obj_class_t *klass,
     }
 
     jml_value_t bound;
-    if (IS_CFUNCTION(method))
-        bound = OBJ_VAL(AS_CFUNCTION(method));
-    else
+    if (IS_CFUNCTION(*method)) {
+        bound = OBJ_VAL(AS_CFUNCTION(*method));
+
+    } else {
         bound = OBJ_VAL(jml_obj_method_new(
-            jml_vm_peek(0), AS_CLOSURE(method)
+            jml_vm_peek(0), AS_CLOSURE(*method)
         ));
+    }
 
     jml_vm_pop();
     jml_vm_push(bound);
@@ -687,7 +685,7 @@ static bool
 jml_vm_module_import(jml_obj_string_t *fullname,
     jml_obj_string_t *name)
 {
-    jml_value_t value = NONE_VAL;
+    jml_value_t *value;
 
     if (!jml_hashmap_get(&vm->modules, fullname, &value)) {
         jml_value_t path_value;
@@ -713,7 +711,7 @@ jml_vm_module_import(jml_obj_string_t *fullname,
         }
 
     } else
-        jml_vm_push(value);
+        jml_vm_push(*value);
 
     return true;
 }
@@ -723,8 +721,10 @@ static bool
 jml_vm_module_bind(jml_obj_module_t *module,
     jml_obj_string_t *name)
 {
-    jml_value_t function;
-    if (!jml_hashmap_get(&module->globals, name, &function)) {
+    jml_value_t  function;
+    jml_value_t *value;
+
+    if (!jml_hashmap_get(&module->globals, name, &value)) {
 #ifdef JML_LAZY_IMPORT
         jml_obj_cfunction_t *cfunction = jml_module_get_raw(
             module, name->chars, true);
@@ -747,7 +747,8 @@ jml_vm_module_bind(jml_obj_module_t *module,
             );
             return false;
         }
-    }
+    } else
+        function = *value;
 
     jml_vm_pop();
     jml_vm_push(function);
@@ -1420,14 +1421,14 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_GET_GLOBAL) {
                 jml_obj_string_t *name = READ_STRING();
-                jml_value_t value;
+                jml_value_t *value;
 
                 if (!jml_vm_global_get(name, &value)) {
                     SAVE_FRAME();
                     jml_vm_error("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                jml_vm_push(value);
+                jml_vm_push(*value);
                 END_OP();
             }
 
@@ -1480,10 +1481,10 @@ jml_vm_run(jml_value_t *last)
                 if (IS_INSTANCE(peeked)) {
                     jml_obj_instance_t *instance    = AS_INSTANCE(peeked);
 
-                    jml_value_t value;
+                    jml_value_t *value;
                     if (jml_hashmap_get(&instance->fields, name, &value)) {
                         jml_vm_pop();
-                        jml_vm_push(value);
+                        jml_vm_push(*value);
                         END_OP();
                     }
 
@@ -1494,10 +1495,10 @@ jml_vm_run(jml_value_t *last)
                 } else if (IS_MODULE(peeked)) {
                     jml_obj_module_t   *module      = AS_MODULE(peeked);
 
-                    jml_value_t value;
+                    jml_value_t *value;
                     if (jml_hashmap_get(&module->globals, name, &value)) {
                         jml_vm_pop();
-                        jml_vm_push(value);
+                        jml_vm_push(*value);
                         END_OP();
                     }
 
@@ -1590,9 +1591,11 @@ jml_vm_run(jml_value_t *last)
                         return INTERPRET_RUNTIME_ERROR;
                     }
 
-                    if (!jml_hashmap_get(&AS_MAP(box)->hashmap,
-                        AS_STRING(index), &value))
+                    jml_value_t    *temp;
+                    if (!jml_hashmap_get(&AS_MAP(box)->hashmap, AS_STRING(index), &temp))
                         value       = NONE_VAL;
+                    else
+                        value       = *temp;
 
                 } else if (IS_ARRAY(box)) {
                     if (!IS_NUM(index)) {
