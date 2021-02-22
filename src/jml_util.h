@@ -50,6 +50,14 @@ static inline bool
 jml_is_alpha(char c)
 {
     return (c >= 'a' && c <= 'z')
+        || (c >= 'A' && c <= 'Z');
+}
+
+
+static inline bool
+jml_is_ident(char c)
+{
+    return (c >= 'a' && c <= 'z')
         || (c >= 'A' && c <= 'Z')
         || (c == '_');
 }

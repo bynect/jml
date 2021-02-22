@@ -42,8 +42,6 @@ jml_parser_error_at(jml_token_t *token,
     if (parser.panicked)
         return;
 
-    parser.panicked = true;
-
     if (current->output) {
         fprintf(stderr, "[line %d", token->line);
 
@@ -72,7 +70,8 @@ jml_parser_error_at(jml_token_t *token,
         fprintf(stderr, ": %s\n", message);
     }
 
-    parser.w_error = true;
+    parser.panicked = true;
+    parser.w_error  = true;
 }
 
 
@@ -599,6 +598,7 @@ jml_parser_synchronize(void)
             case TOKEN_WHILE:
             case TOKEN_BREAK:
             case TOKEN_SKIP:
+            case TOKEN_MATCH:
             case TOKEN_WITH:
             case TOKEN_IF:
             case TOKEN_CLASS:
@@ -1216,7 +1216,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_COMMA*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_DOT*/       {NULL,          &jml_dot,       PREC_CALL},
 
-    /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_USCORE*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_PIPE*/      {&jml_lambda,   NULL,           PREC_NONE},
     /*TOKEN_CARET*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AMP*/       {NULL,          NULL,           PREC_NONE},
@@ -1226,6 +1226,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_HASH*/      {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AT*/        {NULL,          NULL,           PREC_NONE},
     /*TOKEN_ARROW*/     {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
 
     /*TOKEN_COLCOLON*/  {NULL,          &jml_binary,    PREC_TERM},
     /*TOKEN_COLCOLONRQ*/{NULL,          NULL,           PREC_NONE},
@@ -1255,6 +1256,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_BREAK*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_SKIP*/      {NULL,          NULL,           PREC_NONE},
     /*TOKEN_IN*/        {NULL,          &jml_binary,    PREC_COMPARISON},
+    /*TOKEN_MATCH*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_WITH*/      {NULL,          NULL,           PREC_NONE},
     /*TOKEN_IF*/        {NULL,          NULL,           PREC_NONE},
     /*TOKEN_ELSE*/      {NULL,          NULL,           PREC_NONE},

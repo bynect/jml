@@ -181,11 +181,9 @@ jml_identifier_check(jml_lexer_t *lexer)
             }
             break;
 
-        case 'b': return jml_keyword_match(1, 4, "reak", TOKEN_BREAK, lexer);
-
-        case 'c': return jml_keyword_match(1, 4, "lass", TOKEN_CLASS, lexer);
-
-        case 'e': return jml_keyword_match(1, 3, "lse",  TOKEN_ELSE, lexer);
+        case 'b': return jml_keyword_match(1, 4, "reak",            TOKEN_BREAK, lexer);
+        case 'c': return jml_keyword_match(1, 4, "lass",            TOKEN_CLASS, lexer);
+        case 'e': return jml_keyword_match(1, 3, "lse",             TOKEN_ELSE, lexer);
 
         case 'f':
             if (lexer->current - lexer->start > 1) {
@@ -211,17 +209,16 @@ jml_identifier_check(jml_lexer_t *lexer)
             if (lexer->current - lexer->start > 1
                 && lexer->start[1] == 'o') {
                 switch (lexer->start[2]) {
-                    case 'n': return jml_keyword_match(3, 1, "e", TOKEN_NONE, lexer);
-                    case 't': return jml_keyword_match(3, 0, "",  TOKEN_NOT, lexer);
+                    case 'n': return jml_keyword_match(3, 1, "e",   TOKEN_NONE, lexer);
+                    case 't': return jml_keyword_match(3, 0, "",    TOKEN_NOT, lexer);
                 }
             }
             break;
 
-        case 'o': return jml_keyword_match(1, 1, "r",       TOKEN_OR, lexer);
-
-        case 'l': return jml_keyword_match(1, 2, "et",      TOKEN_LET, lexer);
-
-        case 'r': return jml_keyword_match(1, 5, "eturn",   TOKEN_RETURN, lexer);
+        case 'm': return jml_keyword_match(1, 4, "atch",            TOKEN_MATCH, lexer);
+        case 'o': return jml_keyword_match(1, 1, "r",               TOKEN_OR, lexer);
+        case 'l': return jml_keyword_match(1, 2, "et",              TOKEN_LET, lexer);
+        case 'r': return jml_keyword_match(1, 5, "eturn",           TOKEN_RETURN, lexer);
 
         case 's':
             if (lexer->current - lexer->start > 1) {
@@ -251,7 +248,7 @@ jml_identifier_check(jml_lexer_t *lexer)
 static jml_token_t
 jml_identifier_literal(jml_lexer_t *lexer)
 {
-    while (jml_is_alpha(jml_lexer_peek(lexer))
+    while (jml_is_ident(jml_lexer_peek(lexer))
         || jml_is_digit(jml_lexer_peek(lexer)))
 
         jml_lexer_advance(lexer);
@@ -346,6 +343,15 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
         case  ',':  return  jml_token_emit(TOKEN_COMMA, lexer);
         case  '.':  return  jml_token_emit(TOKEN_DOT, lexer);
 
+        case  '_':  return  jml_token_emit(TOKEN_USCORE, lexer);
+        case  '|':  return  jml_token_emit(TOKEN_PIPE, lexer);
+        case  '^':  return  jml_token_emit(TOKEN_CARET, lexer);
+        case  '&':  return  jml_token_emit(TOKEN_AMP, lexer);
+        case  '~':  return  jml_token_emit(TOKEN_TILDE, lexer);
+        case  '?':  return  jml_token_emit(TOKEN_QUEST, lexer);
+        case  '#':  return  jml_token_emit(TOKEN_HASH, lexer);
+        case  '@':  return  jml_token_emit(TOKEN_AT, lexer);
+
         case  ':':  return  jml_token_emit(jml_lexer_match(':', lexer)
                         ? jml_lexer_match('=', lexer) ? TOKEN_COLCOLONEQ
                         : TOKEN_COLCOLON : TOKEN_COLON, lexer);
@@ -385,14 +391,6 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
 
         case '\n':  return  jml_token_emit(TOKEN_LINE, lexer);
 
-        case  '@':  return  jml_token_emit(TOKEN_AT, lexer);
-        case  '|':  return  jml_token_emit(TOKEN_PIPE, lexer);
-        case  '~':  return  jml_token_emit(TOKEN_TILDE, lexer);
-        case  '&':  return  jml_token_emit(TOKEN_AMP, lexer);
-        case  '^':  return  jml_token_emit(TOKEN_CARET, lexer);
-        case  '?':  return  jml_token_emit(TOKEN_QUEST, lexer);
-        case  '#':  return  jml_token_emit(TOKEN_HASH, lexer);
-
         default:
             break;
     }
@@ -418,7 +416,7 @@ jml_token_type_print(jml_token_type type)
         case PRINT_TOKEN(TOKEN_COMMA);
         case PRINT_TOKEN(TOKEN_DOT);
 
-        case PRINT_TOKEN(TOKEN_COLON);
+        case PRINT_TOKEN(TOKEN_USCORE);
         case PRINT_TOKEN(TOKEN_PIPE);
         case PRINT_TOKEN(TOKEN_CARET);
         case PRINT_TOKEN(TOKEN_AMP);
@@ -428,6 +426,7 @@ jml_token_type_print(jml_token_type type)
         case PRINT_TOKEN(TOKEN_HASH);
         case PRINT_TOKEN(TOKEN_AT);
         case PRINT_TOKEN(TOKEN_ARROW);
+        case PRINT_TOKEN(TOKEN_COLON);
 
         case PRINT_TOKEN(TOKEN_COLCOLON);
         case PRINT_TOKEN(TOKEN_COLCOLONEQ);
@@ -457,6 +456,7 @@ jml_token_type_print(jml_token_type type)
         case PRINT_TOKEN(TOKEN_BREAK);
         case PRINT_TOKEN(TOKEN_SKIP);
         case PRINT_TOKEN(TOKEN_IN);
+        case PRINT_TOKEN(TOKEN_MATCH);
         case PRINT_TOKEN(TOKEN_WITH);
         case PRINT_TOKEN(TOKEN_IF);
         case PRINT_TOKEN(TOKEN_ELSE);

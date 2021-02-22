@@ -441,10 +441,8 @@ jml_vm_invoke_class(jml_obj_class_t *klass,
 {
     jml_value_t *method;
 
-    if (!jml_hashmap_get(&klass->methods, name, &method)) {
-        jml_vm_error("Undefined property '%s'.", name->chars);
+    if (!jml_hashmap_get(&klass->methods, name, &method))
         return false;
-    }
 
     if (IS_CFUNCTION(*method))
         return jml_vm_call_value(*method, arg_count + 1);
@@ -1290,8 +1288,10 @@ jml_vm_run(jml_value_t *last)
 
                 SAVE_FRAME();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
-                if (!jml_vm_invoke_class(superclass, method, arg_count))
+                if (!jml_vm_invoke_class(superclass, method, arg_count)) {
+                    jml_vm_error("Undefined property '%s'.", method->chars);
                     return INTERPRET_RUNTIME_ERROR;
+                }
 
                 LOAD_FRAME();
                 END_OP();

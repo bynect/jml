@@ -17,7 +17,7 @@ typedef enum {
     TOKEN_DOT,
 
     /* special characters */
-    TOKEN_COLON,
+    TOKEN_USCORE,
     TOKEN_PIPE,
     TOKEN_CARET,
     TOKEN_AMP,
@@ -27,6 +27,7 @@ typedef enum {
     TOKEN_HASH,
     TOKEN_AT,
     TOKEN_ARROW,
+    TOKEN_COLON,
 
     /* arithmetic operators */
     TOKEN_COLCOLON,
@@ -59,6 +60,7 @@ typedef enum {
     TOKEN_BREAK,
     TOKEN_SKIP,
     TOKEN_IN,
+    TOKEN_MATCH,
     TOKEN_WITH,
     TOKEN_IF,
     TOKEN_ELSE,
