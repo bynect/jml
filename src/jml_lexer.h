@@ -18,7 +18,6 @@ typedef enum {
 
     /* special characters */
     TOKEN_USCORE,
-    TOKEN_PIPE,
     TOKEN_CARET,
     TOKEN_AMP,
     TOKEN_TILDE,
@@ -27,6 +26,8 @@ typedef enum {
     TOKEN_HASH,
     TOKEN_AT,
     TOKEN_ARROW,
+    TOKEN_VBAR,
+    TOKEN_PIPE,
     TOKEN_COLON,
 
     /* arithmetic operators */

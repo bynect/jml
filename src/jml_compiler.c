@@ -679,14 +679,14 @@ jml_binary(JML_UNUSED(bool assignable))
 {
     jml_parser_match_line();
 
-    jml_token_type operator_token = parser.previous.type;
+    jml_token_type type = parser.previous.type;
 
-    jml_parser_rule *rule = jml_parser_rule_get(operator_token);
+    jml_parser_rule *rule = jml_parser_rule_get(type);
     jml_parser_precedence_parse(
         (jml_parser_precedence)(rule->precedence + 1)
     );
 
-    switch (operator_token) {
+    switch (type) {
         case TOKEN_COLCOLON:    jml_bytecode_emit_byte(OP_CONCAT);      break;
         case TOKEN_PLUS:        jml_bytecode_emit_byte(OP_ADD);         break;
         case TOKEN_MINUS:       jml_bytecode_emit_byte(OP_SUB);         break;
@@ -1178,7 +1178,7 @@ jml_lambda(JML_UNUSED(bool assignable))
         current->module, current->output);
     jml_scope_begin();
 
-    if (!jml_parser_check(TOKEN_PIPE)) {
+    if (!jml_parser_check(TOKEN_VBAR)) {
         do {
             ++current->function->arity;
             if (current->function->arity > 255) {
@@ -1192,7 +1192,7 @@ jml_lambda(JML_UNUSED(bool assignable))
         } while (jml_parser_match(TOKEN_COMMA));
     }
 
-    jml_parser_consume(TOKEN_PIPE, "Expect '|' after parameters.");
+    jml_parser_consume(TOKEN_VBAR, "Expect '|' after parameters.");
     jml_parser_consume(TOKEN_LBRACE, "Expect '{' before lambda body.");
     jml_block();
 
@@ -1208,6 +1208,22 @@ jml_lambda(JML_UNUSED(bool assignable))
 }
 
 
+static void
+jml_piping(JML_UNUSED(bool assignable))
+{
+    jml_parser_match_line();
+
+    jml_parser_consume(TOKEN_NAME, "Expect function name.");
+    jml_variable_named(parser.previous, false);
+
+    jml_bytecode_emit_byte(OP_ROT);
+    jml_parser_consume(TOKEN_LPAREN, "Expect '(' before arguments.");
+
+    uint8_t arg_count = jml_arguments_list();
+    jml_bytecode_emit_bytes(OP_CALL, arg_count + 1);
+}
+
+
 static jml_parser_rule rules[] = {
     /*TOKEN_RPAREN*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_LPAREN*/    {&jml_grouping, &jml_call,      PREC_CALL},
@@ -1220,7 +1236,6 @@ static jml_parser_rule rules[] = {
     /*TOKEN_DOT*/       {NULL,          &jml_dot,       PREC_CALL},
 
     /*TOKEN_USCORE*/    {NULL,          NULL,           PREC_NONE},
-    /*TOKEN_PIPE*/      {&jml_lambda,   NULL,           PREC_NONE},
     /*TOKEN_CARET*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AMP*/       {NULL,          NULL,           PREC_NONE},
     /*TOKEN_TILDE*/     {NULL,          NULL,           PREC_NONE},
@@ -1229,6 +1244,8 @@ static jml_parser_rule rules[] = {
     /*TOKEN_HASH*/      {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AT*/        {NULL,          NULL,           PREC_NONE},
     /*TOKEN_ARROW*/     {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_VBAR*/      {&jml_lambda,   NULL,           PREC_NONE},
+    /*TOKEN_PIPE*/      {NULL,          &jml_piping,    PREC_FACTOR},
     /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
 
     /*TOKEN_COLCOLON*/  {NULL,          &jml_binary,    PREC_TERM},

@@ -96,7 +96,7 @@ jml_bytecode_instruction_byte(const char *name,
     jml_bytecode_t *bytecode, int offset)
 {
     uint8_t slot        = bytecode->code[offset + 1];
-    printf("%-16s   %4d\n", name, slot);
+    printf("%-16s %4d\n", name, slot);
 
     return offset + 2;
 }
@@ -109,7 +109,7 @@ jml_bytecode_instruction_jump(const char *name,
     uint16_t jump       = (uint16_t)(bytecode->code[offset + 1] << 8);
     jump |= bytecode->code[offset + 2];
 
-    printf("%-16s   %4d -> %d\n",
+    printf("%-16s %4d -> %d\n",
         name, offset, offset + 3 + sign * jump
     );
 

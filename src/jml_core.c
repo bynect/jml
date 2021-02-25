@@ -175,6 +175,11 @@ jml_core_format(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_print(int arg_count, jml_value_t *args)
 {
+    if (arg_count == 0) {
+        printf("\n");
+        return NONE_VAL;
+    }
+
     for (int i = 0; i < arg_count; ++i) {
         if (IS_STRING(args[i]))
             printf("%s", AS_CSTRING(args[i]));

@@ -346,13 +346,15 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
         case  '.':  return  jml_token_emit(TOKEN_DOT, lexer);
 
         case  '_':  return  jml_token_emit(TOKEN_USCORE, lexer);
-        case  '|':  return  jml_token_emit(TOKEN_PIPE, lexer);
         case  '^':  return  jml_token_emit(TOKEN_CARET, lexer);
         case  '&':  return  jml_token_emit(TOKEN_AMP, lexer);
         case  '~':  return  jml_token_emit(TOKEN_TILDE, lexer);
         case  '?':  return  jml_token_emit(TOKEN_QUEST, lexer);
         case  '#':  return  jml_token_emit(TOKEN_HASH, lexer);
         case  '@':  return  jml_token_emit(TOKEN_AT, lexer);
+
+        case  '|':  return  jml_token_emit(jml_lexer_match('>', lexer)
+                        ? TOKEN_PIPE : TOKEN_VBAR, lexer);
 
         case  ':':  return  jml_token_emit(jml_lexer_match(':', lexer)
                         ? jml_lexer_match('=', lexer) ? TOKEN_COLCOLONEQ
@@ -419,7 +421,6 @@ jml_token_type_print(jml_token_type type)
         case PRINT_TOKEN(TOKEN_DOT);
 
         case PRINT_TOKEN(TOKEN_USCORE);
-        case PRINT_TOKEN(TOKEN_PIPE);
         case PRINT_TOKEN(TOKEN_CARET);
         case PRINT_TOKEN(TOKEN_AMP);
         case PRINT_TOKEN(TOKEN_TILDE);
@@ -428,6 +429,8 @@ jml_token_type_print(jml_token_type type)
         case PRINT_TOKEN(TOKEN_HASH);
         case PRINT_TOKEN(TOKEN_AT);
         case PRINT_TOKEN(TOKEN_ARROW);
+        case PRINT_TOKEN(TOKEN_VBAR);
+        case PRINT_TOKEN(TOKEN_PIPE);
         case PRINT_TOKEN(TOKEN_COLON);
 
         case PRINT_TOKEN(TOKEN_COLCOLON);
