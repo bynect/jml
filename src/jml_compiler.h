@@ -28,6 +28,7 @@ typedef enum {
     PREC_FACTOR,
     PREC_UNARY,
     PREC_CALL,
+    PREC_PIPE,
     PREC_PRIMARY
 } jml_parser_precedence;
 

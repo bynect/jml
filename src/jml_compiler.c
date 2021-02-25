@@ -1213,14 +1213,15 @@ jml_piping(JML_UNUSED(bool assignable))
 {
     jml_parser_match_line();
 
-    jml_parser_consume(TOKEN_NAME, "Expect function name.");
-    jml_variable_named(parser.previous, false);
+    jml_parser_precedence_parse(PREC_PIPE);
 
     jml_bytecode_emit_byte(OP_ROT);
-    jml_parser_consume(TOKEN_LPAREN, "Expect '(' before arguments.");
 
-    uint8_t arg_count = jml_arguments_list();
-    jml_bytecode_emit_bytes(OP_CALL, arg_count + 1);
+    uint8_t arg_count = 1;
+    if (jml_parser_match(TOKEN_LPAREN))
+        arg_count += jml_arguments_list();
+
+    jml_bytecode_emit_bytes(OP_CALL, arg_count);
 }
 
 
@@ -1245,7 +1246,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_AT*/        {NULL,          NULL,           PREC_NONE},
     /*TOKEN_ARROW*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_VBAR*/      {&jml_lambda,   NULL,           PREC_NONE},
-    /*TOKEN_PIPE*/      {NULL,          &jml_piping,    PREC_FACTOR},
+    /*TOKEN_PIPE*/      {NULL,          &jml_piping,    PREC_PIPE},
     /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
 
     /*TOKEN_COLCOLON*/  {NULL,          &jml_binary,    PREC_TERM},
