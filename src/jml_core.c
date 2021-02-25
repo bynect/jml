@@ -130,24 +130,32 @@ jml_core_format(int arg_count, jml_value_t *args)
         else {
             char *value_str     = jml_value_stringify(args[fmt_args + 1]);
 
-            dest_size += strlen(value_str) + strlen(token);
+            dest_size          += strlen(value_str) + strlen(token);
             REALLOC(char, buffer, size, dest_size);
 
-            char *temp = jml_strcat(buffer, token);
+            char *temp          = jml_strcat(buffer, token);
             jml_strcat(temp, value_str);
 
             jml_free(value_str);
         }
 
         ++fmt_args;
-        token = jml_strtok(NULL, "{}", &save);
+        token                   = jml_strtok(NULL, "{}", &save);
+    }
+
+    fmt_err                     = fmt_args;
+
+    if (fmt_obj->length < 2
+        || !(fmt_obj->chars[fmt_obj->length - 1] == '}'
+        && fmt_obj->chars[fmt_obj->length - 2] == '{')) {
+
+        --fmt_err;
+        --fmt_extra;
     }
 
     jml_free(fmt_str);
 
-    fmt_err = fmt_obj->chars[fmt_obj->length - 1] == '}' ? fmt_args : fmt_args - 1;
-
-    if (fmt_extra != 0 || fmt_err + 1 < arg_count) {
+    if (fmt_extra != 0 || fmt_err + 1 != arg_count) {
         jml_free(buffer);
         return OBJ_VAL(
             jml_obj_exception_format(
@@ -158,7 +166,9 @@ jml_core_format(int arg_count, jml_value_t *args)
         );
     }
 
-    return OBJ_VAL(jml_obj_string_take(buffer, dest_size));
+    return OBJ_VAL(
+        jml_obj_string_take(buffer, dest_size)
+    );
 }
 
 
