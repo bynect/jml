@@ -240,6 +240,8 @@ jml_identifier_check(jml_lexer_t *lexer)
                 }
             }
             break;
+
+        case '_': return jml_keyword_match(1, 0, "", TOKEN_USCORE, lexer);
     }
     return TOKEN_NAME;
 }
@@ -329,7 +331,7 @@ jml_lexer_tokenize(jml_lexer_t *lexer)
     }
 
     char c          =       jml_lexer_advance(lexer);
-    if (jml_is_alpha(c))    return jml_identifier_literal(lexer);
+    if (jml_is_ident(c))    return jml_identifier_literal(lexer);
     if (jml_is_digit(c))    return jml_number_literal(lexer);
 
     switch (c) {

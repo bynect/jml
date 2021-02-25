@@ -138,8 +138,7 @@ static bool
 jml_parser_match_line(void)
 {
     if (!jml_parser_match(TOKEN_LINE)
-        && !jml_parser_check(TOKEN_RBRACE)
-        && !jml_parser_match(TOKEN_SEMI))
+        && !jml_parser_check(TOKEN_RBRACE))
         return false;
 
     while (jml_parser_match(TOKEN_LINE));
@@ -652,6 +651,8 @@ jml_and(JML_UNUSED(bool assignable))
     jml_parser_precedence_parse(PREC_AND);
 
     jml_bytecode_patch_jump(jump_end);
+
+    jml_bytecode_emit_byte(OP_BOOL);
 }
 
 
@@ -668,6 +669,8 @@ jml_or(JML_UNUSED(bool assignable))
 
     jml_parser_precedence_parse(PREC_OR);
     jml_bytecode_patch_jump(jump_end);
+
+    jml_bytecode_emit_byte(OP_BOOL);
 }
 
 
@@ -826,13 +829,13 @@ jml_string(JML_UNUSED(bool assignable))
             }
 
             switch (raw[i + 1]) {
-                case '\'':              c =   '\''; ++i;                break;
-                case  '"':              c =    '"'; ++i;                break;
-                case '\\':              c =   '\\'; ++i;                break;
-                case  'n':              c =   '\n'; ++i;                break;
-                case  'r':              c =   '\r'; ++i;                break;
-                case  't':              c =   '\t'; ++i;                break;
-                case  'e':              c = '\x1b'; ++i;                break;
+                case '\'':              c = '\047'; ++i;                break;
+                case  '"':              c = '\042'; ++i;                break;
+                case '\\':              c = '\134'; ++i;                break;
+                case  'n':              c = '\012'; ++i;                break;
+                case  'r':              c = '\015'; ++i;                break;
+                case  't':              c = '\011'; ++i;                break;
+                case  'e':              c = '\033'; ++i;                break;
 
                 case  'x': {
                     if (i + 3 >= length) {
@@ -1229,7 +1232,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
 
     /*TOKEN_COLCOLON*/  {NULL,          &jml_binary,    PREC_TERM},
-    /*TOKEN_COLCOLONRQ*/{NULL,          NULL,           PREC_NONE},
+    /*TOKEN_COLCOLONEQ*/{NULL,          NULL,           PREC_NONE},
     /*TOKEN_PLUS*/      {NULL,          &jml_binary,    PREC_TERM},
     /*TOKEN_PLUSEQ*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_MINUS*/     {&jml_unary,    &jml_binary,    PREC_TERM},

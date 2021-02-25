@@ -614,7 +614,7 @@ jml_string_concatenate(void)
     jml_obj_string_t *b = AS_STRING(jml_vm_peek(0));
     jml_obj_string_t *a = AS_STRING(jml_vm_peek(1));
 
-    int length = a->length + b->length;
+    size_t length = a->length + b->length;
     char *chars = ALLOCATE(char, length + 1);
 
     memcpy(chars, a->chars, a->length);
@@ -917,6 +917,7 @@ jml_vm_run(jml_value_t *last)
         &&exec_OP_NONE,
         &&exec_OP_TRUE,
         &&exec_OP_FALSE,
+        &&exec_OP_BOOL,
         &&exec_OP_ADD,
         &&exec_OP_SUB,
         &&exec_OP_MUL,
@@ -1058,6 +1059,13 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_FALSE) {
                 jml_vm_push(FALSE_VAL);
+                END_OP();
+            }
+
+            EXEC_OP(OP_BOOL) {
+                jml_vm_push(BOOL_VAL(
+                    !jml_value_falsey(jml_vm_pop())
+                ));
                 END_OP();
             }
 

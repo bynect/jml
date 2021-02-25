@@ -206,6 +206,9 @@ jml_bytecode_instruction_disassemble(
         case OP_FALSE:
             return jml_bytecode_instruction_simple("OP_FALSE", offset);
 
+        case OP_BOOL:
+            return jml_bytecode_instruction_simple("OP_BOOL", offset);
+
         case OP_ADD:
             return jml_bytecode_instruction_simple("OP_ADD", offset);
 
