@@ -281,9 +281,7 @@ jml_compiler_init(jml_compiler_t *compiler, jml_function_type type,
     current                 = compiler;
 
     if (type == FUNCTION_LAMBDA) {
-        current->function->name = jml_obj_string_copy(
-            "lambda", 6
-        );
+        current->function->name = jml_obj_string_copy("lambda", 6);
 
     } else if (type != FUNCTION_MAIN) {
         current->function->name = jml_obj_string_copy(
@@ -293,6 +291,7 @@ jml_compiler_init(jml_compiler_t *compiler, jml_function_type type,
     } else if (module != NULL) {
         char name[128];
         int length = snprintf(name, 128, "%s.__main", module->name->chars);
+
         current->function->name = jml_obj_string_copy(name, length);
     }
 

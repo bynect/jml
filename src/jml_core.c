@@ -224,7 +224,7 @@ jml_core_reverse(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_size(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_error_args(
+    jml_obj_exception_t *exc            = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
@@ -241,6 +241,20 @@ jml_core_size(int arg_count, jml_value_t *args)
 
         case OBJ_ARRAY:
             return NUM_VAL(AS_ARRAY(value)->values.count);
+
+        case OBJ_INSTANCE: {
+            jml_obj_instance_t *instance    = AS_INSTANCE(value);
+            jml_value_t  last               = NONE_VAL;
+
+            if (jml_vm_invoke_cstack(instance, vm->size_string, 0, &last))
+                return last;
+
+            return OBJ_VAL(jml_obj_exception_format(
+                "DiffTypes",
+                "Can't get size from instance of '%s'.",
+                instance->klass->name->chars
+            ));
+        }
 
         default:
             goto err;
