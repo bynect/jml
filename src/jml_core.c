@@ -38,6 +38,7 @@ jml_core_format(int arg_count, jml_value_t *args)
     char             *buffer    = jml_alloc(size);
     char             *save      = NULL;
     char             *token     = jml_strtok(fmt_str, "{}", &save);
+    char             *last      = token;
 
     while (token != NULL) {
         if (fmt_args + 1 >= arg_count)
@@ -48,15 +49,16 @@ jml_core_format(int arg_count, jml_value_t *args)
             dest_size          += strlen(value_str) + strlen(token);
             REALLOC(char, buffer, size, dest_size);
 
-            char *temp          = jml_strcat(buffer, token);
-            jml_strcat(temp, value_str);
+            jml_strcat(jml_strcat(buffer, token), value_str);
 
             jml_free(value_str);
         }
 
         ++fmt_args;
+        last                    = token;
         token                   = jml_strtok(NULL, "{}", &save);
     }
+
 
     fmt_err                     = fmt_args;
 
@@ -66,11 +68,12 @@ jml_core_format(int arg_count, jml_value_t *args)
 
         --fmt_err;
         --fmt_extra;
+        jml_strcat(buffer, last);
     }
 
     jml_free(fmt_str);
 
-    if (fmt_extra != 0 || fmt_err + 1 != arg_count) {
+    if (fmt_extra > 0 || fmt_err + 1 != arg_count) {
         jml_free(buffer);
         return OBJ_VAL(
             jml_obj_exception_format(
@@ -82,7 +85,7 @@ jml_core_format(int arg_count, jml_value_t *args)
     }
 
     return OBJ_VAL(
-        jml_obj_string_take(buffer, dest_size)
+        jml_obj_string_take(buffer, strlen(buffer))
     );
 }
 

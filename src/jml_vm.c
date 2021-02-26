@@ -138,14 +138,6 @@ jml_vm_free(jml_vm_t *vm)
 void
 jml_vm_error(const char *format, ...)
 {
-    va_list args;
-    va_start(args, format);
-
-    vfprintf(stderr, format, args);
-    fputs("\n", stderr);
-
-    va_end(args);
-
 #ifndef JML_BACKTRACE
     if (vm->external != NULL) {
         jml_call_frame_t    *frame    = &vm->frames[0];
@@ -212,6 +204,14 @@ jml_vm_error(const char *format, ...)
         fprintf(stderr, "%s\n", vm->external->name->chars);
     }
 #endif
+
+    va_list args;
+    va_start(args, format);
+
+    vfprintf(stderr, format, args);
+    fprintf(stderr, "\n");
+
+    va_end(args);
 
     jml_vm_reset(vm);
 }

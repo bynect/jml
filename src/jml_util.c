@@ -91,7 +91,9 @@ jml_strdup(const char *str)
 char *
 jml_strcat(char *dest, char *src)
 {
-    while (*dest) dest++;
+    while (*dest)
+        dest++;
+
     while ((*dest++ = *src++));
 
     return --dest;
