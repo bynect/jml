@@ -150,17 +150,13 @@ bool jml_module_add_class(jml_obj_module_t *module,
     const char *name, jml_module_function *table, bool inheritable);
 
 
-jml_obj_exception_t *jml_core_exception_args(
-    int arg_count, int expected_arg);
+jml_obj_exception_t *jml_error_args(int arg_count, int expected_arg);
 
-jml_obj_exception_t *jml_core_exception_implemented(
-    jml_value_t value);
+jml_obj_exception_t *jml_error_implemented(jml_value_t value);
 
-jml_obj_exception_t *jml_core_exception_types(
-    bool mult, int arg_count, ...);
+jml_obj_exception_t *jml_error_types(bool mult, int arg_count, ...);
 
-jml_obj_exception_t *jml_core_exception_value(
-    const char *value);
+jml_obj_exception_t *jml_error_value(const char *value);
 
 
 typedef enum {

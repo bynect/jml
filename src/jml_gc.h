@@ -5,7 +5,7 @@
 #include <jml_type.h>
 
 
-#define GC_HEAP_GROW_FACTOR 1.5
+#define GC_HEAP_GROW_FACTOR         1.5
 
 
 #define ALLOCATE(type, count)                           \

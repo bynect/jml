@@ -51,14 +51,14 @@ jml_std_fs_dir_internal_init(const char *name, DIR *handle)
 static jml_value_t
 jml_std_fs_dir_init(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[1])) {
-        exc = jml_core_exception_types(false, 1, "string");
+        exc = jml_error_types(false, 1, "string");
         goto err;
     }
 
@@ -99,14 +99,14 @@ err:
 static jml_value_t
 jml_std_fs_dir_open(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0])) {
-        exc = jml_core_exception_types(false, 1, "string");
+        exc = jml_error_types(false, 1, "string");
         goto err;
     }
 
@@ -115,7 +115,7 @@ jml_std_fs_dir_open(int arg_count, jml_value_t *args)
     jml_std_fs_dir_t    *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Dir instance");
+        exc = jml_error_value("Dir instance");
         goto err;
     }
 
@@ -160,7 +160,7 @@ err:
 static jml_value_t
 jml_std_fs_dir_close(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 0);
 
     if (exc != NULL)
@@ -170,7 +170,7 @@ jml_std_fs_dir_close(int arg_count, jml_value_t *args)
     jml_std_fs_dir_t   *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Dir instance");
+        exc = jml_error_value("Dir instance");
         goto err;
     }
 
@@ -205,7 +205,7 @@ err:
 static jml_value_t
 jml_std_fs_dir_read(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 0);
 
     if (exc != NULL)
@@ -215,7 +215,7 @@ jml_std_fs_dir_read(int arg_count, jml_value_t *args)
     jml_std_fs_dir_t   *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Dir instance");
+        exc = jml_error_value("Dir instance");
         goto err;
     }
 
@@ -373,14 +373,14 @@ jml_std_fs_file_internal_init(const char *name, FILE *handle, jml_file_mode mode
 static jml_value_t
 jml_std_fs_file_init(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 2);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[1]) || !IS_STRING(args[2])) {
-        exc = jml_core_exception_types(false, 2, "string", "string");
+        exc = jml_error_types(false, 2, "string", "string");
         goto err;
     }
 
@@ -390,7 +390,7 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
     jml_file_mode       open_mode;
 
     if ((open_mode = jml_std_fs_file_open_mode(mode)) == INVALID) {
-        exc = jml_core_exception_value("File open mode");
+        exc = jml_error_value("File open mode");
         goto err;
     }
 
@@ -430,14 +430,14 @@ err:
 static jml_value_t
 jml_std_fs_file_open(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 2);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0]) || !IS_STRING(args[1])) {
-        exc = jml_core_exception_types(false, 2, "string", "string");
+        exc = jml_error_types(false, 2, "string", "string");
         goto err;
     }
 
@@ -448,7 +448,7 @@ jml_std_fs_file_open(int arg_count, jml_value_t *args)
     jml_file_mode       open_mode;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("File instance");
+        exc = jml_error_value("File instance");
         goto err;
     }
 
@@ -461,7 +461,7 @@ jml_std_fs_file_open(int arg_count, jml_value_t *args)
     }
 
     if ((open_mode = jml_std_fs_file_open_mode(mode)) == INVALID) {
-        exc = jml_core_exception_value("File open mode");
+        exc = jml_error_value("File open mode");
         goto err;
     }
 
@@ -502,7 +502,7 @@ err:
 static jml_value_t
 jml_std_fs_file_close(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 0);
 
     if (exc != NULL)
@@ -512,7 +512,7 @@ jml_std_fs_file_close(int arg_count, jml_value_t *args)
     jml_std_fs_file_t  *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("File instance");
+        exc = jml_error_value("File instance");
         goto err;
     }
 
@@ -549,7 +549,7 @@ err:
 static jml_value_t
 jml_std_fs_file_read(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 0);
 
     if (exc != NULL)
@@ -559,7 +559,7 @@ jml_std_fs_file_read(int arg_count, jml_value_t *args)
     jml_std_fs_file_t  *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("File instance");
+        exc = jml_error_value("File instance");
         goto err;
     }
 
@@ -620,14 +620,14 @@ err:
 static jml_value_t
 jml_std_fs_file_write(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0])) {
-        exc = jml_core_exception_types(false, 1, "string");
+        exc = jml_error_types(false, 1, "string");
         goto err;
     }
 
@@ -636,7 +636,7 @@ jml_std_fs_file_write(int arg_count, jml_value_t *args)
     jml_std_fs_file_t  *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("File instance");
+        exc = jml_error_value("File instance");
         goto err;
     }
 
@@ -690,7 +690,7 @@ err:
 static jml_value_t
 jml_std_fs_file_flush(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 0);
 
     if (exc != NULL)
@@ -700,7 +700,7 @@ jml_std_fs_file_flush(int arg_count, jml_value_t *args)
     jml_std_fs_file_t  *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("File instance");
+        exc = jml_error_value("File instance");
         goto err;
     }
 
@@ -758,14 +758,14 @@ MODULE_TABLE_HEAD file_table[] = {
 static jml_value_t
 jml_std_fs_remove(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0])) {
-        exc = jml_core_exception_types(false, 1, "string");
+        exc = jml_error_types(false, 1, "string");
         goto err;
     }
 
@@ -795,14 +795,14 @@ err:
 static jml_value_t
 jml_std_fs_rename(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 2);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0]) || !IS_STRING(args[1])) {
-        exc = jml_core_exception_types(false, 2, "string", "string");
+        exc = jml_error_types(false, 2, "string", "string");
         goto err;
     }
 
@@ -832,14 +832,14 @@ err:
 static jml_value_t
 jml_std_fs_tempfile(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 0);
 
     if (exc != NULL)
         goto err;
 
     if (file_class == NULL) {
-        exc = jml_core_exception_value("File class");
+        exc = jml_error_value("File class");
         goto err;
     }
 
@@ -871,7 +871,7 @@ err:
 static jml_value_t
 jml_std_fs_tempname(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 0);
 
     if (exc != NULL)
@@ -896,14 +896,14 @@ err:
 static jml_value_t
 jml_std_fs_makedir(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0])) {
-        exc = jml_core_exception_types(false, 1, "string");
+        exc = jml_error_types(false, 1, "string");
         goto err;
     }
 

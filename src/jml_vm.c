@@ -14,7 +14,7 @@
 #include <jml_util.h>
 
 
-jml_vm_t *vm;
+jml_vm_t *vm                        = NULL;
 
 
 jml_vm_t *

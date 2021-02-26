@@ -1132,11 +1132,11 @@ jml_super(JML_UNUSED(bool assignable))
 {
     jml_parser_match_line();
 
-    if (class_current == NULL) {
+    if (class_current == NULL)
         jml_parser_error("Can't use 'super' outside of a class.");
-    } else if (!class_current->w_superclass) {
+
+    else if (!class_current->w_superclass)
         jml_parser_error("Can't use 'super' in a class with no superclass.");
-    }
 
     jml_parser_consume(TOKEN_DOT, "Expect '.' after 'super'.");
     jml_parser_consume(TOKEN_NAME, "Expect superclass method name.");
@@ -1166,6 +1166,7 @@ jml_self(JML_UNUSED(bool assignable))
         jml_parser_error("Can't use 'self' outside of a class.");
         return;
     }
+
     jml_variable(false);
 }
 

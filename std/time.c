@@ -24,14 +24,14 @@
 static jml_value_t
 jml_std_time_sleep(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_NUM(args[0])) {
-        exc = jml_core_exception_types(
+        exc = jml_error_types(
             false, 1, "number"
         );
         goto err;
@@ -57,14 +57,14 @@ err:
 static jml_value_t
 jml_std_time_usleep(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_NUM(args[0])) {
-        exc = jml_core_exception_types(
+        exc = jml_error_types(
             false, 1, "number"
         );
         goto err;
@@ -90,7 +90,7 @@ err:
 static jml_value_t
 jml_std_time_time(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 0);
 
     if (exc != NULL)
@@ -103,7 +103,7 @@ jml_std_time_time(int arg_count, JML_UNUSED(jml_value_t *args))
 static jml_value_t
 jml_std_time_clock(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 0);
 
     if (exc != NULL)
@@ -116,14 +116,14 @@ jml_std_time_clock(int arg_count, JML_UNUSED(jml_value_t *args))
 static jml_value_t
 jml_std_time_difftime(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 2);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_NUM(args[0]) || !IS_NUM(args[1])) {
-        exc = jml_core_exception_types(
+        exc = jml_error_types(
             false, 2, "number", "number"
         );
         goto err;
@@ -141,7 +141,7 @@ err:
 static jml_value_t
 jml_std_time_localtime(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 0);
 
     if (exc != NULL)

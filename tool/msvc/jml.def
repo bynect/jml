@@ -87,10 +87,10 @@ jml_gc_mark_value
 jml_gc_unexempt
 jml_realloc
 jml_reallocate
-jml_core_exception_args
-jml_core_exception_implemented
-jml_core_exception_types
-jml_core_exception_value
+jml_error_args
+jml_error_implemented
+jml_error_types
+jml_error_value
 jml_core_register
 jml_compiler_compile
 jml_compiler_mark_roots

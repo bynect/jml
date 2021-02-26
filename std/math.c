@@ -18,13 +18,13 @@
 
 #define MATH_CHECK(arg_count, args, arg_num, ...)       \
     do {                                                \
-        exc = jml_core_exception_args(                  \
+        exc = jml_error_args(                           \
             arg_count, arg_num);                        \
         if (exc != NULL) goto err;                      \
                                                         \
         for (int i = 0; i < arg_count; ++i)             \
             if (!IS_NUM(args[i])) {                     \
-                exc = jml_core_exception_types(         \
+                exc = jml_error_types(                  \
                 false, arg_num, __VA_ARGS__);           \
                 goto err;                               \
             }                                           \

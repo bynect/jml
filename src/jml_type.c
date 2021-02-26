@@ -27,7 +27,7 @@ jml_obj_allocate(size_t size, jml_obj_type type)
 
 #ifdef JML_TRACE_MEM
     printf(
-        "[MEM] |%p allocate %zd (type %s)|\n",
+        "[MEM] |%p allocate %zd %s|\n",
         (void*)object,
         size,
         jml_obj_stringify_type(OBJ_VAL(object))

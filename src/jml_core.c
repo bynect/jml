@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
 #include <stdarg.h>
 
@@ -14,90 +13,6 @@
 #include <jml_string.h>
 
 
-/*helper functions*/
-jml_obj_exception_t *
-jml_core_exception_args(int arg_count, int expected_arg)
-{
-    char message[64];
-
-    sprintf(message, "Expected '%d' arguments but got '%d'.",
-        expected_arg, arg_count);
-
-    if (arg_count > expected_arg)
-        return jml_obj_exception_new(
-            "TooManyArgs", message);
-
-    if (arg_count < expected_arg)
-        return jml_obj_exception_new(
-            "TooFewArgs", message);
-
-    return NULL;
-}
-
-
-jml_obj_exception_t *
-jml_core_exception_implemented(jml_value_t value)
-{
-    return jml_obj_exception_format(
-        "NotImplemented",
-        "Not implemented for %s.",
-        jml_value_stringify_type(value)
-    );
-}
-
-
-jml_obj_exception_t *
-jml_core_exception_types(bool mult, int arg_count, ...)
-{
-    va_list types;
-    va_start(types, arg_count);
-
-    size_t size                 = (arg_count + 1) * 32;
-    size_t dest_size            = size;
-    char *message               = jml_realloc(NULL, size);
-    char *head                  = message;
-
-    char *next = va_arg(types, char*);
-    sprintf(message, "Expected arguments of <type %s>", next);
-
-    for (int i = 1; i < arg_count; ++i) {
-        char *next = va_arg(types, char*);
-        char temp[64];
-        if (mult)
-            sprintf(temp, " or <type %s>", next);
-        else
-            sprintf(temp, " and <type %s>", next);
-
-        dest_size += strlen(temp);
-        REALLOC(char, message, size, dest_size);
-
-        head = jml_strcat(head, temp);
-    }
-
-    *head++ = '.';
-    *head   = '\0';
-
-    jml_obj_exception_t *exc = jml_obj_exception_new(
-        "DiffTypes", message
-    );
-
-    jml_realloc(message, 0);
-    va_end(types);
-
-    return exc;
-}
-
-
-jml_obj_exception_t *
-jml_core_exception_value(const char *value)
-{
-    return jml_obj_exception_format(
-        "WrongValue", "Invalid '%s'.", value
-    );
-}
-
-
-/*core functions*/
 static jml_value_t
 jml_core_format(int arg_count, jml_value_t *args)
 {
@@ -215,7 +130,7 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_reverse(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
@@ -298,7 +213,7 @@ jml_core_reverse(int arg_count, jml_value_t *args)
     }
 
     return OBJ_VAL(
-        jml_core_exception_implemented(value)
+        jml_error_implemented(value)
     );
 }
 
@@ -306,7 +221,7 @@ jml_core_reverse(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_size(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
@@ -330,7 +245,7 @@ jml_core_size(int arg_count, jml_value_t *args)
 
 err:
     return OBJ_VAL(
-        jml_core_exception_implemented(value)
+        jml_error_implemented(value)
     );
 }
 
@@ -338,7 +253,7 @@ err:
 static jml_value_t
 jml_core_char(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
@@ -352,7 +267,7 @@ jml_core_char(int arg_count, jml_value_t *args)
             return jml_string_intern(c);
 
         return OBJ_VAL(
-            jml_core_exception_value("unicode codepoint")
+            jml_error_value("unicode codepoint")
         );
     }
 
@@ -361,7 +276,7 @@ jml_core_char(int arg_count, jml_value_t *args)
 
         if (jml_string_len(string->chars, string->length) != 1) {
             return OBJ_VAL(
-                jml_core_exception_value("string length")
+                jml_error_value("string length")
             );
         }
 
@@ -370,12 +285,12 @@ jml_core_char(int arg_count, jml_value_t *args)
             return NUM_VAL(code);
 
         return OBJ_VAL(
-            jml_core_exception_value("unicode codepoint")
+            jml_error_value("unicode codepoint")
         );
     }
 
     return OBJ_VAL(
-        jml_core_exception_implemented(value)
+        jml_error_implemented(value)
     );
 }
 
@@ -383,7 +298,7 @@ jml_core_char(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_instance(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 2);
 
     if (exc != NULL)
@@ -394,7 +309,7 @@ jml_core_instance(int arg_count, jml_value_t *args)
 
     if (!IS_INSTANCE(instance) || !IS_CLASS(klass)) {
         return OBJ_VAL(
-            jml_core_exception_types(false, 2, "instance", "class")
+            jml_error_types(false, 2, "instance", "class")
         );
     }
 
@@ -408,7 +323,7 @@ jml_core_instance(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_subclass(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc        = jml_core_exception_args(
+    jml_obj_exception_t *exc        = jml_error_args(
         arg_count, 2);
 
     if (exc != NULL)
@@ -419,7 +334,7 @@ jml_core_subclass(int arg_count, jml_value_t *args)
 
     if (!IS_CLASS(sub) || !IS_CLASS(super)) {
         return OBJ_VAL(
-            jml_core_exception_types(false, 2, "class", "class")
+            jml_error_types(false, 2, "class", "class")
         );
     }
 
@@ -444,7 +359,7 @@ jml_core_subclass(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_type(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc        = jml_core_exception_args(
+    jml_obj_exception_t *exc        = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
@@ -459,7 +374,7 @@ jml_core_type(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc        = jml_core_exception_args(
+    jml_obj_exception_t *exc        = jml_error_args(
         arg_count, 0);
 
     if (exc != NULL)
@@ -476,7 +391,7 @@ jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
 static jml_value_t
 jml_core_attr(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc        = jml_core_exception_args(
+    jml_obj_exception_t *exc        = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
@@ -516,7 +431,7 @@ jml_core_attr(int arg_count, jml_value_t *args)
 
 err:
     return OBJ_VAL(
-        jml_core_exception_implemented(value)
+        jml_error_implemented(value)
     );
 }
 
@@ -524,7 +439,7 @@ err:
 static jml_value_t
 jml_core_max(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc        = jml_core_exception_args(
+    jml_obj_exception_t *exc        = jml_error_args(
         arg_count, 2);
 
     if (exc != NULL)
@@ -536,7 +451,7 @@ jml_core_max(int arg_count, jml_value_t *args)
 
     if (!IS_NUM(a) || !IS_NUM(b)) {
         return OBJ_VAL(
-            jml_core_exception_types(false, 2, "number", "number")
+            jml_error_types(false, 2, "number", "number")
         );
     }
 
@@ -547,7 +462,7 @@ jml_core_max(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_min(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc        = jml_core_exception_args(
+    jml_obj_exception_t *exc        = jml_error_args(
         arg_count, 2);
 
     if (exc != NULL)
@@ -559,7 +474,7 @@ jml_core_min(int arg_count, jml_value_t *args)
 
     if (!IS_NUM(a) || !IS_NUM(b)) {
         return OBJ_VAL(
-            jml_core_exception_types(false, 2, "number", "number")
+            jml_error_types(false, 2, "number", "number")
         );
     }
 
@@ -570,7 +485,7 @@ jml_core_min(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_assert(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc        = jml_core_exception_args(
+    jml_obj_exception_t *exc        = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
@@ -586,7 +501,7 @@ jml_core_assert(int arg_count, jml_value_t *args)
 }
 
 
-/*core function registration*/
+/*core table*/
 static jml_module_function core_functions[] = {
     {"format",                      &jml_core_format},
     {"print",                       &jml_core_print},

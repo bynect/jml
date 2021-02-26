@@ -68,14 +68,14 @@ jml_std_sock_socket_internal_init(int fd, int domain, int type)
 static jml_value_t
 jml_std_sock_socket_init(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 2);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_NUM(args[1]) || !IS_NUM(args[2])) {
-        return OBJ_VAL(jml_core_exception_types(
+        return OBJ_VAL(jml_error_types(
             false, 2, "number", "number"
         ));
     }
@@ -109,14 +109,14 @@ err:
 static jml_value_t
 jml_std_sock_socket_open(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 2);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_NUM(args[0]) || !IS_NUM(args[1])) {
-        return OBJ_VAL(jml_core_exception_types(
+        return OBJ_VAL(jml_error_types(
             false, 2, "number", "number"
         ));
     }
@@ -129,7 +129,7 @@ jml_std_sock_socket_open(int arg_count, jml_value_t *args)
     jml_std_sock_socket_t *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Socket instance");
+        exc = jml_error_value("Socket instance");
         goto err;
     }
 
@@ -166,14 +166,14 @@ err:
 static jml_value_t
 jml_std_sock_socket_bind(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 2);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0]) || !IS_STRING(args[1])) {
-        return OBJ_VAL(jml_core_exception_types(
+        return OBJ_VAL(jml_error_types(
             false, 2, "string", "string"
         ));
     }
@@ -185,7 +185,7 @@ jml_std_sock_socket_bind(int arg_count, jml_value_t *args)
     jml_std_sock_socket_t *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Socket instance");
+        exc = jml_error_value("Socket instance");
         goto err;
     }
 
@@ -242,7 +242,7 @@ err:
 static jml_value_t
 jml_std_sock_socket_listen(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 0);
 
     if (exc != NULL)
@@ -252,7 +252,7 @@ jml_std_sock_socket_listen(int arg_count, jml_value_t *args)
     jml_std_sock_socket_t *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Socket instance");
+        exc = jml_error_value("Socket instance");
         goto err;
     }
 
@@ -289,14 +289,14 @@ err:
 static jml_value_t
 jml_std_sock_socket_accept(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 0);
 
     jml_obj_instance_t *self    = AS_INSTANCE(args[0]);
     jml_std_sock_socket_t *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Socket instance");
+        exc = jml_error_value("Socket instance");
         goto err;
     }
 
@@ -329,7 +329,7 @@ jml_std_sock_socket_accept(int arg_count, jml_value_t *args)
     }
 
     if (socket_class == NULL) {
-        exc = jml_core_exception_value("Socket class");
+        exc = jml_error_value("Socket class");
         goto err;
     }
 
@@ -353,14 +353,14 @@ err:
 static jml_value_t
 jml_std_sock_socket_connect(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_core_exception_args(
+    jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 2);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0]) || !IS_STRING(args[1])) {
-        return OBJ_VAL(jml_core_exception_types(
+        return OBJ_VAL(jml_error_types(
             false, 2, "string", "string"
         ));
     }
@@ -372,7 +372,7 @@ jml_std_sock_socket_connect(int arg_count, jml_value_t *args)
     jml_std_sock_socket_t *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Socket instance");
+        exc = jml_error_value("Socket instance");
         goto err;
     }
 
@@ -437,14 +437,14 @@ err:
 static jml_value_t
 jml_std_sock_socket_recv(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_NUM(args[0])) {
-        return OBJ_VAL(jml_core_exception_types(
+        return OBJ_VAL(jml_error_types(
             false, 1, "number"
         ));
     }
@@ -453,7 +453,7 @@ jml_std_sock_socket_recv(int arg_count, jml_value_t *args)
     jml_std_sock_socket_t *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Socket instance");
+        exc = jml_error_value("Socket instance");
         goto err;
     }
 
@@ -466,7 +466,7 @@ jml_std_sock_socket_recv(int arg_count, jml_value_t *args)
     }
 
     if (AS_NUM(args[0]) < 0) {
-        exc = jml_core_exception_value("buffer size");
+        exc = jml_error_value("buffer size");
         goto err;
     }
 
@@ -494,14 +494,14 @@ err:
 static jml_value_t
 jml_std_sock_socket_send(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0])) {
-        return OBJ_VAL(jml_core_exception_types(
+        return OBJ_VAL(jml_error_types(
             false, 1, "string"
         ));
     }
@@ -511,7 +511,7 @@ jml_std_sock_socket_send(int arg_count, jml_value_t *args)
     jml_std_sock_socket_t *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Socket instance");
+        exc = jml_error_value("Socket instance");
         goto err;
     }
 
@@ -556,7 +556,7 @@ jml_std_sock_socket_setopt(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_std_sock_socket_shutdown(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 0);
 
     if (exc != NULL)
@@ -566,7 +566,7 @@ jml_std_sock_socket_shutdown(int arg_count, jml_value_t *args)
     jml_std_sock_socket_t *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Socket instance");
+        exc = jml_error_value("Socket instance");
         goto err;
     }
 
@@ -595,7 +595,7 @@ err:
 static jml_value_t
 jml_std_sock_socket_close(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count - 1, 0);
 
     if (exc != NULL)
@@ -605,7 +605,7 @@ jml_std_sock_socket_close(int arg_count, jml_value_t *args)
     jml_std_sock_socket_t *internal;
 
     if ((internal = self->extra) == NULL) {
-        exc = jml_core_exception_value("Socket instance");
+        exc = jml_error_value("Socket instance");
         goto err;
     }
 

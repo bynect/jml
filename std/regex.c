@@ -22,14 +22,14 @@ static char                        *last_string = NULL;
 
 #define REGEX_CHECK(exc, arg_count, args, arg_num, ...) \
     do {                                                \
-        exc = jml_core_exception_args(                  \
+        exc = jml_error_args(                           \
             arg_count, arg_num);                        \
         if (exc != NULL)                                \
             goto err;                                   \
                                                         \
         if (!IS_STRING(args[0])                         \
             || !IS_STRING(args[1])) {                   \
-            exc = jml_core_exception_types(             \
+            exc = jml_error_types(                      \
                 false, arg_num, __VA_ARGS__);           \
             goto err;                                   \
         }                                               \

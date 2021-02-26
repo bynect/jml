@@ -8,7 +8,7 @@
 static jml_value_t
 jml_std_errno_get_errno(int arg_count, JML_UNUSED(jml_value_t *args))
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 0);
 
     if (exc != NULL)
@@ -21,14 +21,14 @@ jml_std_errno_get_errno(int arg_count, JML_UNUSED(jml_value_t *args))
 static jml_value_t
 jml_std_errno_strerror(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_NUM(args[0])) {
-        jml_core_exception_types(false, 1, "number");
+        jml_error_types(false, 1, "number");
         goto err;
     }
 
@@ -43,14 +43,14 @@ err:
 static jml_value_t
 jml_std_errno_perror(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_core_exception_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
         goto err;
 
     if (!IS_STRING(args[0])) {
-        exc = jml_core_exception_types(false, 1, "string");
+        exc = jml_error_types(false, 1, "string");
         goto err;
     }
 
