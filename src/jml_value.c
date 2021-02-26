@@ -166,7 +166,7 @@ jml_hashmap_pop(jml_hashmap_t *map,
     jml_obj_string_t *key, jml_value_t *value)
 {
     if (map->count == 0)
-        return OBJ_VAL(vm->sentinel);
+        return false;
 
     jml_hashmap_entry_t *entry = jml_hashmap_find_entry(
         map->entries, map->capacity, key

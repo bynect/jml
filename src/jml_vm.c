@@ -330,7 +330,7 @@ jml_vm_call(jml_obj_closure_t *closure,
     }
 
     if (vm->frame_count == FRAMES_MAX) {
-        jml_vm_error("Scope depth overflow.");
+        jml_vm_error("OverflowErr: Scope depth overflow.");
         return false;
     }
 
@@ -377,7 +377,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
                 } else if (arg_count != 0) {
                     jml_vm_error(
-                        "Expected '0' arguments but got %d.", arg_count
+                        "TooManyArgs: Expected '0' arguments but got '%d'.", arg_count
                     );
                     return false;
                 }
@@ -397,7 +397,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
                 } else {
                     jml_vm_error(
-                        "Can't call instance of '%s'.",
+                        "DiffTypes: Can't call instance of '%s'.",
                         instance->klass->name->chars
                     );
                     return false;
@@ -429,7 +429,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
     }
 
     jml_vm_error(
-        "Can call only functions, classes and instances."
+        "DiffTypes: Can call only functions, classes and instances."
     );
     return false;
 }
@@ -484,7 +484,7 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
         }
 
         if (!jml_vm_invoke_instance(instance, name, arg_count)) {
-            jml_vm_error("Undefined property '%s'.", name->chars);
+            jml_vm_error("UndefErr: Undefined property '%s'.", name->chars);
             return false;
         }
         return true;
@@ -498,7 +498,7 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
 #ifndef JML_LAZY_IMPORT
         else {
-            jml_vm_error("Undefined property '%s'.", name->chars);
+            jml_vm_error("UndefErr: Undefined property '%s'.", name->chars);
             return false;
         }
 #else
@@ -507,7 +507,7 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
                 module, name->chars, true);
 
             if (cfunction == NULL || cfunction->function == NULL) {
-                jml_vm_error("Undefined property '%s'.", name->chars);
+                jml_vm_error("UndefErr: Undefined property '%s'.", name->chars);
                 return false;
             }
 
@@ -519,7 +519,7 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 #endif
     }
 
-    jml_vm_error("Can't call '%s'.", name->chars);
+    jml_vm_error("DiffTypes: Can't call '%s'.", name->chars);
     return false;
 }
 
@@ -532,7 +532,7 @@ jml_vm_method_bind(jml_obj_class_t *klass,
 
     if (!jml_hashmap_get(&klass->methods, name, &method)) {
         jml_vm_error(
-            "Undefined property '%s'.", name->chars
+            "UndefErr: Undefined property '%s'.", name->chars
         );
         return false;
     }
@@ -741,7 +741,7 @@ jml_vm_module_bind(jml_obj_module_t *module,
 #endif
         err: {
             jml_vm_error(
-                "Undefined member '%s'.", name->chars
+                "UndefErr: Undefined member '%s'.", name->chars
             );
             return false;
         }
@@ -799,7 +799,8 @@ jml_vm_run(jml_value_t *last)
             if (!jml_vm_invoke_instance(                \
                 AS_INSTANCE(a), string, 1)) {           \
                 jml_vm_error(                           \
-                    "Can't " verb " instance of '%s'.", \
+                    "DiffTypes: Can't " verb            \
+                    " instance of '%s'.",               \
                     AS_INSTANCE(a)->klass->name->chars  \
                 );                                      \
                 return INTERPRET_RUNTIME_ERROR;         \
@@ -810,6 +811,7 @@ jml_vm_run(jml_value_t *last)
         } else {                                        \
             SAVE_FRAME();                               \
             jml_vm_error(                               \
+                "DiffTypes: "                           \
                 "Operands must be numbers or instances."\
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
@@ -827,7 +829,7 @@ jml_vm_run(jml_value_t *last)
             if (AS_NUM(b) == 0) {                       \
                 SAVE_FRAME();                           \
                 jml_vm_error(                           \
-                    "Can't divide by zero."             \
+                    "DivByZero: Can't divide by zero."  \
                 );                                      \
                 return INTERPRET_RUNTIME_ERROR;         \
             }                                           \
@@ -842,7 +844,8 @@ jml_vm_run(jml_value_t *last)
             if (!jml_vm_invoke_instance(                \
                 AS_INSTANCE(a), string, 1)) {           \
                 jml_vm_error(                           \
-                    "Can't " verb " instance of '%s'.", \
+                    "DiffTypes: Can't " verb            \
+                    " instance of '%s'.",               \
                     AS_INSTANCE(a)->klass->name->chars  \
                 );                                      \
                 return INTERPRET_RUNTIME_ERROR;         \
@@ -853,6 +856,7 @@ jml_vm_run(jml_value_t *last)
         } else {                                        \
             SAVE_FRAME();                               \
             jml_vm_error(                               \
+                "DiffTypes: "                           \
                 "Operands must be numbers or instances."\
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
@@ -877,7 +881,8 @@ jml_vm_run(jml_value_t *last)
             if (!jml_vm_invoke_instance(                \
                 AS_INSTANCE(a), string, 1)) {           \
                 jml_vm_error(                           \
-                    "Can't " verb " instance of '%s'.", \
+                    "DiffTypes: Can't " verb            \
+                    " instance of '%s'.",               \
                     AS_INSTANCE(a)->klass->name->chars  \
                 );                                      \
                 return INTERPRET_RUNTIME_ERROR;         \
@@ -888,6 +893,7 @@ jml_vm_run(jml_value_t *last)
         } else {                                        \
             SAVE_FRAME();                               \
             jml_vm_error(                               \
+                "DiffTypes: "                           \
                 "Operands must be numbers or instances."\
             );                                          \
             return INTERPRET_RUNTIME_ERROR;             \
@@ -1122,7 +1128,7 @@ jml_vm_run(jml_value_t *last)
                 if (!IS_NUM(jml_vm_peek(0))) {
                     SAVE_FRAME();
                     jml_vm_error(
-                        "Operand must be a number."
+                        "DiffTypes: Operand must be a number."
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1187,7 +1193,7 @@ jml_vm_run(jml_value_t *last)
                     if (!IS_STRING(tail)) {
                         SAVE_FRAME();
                         jml_vm_error(
-                            "Can't concatenate string to %s.",
+                            "DiffTypes: Can't concatenate string to %s.",
                             jml_value_stringify_type(tail)
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -1201,7 +1207,7 @@ jml_vm_run(jml_value_t *last)
                     SAVE_FRAME();
                     if (!jml_vm_invoke_instance(AS_INSTANCE(head), vm->concat_string, 1)) {
                         jml_vm_error(
-                            "Can't concatenate instance of '%s'.",
+                            "DiffTypes: Can't concatenate instance of '%s'.",
                             AS_INSTANCE(head)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -1213,7 +1219,7 @@ jml_vm_run(jml_value_t *last)
                 } else {
                     SAVE_FRAME();
                     jml_vm_error(
-                        "Operands must be strings, array or instances."
+                        "DiffTypes: Operands must be strings, array or instances."
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1235,7 +1241,7 @@ jml_vm_run(jml_value_t *last)
                     }
                 } else {
                     SAVE_FRAME();
-                    jml_vm_error("Container must be iterable.");
+                    jml_vm_error("WrongValue: Container must be iterable.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1297,7 +1303,9 @@ jml_vm_run(jml_value_t *last)
                 SAVE_FRAME();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
                 if (!jml_vm_invoke_class(superclass, method, arg_count)) {
-                    jml_vm_error("Undefined property '%s'.", method->chars);
+                    jml_vm_error(
+                        "UndefErr: Undefined property '%s'.", method->chars
+                    );
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1348,13 +1356,13 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t superclass = jml_vm_peek(1);
                 if (!IS_CLASS(superclass)) {
                     SAVE_FRAME();
-                    jml_vm_error("Superclass must be a class.");
+                    jml_vm_error("WrongValue: Superclass must be a class.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
                 if (!AS_CLASS(superclass)->inheritable) {
                     SAVE_FRAME();
-                    jml_vm_error("Superclass must be inheritable.");
+                    jml_vm_error("WrongValue: Superclass must be inheritable.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1421,7 +1429,9 @@ jml_vm_run(jml_value_t *last)
                     jml_vm_global_del(name);
 
                     SAVE_FRAME();
-                    jml_vm_error("Undefined variable '%s'.", name->chars);
+                    jml_vm_error(
+                        "UndefErr: Undefined variable '%s'.", name->chars
+                    );
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 END_OP();
@@ -1433,7 +1443,9 @@ jml_vm_run(jml_value_t *last)
 
                 if (!jml_vm_global_get(name, &value)) {
                     SAVE_FRAME();
-                    jml_vm_error("Undefined variable '%s'.", name->chars);
+                    jml_vm_error(
+                        "UndefErr: Undefined variable '%s'.", name->chars
+                    );
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 jml_vm_push(*value);
@@ -1475,7 +1487,7 @@ jml_vm_run(jml_value_t *last)
                 } else {
                     SAVE_FRAME();
                     jml_vm_error(
-                        "Only instances and modules have properties."
+                        "SyntaxErr: Only instances and modules have properties."
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1517,7 +1529,7 @@ jml_vm_run(jml_value_t *last)
                 } else {
                     SAVE_FRAME();
                     jml_vm_error(
-                        "Only instances and modules have properties."
+                        "SyntaxErr: Only instances and modules have properties."
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1532,7 +1544,7 @@ jml_vm_run(jml_value_t *last)
                 if (IS_MAP(box)) {
                     if (!IS_STRING(index)) {
                         SAVE_FRAME();
-                        jml_vm_error("Maps can be indexed only by strings.");
+                        jml_vm_error("DiffTypes: Maps can be indexed only by strings.");
                         return INTERPRET_RUNTIME_ERROR;
                     }
 
@@ -1543,7 +1555,7 @@ jml_vm_run(jml_value_t *last)
                 } else if (IS_ARRAY(box)) {
                     if (!IS_NUM(index)) {
                         SAVE_FRAME();
-                        jml_vm_error("Arrays can be indexed only by numbers.");
+                        jml_vm_error("DiffTypes: Arrays can be indexed only by numbers.");
                         return INTERPRET_RUNTIME_ERROR;
                     }
 
@@ -1552,7 +1564,7 @@ jml_vm_run(jml_value_t *last)
 
                     if (num_index >= array.count || num_index < -array.count) {
                         SAVE_FRAME();
-                        jml_vm_error("Out of bounds assignment to array.");
+                        jml_vm_error("RangeErr: Out of bounds assignment to array.");
                         return INTERPRET_RUNTIME_ERROR;
 
                     }
@@ -1566,7 +1578,7 @@ jml_vm_run(jml_value_t *last)
                     SAVE_FRAME();
                     if (!jml_vm_invoke_instance(AS_INSTANCE(box), vm->set_string, 2)) {
                         jml_vm_error(
-                            "Can't index instance of '%s'.",
+                            "DiffTypes: Can't index instance of '%s'.",
                             AS_INSTANCE(box)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -1577,7 +1589,7 @@ jml_vm_run(jml_value_t *last)
 
                 } else {
                     SAVE_FRAME();
-                    jml_vm_error("Can index only arrays, maps and instances.");
+                    jml_vm_error("DiffTypes: Can index only arrays, maps and instances.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1595,7 +1607,7 @@ jml_vm_run(jml_value_t *last)
                 if (IS_MAP(box)) {
                     if (!IS_STRING(index)) {
                         SAVE_FRAME();
-                        jml_vm_error("Maps can be indexed only by strings.");
+                        jml_vm_error("DiffTypes: Maps can be indexed only by strings.");
                         return INTERPRET_RUNTIME_ERROR;
                     }
 
@@ -1608,7 +1620,7 @@ jml_vm_run(jml_value_t *last)
                 } else if (IS_ARRAY(box)) {
                     if (!IS_NUM(index)) {
                         SAVE_FRAME();
-                        jml_vm_error("Arrays can be indexed only by numbers.");
+                        jml_vm_error("DiffTypes: Arrays can be indexed only by numbers.");
                         return INTERPRET_RUNTIME_ERROR;
                     }
 
@@ -1626,7 +1638,7 @@ jml_vm_run(jml_value_t *last)
                     SAVE_FRAME();
                     if (!jml_vm_invoke_instance(AS_INSTANCE(box), vm->get_string, 1)) {
                         jml_vm_error(
-                            "Can't index instance of '%s'.",
+                            "DiffTypes: Can't index instance of '%s'.",
                             AS_INSTANCE(box)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -1637,7 +1649,7 @@ jml_vm_run(jml_value_t *last)
 
                 } else {
                     SAVE_FRAME();
-                    jml_vm_error("Can index only arrays, maps and instances.");
+                    jml_vm_error("DiffTypes: Can index only arrays, maps and instances.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1653,13 +1665,13 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t value;
                 if (!jml_vm_global_pop(old_name, &value)) {
                     SAVE_FRAME();
-                    jml_vm_error("Undefined variable '%s'.", old_name->chars);
+                    jml_vm_error("UndefErr: Undefined variable '%s'.", old_name->chars);
                     return INTERPRET_RUNTIME_ERROR;
 
                 } else if (jml_string_equal(old_name, new_name)) {
                     jml_vm_global_set(old_name, value);
                     SAVE_FRAME();
-                    jml_vm_error("Can't swap variable to itself.");
+                    jml_vm_error("SyntaxErr: Can't swap variable to itself.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1711,7 +1723,7 @@ jml_vm_run(jml_value_t *last)
                 for (int i = 0; i < item_count; i += 2) {
                     if (!IS_STRING(values[i])) {
                         SAVE_FRAME();
-                        jml_vm_error("Map key must be a string.");
+                        jml_vm_error("DiffTypes: Map key must be a string.");
                         return INTERPRET_RUNTIME_ERROR;
                     }
 

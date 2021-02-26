@@ -1649,7 +1649,6 @@ jml_import_statement(void)
         jml_bytecode_emit_byte(name_arg);
 
         if (jml_parser_match(TOKEN_ARROW)) {
-            jml_parser_match_line();
             jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
             uint8_t new_name = jml_identifier_const(&parser.previous);
 
@@ -1668,13 +1667,14 @@ jml_import_statement(void)
         jml_bytecode_emit_bytes(name_arg, local);
 
         if (jml_parser_match(TOKEN_ARROW)) {
-            jml_parser_match_line();
             jml_parser_consume(TOKEN_NAME, "Expect identifier after '->'.");
 
             memcpy(&current->locals[local].name,
                 &parser.previous, sizeof(jml_token_t));
         }
     }
+
+    jml_parser_newline("Expect newline after 'import' statement.");
 }
 
 
@@ -1885,7 +1885,7 @@ jml_statement(void)
         jml_scope_begin();
         jml_block();
         jml_scope_end();
-        jml_parser_newline("Expect newline after block");
+        jml_parser_newline("Expect newline after block.");
 
     } else
         jml_expression_statement();
