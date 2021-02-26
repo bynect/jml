@@ -38,9 +38,10 @@ jml_vm_init(jml_vm_t *vm)
     vm->sentinel            = sentinel;
     vm->objects             = vm->sentinel;
     vm->external            = NULL;
+    vm->current             = NULL;
 
     vm->allocated           = 0;
-    vm->next_gc             = 1024 * 1024 * 4;
+    vm->next_gc             = 1024 * 1024 * 2;
 
     vm->gray_count          = 0;
     vm->gray_capacity       = 0;
@@ -50,6 +51,7 @@ jml_vm_init(jml_vm_t *vm)
     jml_hashmap_init(&vm->strings);
     jml_hashmap_init(&vm->modules);
 
+    vm->core_string         = NULL;
     vm->main_string         = NULL;
     vm->init_string         = NULL;
     vm->call_string         = NULL;
@@ -70,6 +72,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->module_string       = NULL;
     vm->path_string         = NULL;
 
+    vm->core_string         = jml_obj_string_copy("core", 4);
     vm->main_string         = jml_obj_string_copy("__main", 6);
     vm->init_string         = jml_obj_string_copy("__init", 6);
     vm->call_string         = jml_obj_string_copy("__call", 6);
@@ -102,9 +105,11 @@ jml_vm_free(jml_vm_t *vm)
     jml_hashmap_free(&vm->modules);
 
     vm->external            = NULL;
+    vm->current             = NULL;
 
     jml_gc_free_objs();
 
+    vm->core_string         = NULL;
     vm->main_string         = NULL;
     vm->init_string         = NULL;
     vm->call_string         = NULL;
@@ -241,8 +246,7 @@ jml_vm_reset(jml_vm_t *vm)
 void
 jml_vm_push(jml_value_t value)
 {
-    *vm->stack_top = value;
-    ++vm->stack_top;
+    *vm->stack_top++ = value;
 }
 
 
@@ -282,7 +286,21 @@ static inline bool
 jml_vm_global_get(jml_obj_string_t *name,
     jml_value_t **value)
 {
-    return jml_hashmap_get(&vm->globals, name, value);
+    static jml_hashmap_t *core_functions = NULL;
+
+    if (core_functions == NULL) {
+        jml_value_t *value;
+        jml_hashmap_get(&vm->modules, vm->core_string, &value);
+        core_functions = &AS_MODULE(*value)->globals;
+    }
+
+    if (vm->current == NULL)
+        return jml_hashmap_get(&vm->globals, name, value);
+
+    if (jml_hashmap_get(core_functions, name, value))
+        return true;
+
+    return jml_hashmap_get(&vm->current->globals, name, value);
 }
 
 
@@ -290,14 +308,20 @@ static inline bool
 jml_vm_global_set(jml_obj_string_t *name,
     jml_value_t value)
 {
-    return jml_hashmap_set(&vm->globals, name, value);
+    if (vm->current == NULL)
+        return jml_hashmap_set(&vm->globals, name, value);
+
+    return jml_hashmap_set(&vm->current->globals, name, value);
 }
 
 
 static inline bool
 jml_vm_global_del(jml_obj_string_t *name)
 {
-    return jml_hashmap_del(&vm->globals, name);
+    if (vm->current == NULL)
+        return jml_hashmap_del(&vm->globals, name);
+
+    return jml_hashmap_del(&vm->current->globals, name);
 }
 
 
@@ -305,7 +329,10 @@ static inline bool
 jml_vm_global_pop(jml_obj_string_t *name,
     jml_value_t *value)
 {
-    return jml_hashmap_pop(&vm->globals, name, value);
+    if (vm->current == NULL)
+        return jml_hashmap_pop(&vm->globals, name, value);
+
+    return jml_hashmap_pop(&vm->current->globals, name, value);
 }
 
 
@@ -351,6 +378,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
             case OBJ_METHOD: {
                 jml_obj_method_t *bound         = AS_METHOD(callee);
                 vm->stack_top[-arg_count - 1]   = bound->receiver;
+
                 return jml_vm_call(bound->method, arg_count);
             }
 
@@ -407,8 +435,8 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
             case OBJ_CFUNCTION: {
                 jml_obj_cfunction_t *cfunction_obj  = AS_CFUNCTION(callee);
                 jml_cfunction        cfunction      = cfunction_obj->function;
-                jml_value_t          result         = cfunction(arg_count,
-                    vm->stack_top - arg_count);
+                jml_value_t          result         = cfunction(
+                    arg_count, vm->stack_top - arg_count);
 
                 vm->stack_top -= arg_count + 1;
 
@@ -754,7 +782,7 @@ jml_vm_module_bind(jml_obj_module_t *module,
 }
 
 
-static jml_interpret_result
+jml_interpret_result
 jml_vm_run(jml_value_t *last)
 {
     register jml_call_frame_t *frame = &vm->frames[vm->frame_count - 1];
@@ -989,7 +1017,9 @@ jml_vm_run(jml_value_t *last)
     trace_stack: {
 #endif
         printf("          ");
-        for (jml_value_t *slot = vm->stack; slot < vm->stack_top; ++slot) {
+        for (jml_value_t *slot = (vm->current == NULL ? vm->stack : vm->cstack);
+            slot < vm->stack_top; ++slot) {
+
             printf("[ ");
             jml_value_print(*slot);
             printf(" ]");
@@ -1321,6 +1351,7 @@ jml_vm_run(jml_value_t *last)
                 for (int i = 0; i < closure->upvalue_count; ++i) {
                     uint8_t local = READ_BYTE();
                     uint8_t index = READ_BYTE();
+
                     if (local)
                         closure->upvalues[i] = jml_vm_upvalue_capture(frame->slots + index);
                     else
@@ -1341,6 +1372,7 @@ jml_vm_run(jml_value_t *last)
 
                 vm->stack_top = frame->slots;
                 jml_vm_push(result);
+
                 LOAD_FRAME();
                 END_OP();
             }
@@ -1419,6 +1451,7 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_CLOSE_UPVALUE) {
                 jml_vm_upvalue_close(vm->stack_top - 1);
+
                 jml_vm_pop();
                 END_OP();
             }
@@ -1702,7 +1735,7 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t      array_value = OBJ_VAL(array);
                 jml_gc_exempt(array_value);
 
-                for (int i = 0; i < item_count; ++i) {
+                for (uint8_t i = 0; i < item_count; ++i) {
                     jml_obj_array_append(
                         array, values[i]
                     );
@@ -1720,7 +1753,7 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t      map_value   = OBJ_VAL(map);
                 jml_gc_exempt(map_value);
 
-                for (int i = 0; i < item_count; i += 2) {
+                for (uint8_t i = 0; i < item_count; i += 2) {
                     if (!IS_STRING(values[i])) {
                         SAVE_FRAME();
                         jml_vm_error("DiffTypes: Map key must be a string.");
@@ -1778,7 +1811,7 @@ jml_vm_run(jml_value_t *last)
                 }
 
                 jml_hashmap_add(
-                    &AS_MODULE(jml_vm_peek(0))->globals, &vm->globals
+                    &AS_MODULE(jml_vm_peek(0))->globals, vm->current == NULL ? &vm->globals : &vm->current->globals
                 );
 
                 jml_vm_pop();

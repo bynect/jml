@@ -11,12 +11,14 @@ struct jml_vm {
     jml_obj_upvalue_t              *open_upvalues;
 
     jml_value_t                     stack[STACK_MAX];
+    jml_value_t                     cstack[STACK_MAX];
     jml_value_t                    *stack_top;
 
     jml_hashmap_t                   globals;
     jml_hashmap_t                   strings;
     jml_hashmap_t                   modules;
 
+    jml_obj_string_t               *core_string;
     jml_obj_string_t               *main_string;
     jml_obj_string_t               *init_string;
     jml_obj_string_t               *call_string;
@@ -37,6 +39,7 @@ struct jml_vm {
     jml_obj_string_t               *module_string;
     jml_obj_string_t               *path_string;
 
+    jml_obj_module_t               *current;
     jml_obj_cfunction_t            *external;
     jml_obj_t                      *sentinel;
     jml_obj_t                      *objects;
@@ -68,6 +71,8 @@ bool jml_vm_call_value(jml_value_t callee, int arg_count);
 
 void jml_cfunction_register(const char *name,
     jml_cfunction function, jml_obj_module_t *module);
+
+jml_interpret_result jml_vm_run(jml_value_t *last);
 
 
 extern jml_vm_t *vm;

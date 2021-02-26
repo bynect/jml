@@ -284,10 +284,16 @@ jml_compiler_init(jml_compiler_t *compiler, jml_function_type type,
         current->function->name = jml_obj_string_copy(
             "lambda", 6
         );
+
     } else if (type != FUNCTION_MAIN) {
         current->function->name = jml_obj_string_copy(
             parser.previous.start, parser.previous.length
         );
+
+    } else if (module != NULL) {
+        char name[128];
+        int length = snprintf(name, 128, "%s.__main", module->name->chars);
+        current->function->name = jml_obj_string_copy(name, length);
     }
 
     if (type == FUNCTION_METHOD || type == FUNCTION_INIT) {
@@ -1563,6 +1569,7 @@ jml_return_statement(void)
 
     if (jml_parser_match_line())
         jml_bytecode_emit_return();
+
     else {
         if (current->type == FUNCTION_INIT)
             jml_parser_error("Can't return a value from an initializer.");

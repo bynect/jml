@@ -189,8 +189,45 @@ jml_module_open(jml_obj_string_t *qualified,
         module = jml_obj_module_new(name, handle);
 
     } else if (jml_strsfx(path_raw, path_len, ".jml", strlen(".jml"))) {
-        jml_vm_error("ImportErr: Module not loadable.");
-        goto err;
+
+        module = jml_obj_module_new(name, NULL);
+        jml_gc_exempt(OBJ_VAL(module));
+
+        char *source = jml_file_read(path_raw);
+        jml_obj_function_t *main = jml_compiler_compile(source, module, true);
+        jml_free(source);
+
+        if (main == NULL) {
+            jml_gc_unexempt(OBJ_VAL(module));
+            jml_vm_error("ImportErr: Import of '%s' failed.", name->chars);
+            goto err;
+        }
+
+        jml_vm_push(OBJ_VAL(main));
+        jml_obj_closure_t *closure = jml_obj_closure_new(main);
+        jml_vm_pop();
+
+        jml_obj_module_t *super = vm->current;
+        vm->current = module;
+        uint8_t frame_count = vm->frame_count;
+        uint64_t offset     = vm->stack_top - vm->stack;
+        vm->stack_top = vm->cstack;
+
+        jml_vm_push(OBJ_VAL(closure));
+        jml_vm_call_value(OBJ_VAL(closure), 0);
+
+        if (jml_vm_run(NULL) != INTERPRET_OK) {
+            jml_gc_unexempt(OBJ_VAL(module));
+            vm->frame_count = frame_count;
+            vm->current = super;
+            vm->stack_top = vm->stack + offset;
+            jml_vm_error("ImportErr: Import of '%s' failed.", name->chars);
+            goto err;
+        }
+
+        vm->frame_count = frame_count;
+        vm->current = super;
+        vm->stack_top = vm->stack + offset;
 
     } else {
         jml_vm_error("ImportErr: Module not loadable.");
@@ -259,27 +296,28 @@ jml_module_get_raw(jml_obj_module_t *module,
 
 void
 jml_module_register(jml_obj_module_t *module,
-    jml_module_function *function_table)
+    jml_module_function *table)
 {
-    jml_module_function *current = function_table;
+    jml_module_function *current;
+    if ((current = table) != NULL) {
+        while (current->name != NULL
+            && current->function != NULL) {
 
-    while (current->name != NULL
-        && current->function != NULL) {
+            jml_vm_push(jml_string_intern(current->name));
 
-        jml_vm_push(jml_string_intern(current->name));
+            jml_vm_push(OBJ_VAL(
+                jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
+                    current->function, module)
+            ));
 
-        jml_vm_push(OBJ_VAL(
-            jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
-                current->function, module)
-        ));
+            jml_hashmap_set(&module->globals,
+                AS_STRING(jml_vm_peek(1)),
+                jml_vm_peek(0)
+            );
 
-        jml_hashmap_set(&module->globals,
-            AS_STRING(jml_vm_peek(0)),
-            jml_vm_peek(1)
-        );
-
-        jml_vm_pop_two();
-        ++current;
+            jml_vm_pop_two();
+            ++current;
+        }
     }
 }
 

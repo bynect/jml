@@ -16,7 +16,7 @@ jml_obj_cfunction_t *jml_module_get_raw(jml_obj_module_t *module,
     const char *name, bool silent);
 
 void jml_module_register(jml_obj_module_t *module,
-    jml_module_function *function_table);
+    jml_module_function *table);
 
 bool jml_module_initialize(jml_obj_module_t *module);
 

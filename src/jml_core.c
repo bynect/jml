@@ -505,7 +505,7 @@ jml_core_assert(int arg_count, jml_value_t *args)
 
 
 /*core table*/
-static jml_module_function core_functions[] = {
+static jml_module_function core_table[] = {
     {"format",                      &jml_core_format},
     {"print",                       &jml_core_print},
     {"printfmt",                    &jml_core_print_fmt},
@@ -527,15 +527,10 @@ static jml_module_function core_functions[] = {
 void
 jml_core_register(void)
 {
-    jml_module_function *current = core_functions;
+    jml_obj_module_t *core_module = jml_obj_module_new(
+        vm->core_string, NULL);
 
-    while (current->function != NULL) {
-        jml_cfunction_register(
-            current->name,
-            current->function,
-            NULL
-        );
-
-        ++current;
-    }
+    jml_module_register(core_module, core_table);
+    jml_hashmap_set(&vm->modules, vm->core_string, OBJ_VAL(core_module));
+    jml_hashmap_add(&core_module->globals, &vm->globals);
 }
