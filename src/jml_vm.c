@@ -53,6 +53,8 @@ jml_vm_init(jml_vm_t *vm)
 
     vm->core_string         = NULL;
     vm->main_string         = NULL;
+    vm->module_string       = NULL;
+    vm->path_string         = NULL;
     vm->init_string         = NULL;
     vm->call_string         = NULL;
     vm->free_string         = NULL;
@@ -69,11 +71,11 @@ jml_vm_init(jml_vm_t *vm)
     vm->concat_string       = NULL;
     vm->get_string          = NULL;
     vm->set_string          = NULL;
-    vm->module_string       = NULL;
-    vm->path_string         = NULL;
 
     vm->core_string         = jml_obj_string_copy("core", 4);
     vm->main_string         = jml_obj_string_copy("__main", 6);
+    vm->module_string       = jml_obj_string_copy("__module", 8);
+    vm->path_string         = jml_obj_string_copy("__path", 6);
     vm->init_string         = jml_obj_string_copy("__init", 6);
     vm->call_string         = jml_obj_string_copy("__call", 6);
     vm->free_string         = jml_obj_string_copy("__free", 6);
@@ -90,8 +92,6 @@ jml_vm_init(jml_vm_t *vm)
     vm->concat_string       = jml_obj_string_copy("__concat", 8);
     vm->get_string          = jml_obj_string_copy("__get", 5);
     vm->set_string          = jml_obj_string_copy("__set", 5);
-    vm->module_string       = jml_obj_string_copy("__module", 8);
-    vm->path_string         = jml_obj_string_copy("__path", 6);
 
     jml_core_register();
 }
@@ -111,6 +111,8 @@ jml_vm_free(jml_vm_t *vm)
 
     vm->core_string         = NULL;
     vm->main_string         = NULL;
+    vm->module_string       = NULL;
+    vm->path_string         = NULL;
     vm->init_string         = NULL;
     vm->call_string         = NULL;
     vm->free_string         = NULL;
@@ -127,8 +129,6 @@ jml_vm_free(jml_vm_t *vm)
     vm->concat_string       = NULL;
     vm->get_string          = NULL;
     vm->set_string          = NULL;
-    vm->module_string       = NULL;
-    vm->path_string         = NULL;
 
     JML_ASSERT(
         vm->allocated == 0,
@@ -549,6 +549,69 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
     jml_vm_error("DiffTypes: Can't call '%s'.", name->chars);
     return false;
+}
+
+
+bool
+jml_vm_call_cstack(jml_value_t callee, int arg_count,
+    jml_value_t *last)
+{
+    bool result         = true;
+    bool nulled         = vm->current == NULL;
+
+    uint8_t frame_count = vm->frame_count;
+    uint64_t offset     = vm->stack_top - vm->stack;
+    vm->stack_top       = vm->cstack;
+
+    if (nulled)
+        ++vm->current;
+
+    jml_vm_push(callee);
+    jml_vm_call_value(callee, arg_count);
+
+    if (jml_vm_run(last) != INTERPRET_OK)
+        result          = false;
+
+    vm->frame_count     = frame_count;
+    vm->stack_top       = vm->stack + offset;
+
+    if (nulled)
+        --vm->current;
+
+    return result;
+}
+
+
+bool
+jml_vm_invoke_cstack(jml_obj_instance_t *instance,
+    jml_obj_string_t *name, int arg_count, jml_value_t *last)
+{
+    bool result         = true;
+    bool nulled         = vm->current == NULL;
+
+    uint8_t frame_count = vm->frame_count;
+    uint64_t offset     = vm->stack_top - vm->stack;
+    vm->stack_top       = vm->cstack;
+
+    if (nulled)
+        ++vm->current;
+
+    if (!jml_vm_invoke_instance(instance, name, arg_count)) {
+        result = false;
+        goto err;
+    }
+
+    if (jml_vm_run(last) != INTERPRET_OK)
+        result          = false;
+
+err:
+    vm->frame_count     = frame_count;
+    vm->stack_top       = vm->stack + offset;
+
+    if (nulled)
+        --vm->current;
+
+    return result;
 }
 
 
@@ -1017,7 +1080,7 @@ jml_vm_run(jml_value_t *last)
     trace_stack: {
 #endif
         printf("          ");
-        for (jml_value_t *slot = (vm->current == NULL ? vm->stack : vm->cstack);
+        for (jml_value_t *slot = (vm->current == NULL || vm->current == NULL + 1) ? vm->stack : vm->cstack;
             slot < vm->stack_top; ++slot) {
 
             printf("[ ");
@@ -1811,7 +1874,9 @@ jml_vm_run(jml_value_t *last)
                 }
 
                 jml_hashmap_add(
-                    &AS_MODULE(jml_vm_peek(0))->globals, vm->current == NULL ? &vm->globals : &vm->current->globals
+                    &AS_MODULE(jml_vm_peek(0))->globals,
+                    (vm->current == NULL || vm->current == NULL + 1)
+                    ? &vm->globals : &vm->current->globals
                 );
 
                 jml_vm_pop();

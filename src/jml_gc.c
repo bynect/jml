@@ -152,6 +152,8 @@ jml_gc_mark_roots(void)
 
     jml_gc_mark_obj((jml_obj_t*)vm->core_string);
     jml_gc_mark_obj((jml_obj_t*)vm->main_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->module_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->path_string);
     jml_gc_mark_obj((jml_obj_t*)vm->init_string);
     jml_gc_mark_obj((jml_obj_t*)vm->call_string);
     jml_gc_mark_obj((jml_obj_t*)vm->free_string);
@@ -168,8 +170,6 @@ jml_gc_mark_roots(void)
     jml_gc_mark_obj((jml_obj_t*)vm->concat_string);
     jml_gc_mark_obj((jml_obj_t*)vm->get_string);
     jml_gc_mark_obj((jml_obj_t*)vm->set_string);
-    jml_gc_mark_obj((jml_obj_t*)vm->module_string);
-    jml_gc_mark_obj((jml_obj_t*)vm->path_string);
 
     jml_gc_mark_obj((jml_obj_t*)vm->external);
 

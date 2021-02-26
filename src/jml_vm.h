@@ -20,6 +20,8 @@ struct jml_vm {
 
     jml_obj_string_t               *core_string;
     jml_obj_string_t               *main_string;
+    jml_obj_string_t               *module_string;
+    jml_obj_string_t               *path_string;
     jml_obj_string_t               *init_string;
     jml_obj_string_t               *call_string;
     jml_obj_string_t               *free_string;
@@ -36,8 +38,6 @@ struct jml_vm {
     jml_obj_string_t               *concat_string;
     jml_obj_string_t               *get_string;
     jml_obj_string_t               *set_string;
-    jml_obj_string_t               *module_string;
-    jml_obj_string_t               *path_string;
 
     jml_obj_module_t               *current;
     jml_obj_cfunction_t            *external;
@@ -68,6 +68,12 @@ jml_value_t jml_vm_peek(int distance);
 void jml_vm_error(const char *format, ...);
 
 bool jml_vm_call_value(jml_value_t callee, int arg_count);
+
+bool jml_vm_call_cstack(jml_value_t callee, int arg_count,
+    jml_value_t *last);
+
+bool jml_vm_invoke_cstack(jml_obj_instance_t *instance,
+    jml_obj_string_t *name, int arg_count, jml_value_t *last);
 
 void jml_cfunction_register(const char *name,
     jml_cfunction function, jml_obj_module_t *module);

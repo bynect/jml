@@ -209,25 +209,16 @@ jml_module_open(jml_obj_string_t *qualified,
 
         jml_obj_module_t *super = vm->current;
         vm->current = module;
-        uint8_t frame_count = vm->frame_count;
-        uint64_t offset     = vm->stack_top - vm->stack;
-        vm->stack_top = vm->cstack;
 
-        jml_vm_push(OBJ_VAL(closure));
-        jml_vm_call_value(OBJ_VAL(closure), 0);
-
-        if (jml_vm_run(NULL) != INTERPRET_OK) {
+        if (!jml_vm_call_cstack(OBJ_VAL(closure), 0, NULL)) {
             jml_gc_unexempt(OBJ_VAL(module));
-            vm->frame_count = frame_count;
             vm->current = super;
-            vm->stack_top = vm->stack + offset;
             jml_vm_error("ImportErr: Import of '%s' failed.", name->chars);
             goto err;
         }
 
-        vm->frame_count = frame_count;
         vm->current = super;
-        vm->stack_top = vm->stack + offset;
+        jml_gc_unexempt(OBJ_VAL(module));
 
     } else {
         jml_vm_error("ImportErr: Module not loadable.");
