@@ -71,6 +71,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->concat_string       = NULL;
     vm->get_string          = NULL;
     vm->set_string          = NULL;
+    vm->size_string         = NULL;
 
     vm->core_string         = jml_obj_string_copy("core", 4);
     vm->main_string         = jml_obj_string_copy("__main", 6);
@@ -92,6 +93,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->concat_string       = jml_obj_string_copy("__concat", 8);
     vm->get_string          = jml_obj_string_copy("__get", 5);
     vm->set_string          = jml_obj_string_copy("__set", 5);
+    vm->size_string         = jml_obj_string_copy("__size", 6);
 
     jml_core_register();
 }
@@ -129,6 +131,7 @@ jml_vm_free(jml_vm_t *vm)
     vm->concat_string       = NULL;
     vm->get_string          = NULL;
     vm->set_string          = NULL;
+    vm->size_string         = NULL;
 
     JML_ASSERT(
         vm->allocated == 0,
@@ -294,7 +297,7 @@ jml_vm_global_get(jml_obj_string_t *name,
         core_functions = &AS_MODULE(*value)->globals;
     }
 
-    if (vm->current == NULL)
+    if (vm->current == NULL || vm->current == NULL + 1)
         return jml_hashmap_get(&vm->globals, name, value);
 
     if (jml_hashmap_get(core_functions, name, value))
@@ -308,7 +311,7 @@ static inline bool
 jml_vm_global_set(jml_obj_string_t *name,
     jml_value_t value)
 {
-    if (vm->current == NULL)
+    if (vm->current == NULL || vm->current == NULL + 1)
         return jml_hashmap_set(&vm->globals, name, value);
 
     return jml_hashmap_set(&vm->current->globals, name, value);
@@ -318,7 +321,7 @@ jml_vm_global_set(jml_obj_string_t *name,
 static inline bool
 jml_vm_global_del(jml_obj_string_t *name)
 {
-    if (vm->current == NULL)
+    if (vm->current == NULL || vm->current == NULL + 1)
         return jml_hashmap_del(&vm->globals, name);
 
     return jml_hashmap_del(&vm->current->globals, name);
@@ -329,7 +332,7 @@ static inline bool
 jml_vm_global_pop(jml_obj_string_t *name,
     jml_value_t *value)
 {
-    if (vm->current == NULL)
+    if (vm->current == NULL || vm->current == NULL + 1)
         return jml_hashmap_pop(&vm->globals, name, value);
 
     return jml_hashmap_pop(&vm->current->globals, name, value);
@@ -1080,7 +1083,7 @@ jml_vm_run(jml_value_t *last)
     trace_stack: {
 #endif
         printf("          ");
-        for (jml_value_t *slot = (vm->current == NULL || vm->current == NULL + 1) ? vm->stack : vm->cstack;
+        for (jml_value_t *slot = vm->current == NULL ? vm->stack : vm->cstack;
             slot < vm->stack_top; ++slot) {
 
             printf("[ ");
