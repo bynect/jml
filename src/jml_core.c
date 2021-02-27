@@ -391,6 +391,14 @@ jml_core_type(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
 {
+    static jml_hashmap_t *core_functions = NULL;
+
+    if (core_functions == NULL) {
+        jml_value_t *value;
+        jml_hashmap_get(&vm->modules, vm->core_string, &value);
+        core_functions = &AS_MODULE(*value)->globals;
+    }
+
     jml_obj_exception_t *exc        = jml_error_args(
         arg_count, 0);
 
@@ -398,9 +406,16 @@ jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
         return OBJ_VAL(exc);
 
     jml_obj_map_t *map              = jml_obj_map_new();
-
     jml_vm_push(OBJ_VAL(map));
-    jml_hashmap_add(&vm->globals, &map->hashmap);
+
+    if (vm->current == NULL)
+        jml_hashmap_add(&vm->globals, &map->hashmap);
+
+    else {
+        jml_hashmap_add(&vm->current->globals, &map->hashmap);
+        jml_hashmap_add(core_functions, &map->hashmap);
+    }
+
     return jml_vm_pop();
 }
 

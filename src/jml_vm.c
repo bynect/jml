@@ -239,10 +239,10 @@ jml_vm_exception(jml_obj_exception_t *exc)
 void
 jml_vm_reset(jml_vm_t *vm)
 {
-    vm->stack_top       = vm->stack;
-    vm->frame_count     = 0;
-    vm->open_upvalues   = NULL;
-    vm->external        = NULL;
+    vm->stack_top           = vm->stack;
+    vm->frame_count         = 0;
+    vm->open_upvalues       = NULL;
+    vm->external            = NULL;
 }
 
 
@@ -521,7 +521,7 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
         return true;
 
     } else if (IS_MODULE(receiver)) {
-        jml_obj_module_t *module = AS_MODULE(receiver);
+        jml_obj_module_t *module    = AS_MODULE(receiver);
         jml_value_t      *value;
 
         if (jml_hashmap_get(&module->globals, name, &value))
@@ -552,69 +552,6 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
     jml_vm_error("DiffTypes: Can't call '%s'.", name->chars);
     return false;
-}
-
-
-bool
-jml_vm_call_cstack(jml_value_t callee, int arg_count,
-    jml_value_t *last)
-{
-    bool result         = true;
-    bool nulled         = vm->current == NULL;
-
-    uint8_t frame_count = vm->frame_count;
-    uint64_t offset     = vm->stack_top - vm->stack;
-    vm->stack_top       = vm->cstack;
-
-    if (nulled)
-        ++vm->current;
-
-    jml_vm_push(callee);
-    jml_vm_call_value(callee, arg_count);
-
-    if (jml_vm_run(last) != INTERPRET_OK)
-        result          = false;
-
-    vm->frame_count     = frame_count;
-    vm->stack_top       = vm->stack + offset;
-
-    if (nulled)
-        --vm->current;
-
-    return result;
-}
-
-
-bool
-jml_vm_invoke_cstack(jml_obj_instance_t *instance,
-    jml_obj_string_t *name, int arg_count, jml_value_t *last)
-{
-    bool result         = true;
-    bool nulled         = vm->current == NULL;
-
-    uint8_t frame_count = vm->frame_count;
-    uint64_t offset     = vm->stack_top - vm->stack;
-    vm->stack_top       = vm->cstack;
-
-    if (nulled)
-        ++vm->current;
-
-    if (!jml_vm_invoke_instance(instance, name, arg_count)) {
-        result = false;
-        goto err;
-    }
-
-    if (jml_vm_run(last) != INTERPRET_OK)
-        result          = false;
-
-err:
-    vm->frame_count     = frame_count;
-    vm->stack_top       = vm->stack + offset;
-
-    if (nulled)
-        --vm->current;
-
-    return result;
 }
 
 
@@ -848,7 +785,7 @@ jml_vm_module_bind(jml_obj_module_t *module,
 }
 
 
-jml_interpret_result
+static jml_interpret_result
 jml_vm_run(jml_value_t *last)
 {
     register jml_call_frame_t *frame = &vm->frames[vm->frame_count - 1];
@@ -1427,7 +1364,7 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_RETURN) {
-                jml_value_t result = jml_vm_pop();
+                jml_value_t result          = jml_vm_pop();
                 jml_vm_upvalue_close(frame->slots);
                 --vm->frame_count;
 
@@ -1909,6 +1846,70 @@ jml_vm_run(jml_value_t *last)
 
 #undef EXEC_OP
 #undef END_OP
+}
+
+
+bool
+jml_vm_call_cstack(jml_value_t callee, int arg_count,
+    jml_value_t *last)
+{
+    bool         result         = true;
+    bool         nulled         = vm->current == NULL;
+
+    uint8_t      frame_count    = vm->frame_count;
+    jml_value_t *top            = vm->stack_top;
+    vm->stack_top               = vm->cstack;
+
+    if (nulled)
+        ++vm->current;
+
+    jml_vm_push(callee);
+    jml_vm_call_value(callee, arg_count);
+
+    if (jml_vm_run(last) != INTERPRET_OK)
+        result                  = false;
+
+    vm->frame_count             = frame_count;
+    vm->stack_top               = top;
+
+    if (nulled)
+        --vm->current;
+
+    return result;
+}
+
+
+bool
+jml_vm_invoke_cstack(jml_obj_instance_t *instance,
+    jml_obj_string_t *name, int arg_count, jml_value_t *last)
+{
+
+    bool         result         = true;
+    bool         nulled         = vm->current == NULL;
+
+    uint8_t      frame_count    = vm->frame_count;
+    jml_value_t *top            = vm->stack_top;
+    vm->stack_top               = vm->cstack;
+
+    if (nulled)
+        ++vm->current;
+
+    if (!jml_vm_invoke_instance(instance, name, arg_count)) {
+        result          = false;
+        goto err;
+    }
+
+    if (jml_vm_run(last) != INTERPRET_OK)
+        result          = false;
+
+err:
+    vm->frame_count             = frame_count;
+    vm->stack_top               = top;
+
+    if (nulled)
+        --vm->current;
+
+    return result;
 }
 
 

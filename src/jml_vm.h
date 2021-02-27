@@ -42,6 +42,7 @@ struct jml_vm {
 
     jml_obj_module_t               *current;
     jml_obj_cfunction_t            *external;
+
     jml_obj_t                      *sentinel;
     jml_obj_t                      *objects;
     size_t                          allocated;
@@ -78,8 +79,6 @@ bool jml_vm_invoke_cstack(jml_obj_instance_t *instance,
 
 void jml_cfunction_register(const char *name,
     jml_cfunction function, jml_obj_module_t *module);
-
-jml_interpret_result jml_vm_run(jml_value_t *last);
 
 
 extern jml_vm_t *vm;

@@ -210,6 +210,9 @@ jml_module_open(jml_obj_string_t *qualified,
         jml_obj_module_t *super = vm->current;
         vm->current = module;
 
+        jml_value_t stack[STACK_MAX];
+        memcpy(stack, vm->cstack, STACK_MAX);
+
         if (!jml_vm_call_cstack(OBJ_VAL(closure), 0, NULL)) {
             jml_gc_unexempt(OBJ_VAL(module));
             vm->current = super;
@@ -217,6 +220,7 @@ jml_module_open(jml_obj_string_t *qualified,
             goto err;
         }
 
+        memcpy(vm->cstack, stack, STACK_MAX);
         vm->current = super;
         jml_gc_unexempt(OBJ_VAL(module));
 
