@@ -1,11 +1,13 @@
 EXPORTS
 jml_cfunction_register
+jml_vm_call_cstack
 jml_vm_call_value
 jml_vm_error
 jml_vm_eval
 jml_vm_free
 jml_vm_init
 jml_vm_interpret
+jml_vm_invoke_cstack
 jml_vm_new
 jml_vm_peek
 jml_vm_pop
