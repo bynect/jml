@@ -47,9 +47,10 @@ jml_value_print(jml_value_t value)
 
 
 static void
-jml_obj_function_print(jml_obj_function_t *function)
+jml_obj_function_print(jml_obj_function_t *function,
+    const char *type)
 {
-    printf("<fn ");
+    printf("<%s ", type);
 
     if (function->name == NULL) {
         printf("__main>");
@@ -67,9 +68,10 @@ jml_obj_function_print(jml_obj_function_t *function)
 
 
 static void
-jml_obj_cfunction_print(jml_obj_cfunction_t *function)
+jml_obj_cfunction_print(jml_obj_cfunction_t *function,
+    const char *type)
 {
-    printf("<builtin fn");
+    printf("<%s", type);
 
     if (function->name == NULL) {
         printf(">");
@@ -170,15 +172,18 @@ jml_obj_print(jml_value_t value)
         }
 
         case OBJ_METHOD:
-            jml_obj_function_print(AS_METHOD(value)->method->function);
+            jml_obj_function_print(
+                AS_METHOD(value)->method->function, "fn");
             break;
 
         case OBJ_FUNCTION:
-            jml_obj_function_print(AS_FUNCTION(value));
+            jml_obj_function_print(
+                AS_FUNCTION(value), "fn");
             break;
 
         case OBJ_CLOSURE:
-            jml_obj_function_print(AS_CLOSURE(value)->function);
+            jml_obj_function_print(
+                AS_CLOSURE(value)->function, "fn");
             break;
 
         case OBJ_UPVALUE:
@@ -186,7 +191,8 @@ jml_obj_print(jml_value_t value)
             break;
 
         case OBJ_CFUNCTION:
-            jml_obj_cfunction_print(AS_CFUNCTION(value));
+            jml_obj_cfunction_print(
+                AS_CFUNCTION(value), "builtin fn");
             break;
 
         case OBJ_EXCEPTION: {

@@ -113,7 +113,7 @@ jml_vm_free(jml_vm_t *vm)
     vm->path_string         = NULL;
     vm->init_string         = NULL;
     vm->call_string         = NULL;
-    vm->free_string         = NULL;
+    /*vm->free_string         = NULL;*/
     vm->add_string          = NULL;
     vm->sub_string          = NULL;
     vm->mul_string          = NULL;

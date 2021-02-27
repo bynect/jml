@@ -91,7 +91,26 @@ jml_core_format(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
-jml_core_print(int arg_count, jml_value_t *args)
+jml_core_print_fmt(int arg_count, jml_value_t *args)
+{
+    if (arg_count == 0) {
+        printf("\n");
+        return NONE_VAL;
+    }
+
+    jml_value_t fmt = jml_core_format(arg_count, args);
+
+    if (IS_STRING(fmt)) {
+        printf("%s\n", AS_CSTRING(fmt));
+        return NONE_VAL;
+    }
+
+    return fmt;
+}
+
+
+static jml_value_t
+jml_core_print_ln(int arg_count, jml_value_t *args)
 {
     if (arg_count == 0) {
         printf("\n");
@@ -112,21 +131,21 @@ jml_core_print(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
-jml_core_print_fmt(int arg_count, jml_value_t *args)
+jml_core_print(int arg_count, jml_value_t *args)
 {
     if (arg_count == 0) {
         printf("\n");
         return NONE_VAL;
     }
 
-    jml_value_t fmt = jml_core_format(arg_count, args);
-
-    if (IS_STRING(fmt)) {
-        printf("%s\n", AS_CSTRING(fmt));
-        return NONE_VAL;
+    for (int i = 0; i < arg_count; ++i) {
+        if (IS_STRING(args[i]))
+            printf("%s", AS_CSTRING(args[i]));
+        else
+            jml_value_print(args[i]);
     }
 
-    return fmt;
+    return NONE_VAL;
 }
 
 
@@ -528,8 +547,9 @@ jml_core_assert(int arg_count, jml_value_t *args)
 /*core table*/
 static jml_module_function core_table[] = {
     {"format",                      &jml_core_format},
-    {"print",                       &jml_core_print},
     {"printfmt",                    &jml_core_print_fmt},
+    {"println",                     &jml_core_print_ln},
+    {"print",                       &jml_core_print},
     {"char",                        &jml_core_char},
     {"reverse",                     &jml_core_reverse},
     {"size",                        &jml_core_size},
