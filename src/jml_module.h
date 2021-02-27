@@ -24,7 +24,7 @@ void jml_module_finalize(jml_obj_module_t *module);
 
 
 /*core module*/
-void jml_core_register(void);
+void jml_core_register(jml_hashmap_t *map);
 
 
 #endif /* JML_MODULE_H_ */

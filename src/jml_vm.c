@@ -99,7 +99,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->print_string        = jml_obj_string_copy("__print", 7);
     vm->string_string       = jml_obj_string_copy("__string", 8);
 
-    jml_core_register();
+    jml_core_register(&vm->globals);
 }
 
 
@@ -295,18 +295,17 @@ static inline bool
 jml_vm_global_get(jml_obj_string_t *name,
     jml_value_t **value)
 {
-    static jml_hashmap_t *core_functions = NULL;
+    static jml_hashmap_t core_functions;
 
-    if (core_functions == NULL) {
-        jml_value_t *value;
-        jml_hashmap_get(&vm->modules, vm->core_string, &value);
-        core_functions = &AS_MODULE(*value)->globals;
+    if (core_functions.count == 0) {
+        jml_hashmap_init(&core_functions);
+        jml_core_register(&core_functions);
     }
 
     if (vm->current == NULL || vm->current == NULL + 1)
         return jml_hashmap_get(&vm->globals, name, value);
 
-    if (jml_hashmap_get(core_functions, name, value))
+    if (jml_hashmap_get(&core_functions, name, value))
         return true;
 
     return jml_hashmap_get(&vm->current->globals, name, value);
