@@ -13,7 +13,6 @@
 #define EXEMPT_MAX                  32
 
 #define JML_BACKTRACE
-#define JML_RECURSIVE_SEARCH
 #undef  JML_LAZY_IMPORT
 #define JML_EVAL
 

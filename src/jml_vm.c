@@ -51,7 +51,6 @@ jml_vm_init(jml_vm_t *vm)
     jml_hashmap_init(&vm->strings);
     jml_hashmap_init(&vm->modules);
 
-    vm->core_string         = NULL;
     vm->main_string         = NULL;
     vm->module_string       = NULL;
     vm->path_string         = NULL;
@@ -75,7 +74,6 @@ jml_vm_init(jml_vm_t *vm)
     vm->print_string        = NULL;
     vm->string_string       = NULL;
 
-    vm->core_string         = jml_obj_string_copy("core", 4);
     vm->main_string         = jml_obj_string_copy("__main", 6);
     vm->module_string       = jml_obj_string_copy("__module", 8);
     vm->path_string         = jml_obj_string_copy("__path", 6);
@@ -110,12 +108,6 @@ jml_vm_free(jml_vm_t *vm)
     jml_hashmap_free(&vm->strings);
     jml_hashmap_free(&vm->modules);
 
-    vm->external            = NULL;
-    vm->current             = NULL;
-
-    jml_gc_free_objs();
-
-    vm->core_string         = NULL;
     vm->main_string         = NULL;
     vm->module_string       = NULL;
     vm->path_string         = NULL;
@@ -138,6 +130,11 @@ jml_vm_free(jml_vm_t *vm)
     vm->size_string         = NULL;
     vm->print_string        = NULL;
     vm->string_string       = NULL;
+
+    vm->external            = NULL;
+    vm->current             = NULL;
+
+    jml_gc_free_objs();
 
     JML_ASSERT(
         vm->allocated == 0,
@@ -302,7 +299,7 @@ jml_vm_global_get(jml_obj_string_t *name,
         jml_core_register(&core_functions);
     }
 
-    if (vm->current == NULL || vm->current == NULL + 1)
+    if (vm->current == NULL || vm->current == (void*)1)
         return jml_hashmap_get(&vm->globals, name, value);
 
     if (jml_hashmap_get(&core_functions, name, value))
@@ -316,7 +313,7 @@ static inline bool
 jml_vm_global_set(jml_obj_string_t *name,
     jml_value_t value)
 {
-    if (vm->current == NULL || vm->current == NULL + 1)
+    if (vm->current == NULL || vm->current == (void*)1)
         return jml_hashmap_set(&vm->globals, name, value);
 
     return jml_hashmap_set(&vm->current->globals, name, value);
@@ -326,7 +323,7 @@ jml_vm_global_set(jml_obj_string_t *name,
 static inline bool
 jml_vm_global_del(jml_obj_string_t *name)
 {
-    if (vm->current == NULL || vm->current == NULL + 1)
+    if (vm->current == NULL || vm->current == (void*)1)
         return jml_hashmap_del(&vm->globals, name);
 
     return jml_hashmap_del(&vm->current->globals, name);
@@ -337,7 +334,7 @@ static inline bool
 jml_vm_global_pop(jml_obj_string_t *name,
     jml_value_t *value)
 {
-    if (vm->current == NULL || vm->current == NULL + 1)
+    if (vm->current == NULL || vm->current == (void*)1)
         return jml_hashmap_pop(&vm->globals, name, value);
 
     return jml_hashmap_pop(&vm->current->globals, name, value);
@@ -1820,7 +1817,7 @@ jml_vm_run(jml_value_t *last)
 
                 jml_hashmap_add(
                     &AS_MODULE(jml_vm_peek(0))->globals,
-                    (vm->current == NULL || vm->current == NULL + 1)
+                    (vm->current == NULL || vm->current == (void*)1)
                     ? &vm->globals : &vm->current->globals
                 );
 

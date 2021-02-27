@@ -18,7 +18,6 @@ struct jml_vm {
     jml_hashmap_t                   strings;
     jml_hashmap_t                   modules;
 
-    jml_obj_string_t               *core_string;
     jml_obj_string_t               *main_string;
     jml_obj_string_t               *module_string;
     jml_obj_string_t               *path_string;
