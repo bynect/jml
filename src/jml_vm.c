@@ -72,6 +72,8 @@ jml_vm_init(jml_vm_t *vm)
     vm->get_string          = NULL;
     vm->set_string          = NULL;
     vm->size_string         = NULL;
+    vm->print_string        = NULL;
+    vm->string_string       = NULL;
 
     vm->core_string         = jml_obj_string_copy("core", 4);
     vm->main_string         = jml_obj_string_copy("__main", 6);
@@ -94,6 +96,8 @@ jml_vm_init(jml_vm_t *vm)
     vm->get_string          = jml_obj_string_copy("__get", 5);
     vm->set_string          = jml_obj_string_copy("__set", 5);
     vm->size_string         = jml_obj_string_copy("__size", 6);
+    vm->print_string        = jml_obj_string_copy("__print", 7);
+    vm->string_string       = jml_obj_string_copy("__string", 8);
 
     jml_core_register();
 }
@@ -132,6 +136,8 @@ jml_vm_free(jml_vm_t *vm)
     vm->get_string          = NULL;
     vm->set_string          = NULL;
     vm->size_string         = NULL;
+    vm->print_string        = NULL;
+    vm->string_string       = NULL;
 
     JML_ASSERT(
         vm->allocated == 0,
@@ -1883,7 +1889,6 @@ bool
 jml_vm_invoke_cstack(jml_obj_instance_t *instance,
     jml_obj_string_t *name, int arg_count, jml_value_t *last)
 {
-
     bool         result         = true;
     bool         nulled         = vm->current == NULL;
 

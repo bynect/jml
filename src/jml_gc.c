@@ -171,6 +171,8 @@ jml_gc_mark_roots(void)
     jml_gc_mark_obj((jml_obj_t*)vm->get_string);
     jml_gc_mark_obj((jml_obj_t*)vm->set_string);
     jml_gc_mark_obj((jml_obj_t*)vm->size_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->print_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->string_string);
 
     jml_gc_mark_obj((jml_obj_t*)vm->external);
 
@@ -270,22 +272,8 @@ jml_gc_free_object(jml_obj_t *object)
         case OBJ_INSTANCE: {
             jml_obj_instance_t *instance = (jml_obj_instance_t*)object;
 
-            if (vm->free_string != NULL) {
-                jml_value_t *destructor;
-                if (jml_hashmap_get(&instance->klass->methods,
-                    vm->free_string, &destructor)) {
-
-                    if (IS_CFUNCTION(*destructor)) {
-                        jml_vm_push(OBJ_VAL(*destructor));
-                        jml_vm_push(OBJ_VAL(instance));
-
-                        jml_vm_call_value(*destructor, 1);
-                        jml_vm_pop();
-                    } else {
-                        /*TODO*/
-                    }
-                }
-            }
+            if (vm->free_string != NULL)
+                jml_vm_invoke_cstack(instance, vm->free_string, 0, NULL);
 
             instance->extra = NULL;
             jml_hashmap_free(&instance->fields);

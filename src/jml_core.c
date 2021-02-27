@@ -244,7 +244,7 @@ jml_core_size(int arg_count, jml_value_t *args)
 
         case OBJ_INSTANCE: {
             jml_obj_instance_t *instance    = AS_INSTANCE(value);
-            jml_value_t  last               = NONE_VAL;
+            jml_value_t         last        = NONE_VAL;
 
             if (jml_vm_invoke_cstack(instance, vm->size_string, 0, &last))
                 return last;
@@ -559,7 +559,11 @@ jml_core_register(void)
     jml_obj_module_t *core_module = jml_obj_module_new(
         vm->core_string, NULL);
 
+    jml_vm_push(OBJ_VAL(core_module));
     jml_module_register(core_module, core_table);
-    jml_hashmap_set(&vm->modules, vm->core_string, OBJ_VAL(core_module));
+
+    jml_hashmap_set(&vm->modules, vm->core_string, jml_vm_peek(0));
     jml_hashmap_add(&core_module->globals, &vm->globals);
+
+    jml_vm_pop();
 }

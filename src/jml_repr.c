@@ -6,6 +6,7 @@
 
 #include <jml_repr.h>
 #include <jml_gc.h>
+#include <jml_vm.h>
 
 
 void
@@ -155,13 +156,16 @@ jml_obj_print(jml_value_t value)
         }
 
         case OBJ_INSTANCE: {
-            jml_obj_class_t *klass  = AS_INSTANCE(value)->klass;
-            printf("<instance of ");
+            jml_obj_instance_t *instance    = AS_INSTANCE(value);
 
-            if (klass->module != NULL)
-                printf("%s.", klass->module->name->chars);
+            if (!jml_vm_invoke_cstack(instance, vm->print_string, 0, NULL)) {
+                printf("<instance of ");
 
-            printf("%s>", klass->name->chars);
+                if (instance->klass->module != NULL)
+                    printf("%s.", instance->klass->module->name->chars);
+
+                printf("%s>", instance->klass->name->chars);
+            }
             break;
         }
 
@@ -327,6 +331,11 @@ jml_obj_class_stringify(jml_obj_class_t *klass)
 static char *
 jml_obj_instance_stringify(jml_obj_instance_t *instance)
 {
+    jml_value_t last = NONE_VAL;
+
+    if (jml_vm_invoke_cstack(instance, vm->string_string, 0, &last))
+        return jml_obj_stringify(last);
+
     size_t size = instance->klass->name->length * GC_HEAP_GROW_FACTOR;
     char *buffer = jml_realloc(NULL, size);
 
