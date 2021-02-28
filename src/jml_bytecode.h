@@ -6,6 +6,7 @@
 
 
 typedef enum {
+    OP_END,
     OP_NOP,
     OP_POP,
     OP_POP_TWO,

@@ -324,6 +324,8 @@ static jml_obj_function_t *
 jml_compiler_end(void)
 {
     jml_bytecode_emit_return();
+    jml_bytecode_emit_byte(OP_END);
+
     jml_obj_function_t *function = current->function;
 
 #ifdef JML_DISASSEMBLE
