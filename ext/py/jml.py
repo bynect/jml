@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# sudo python3 ext/py/jml.py instal
+# sudo python3 ext/py/jml.py install
 
 
 from distutils.core import setup, Extension

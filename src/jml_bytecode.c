@@ -8,10 +8,11 @@
 void
 jml_bytecode_init(jml_bytecode_t *bytecode)
 {
-    bytecode->count = 0;
-    bytecode->code = NULL;
-    bytecode->lines = NULL;
-    bytecode->capacity = 0;
+    bytecode->count         = 0;
+    bytecode->code          = NULL;
+    bytecode->lines         = NULL;
+    bytecode->capacity      = 0;
+
     jml_value_array_init(&bytecode->constants);
 }
 
@@ -32,7 +33,7 @@ jml_bytecode_write(jml_bytecode_t *bytecode,
             old_capacity, bytecode->capacity);
     }
 
-    bytecode->code[bytecode->count] = byte;
+    bytecode->code[bytecode->count]  = byte;
     bytecode->lines[bytecode->count] = line;
     ++bytecode->count;
 }
@@ -73,7 +74,7 @@ jml_bytecode_disassemble(jml_bytecode_t *bytecode,
         pad, "", name, pad, ""
     );
 
-    for (uint32_t offset = 0; offset < bytecode->count;) {
+    for (uint32_t offset = 0; offset < bytecode->count; ) {
         offset = jml_bytecode_instruction_disassemble(
             bytecode, offset
         );
@@ -81,7 +82,7 @@ jml_bytecode_disassemble(jml_bytecode_t *bytecode,
 }
 
 
-static int
+static uint32_t
 jml_bytecode_instruction_simple(const char *name,
     uint32_t offset)
 {
@@ -91,9 +92,9 @@ jml_bytecode_instruction_simple(const char *name,
 }
 
 
-static int
+static uint32_t
 jml_bytecode_instruction_byte(const char *name,
-    jml_bytecode_t *bytecode, int offset)
+    jml_bytecode_t *bytecode, uint32_t offset)
 {
     uint8_t slot        = bytecode->code[offset + 1];
     printf("%-16s %4d\n", name, slot);
@@ -102,9 +103,9 @@ jml_bytecode_instruction_byte(const char *name,
 }
 
 
-static int
+static uint32_t
 jml_bytecode_instruction_jump(const char *name,
-    int sign, jml_bytecode_t *bytecode, int offset)
+    int sign, jml_bytecode_t *bytecode, uint32_t offset)
 {
     uint16_t jump       = (uint16_t)(bytecode->code[offset + 1] << 8);
     jump |= bytecode->code[offset + 2];
@@ -117,9 +118,9 @@ jml_bytecode_instruction_jump(const char *name,
 }
 
 
-static int
+static uint32_t
 jml_bytecode_instruction_invoke(const char *name,
-    jml_bytecode_t *bytecode, int offset)
+    jml_bytecode_t *bytecode, uint32_t offset)
 {
     uint8_t constant    = bytecode->code[offset + 1];
     uint8_t arg_count   = bytecode->code[offset + 2];
@@ -131,9 +132,9 @@ jml_bytecode_instruction_invoke(const char *name,
 }
 
 
-static int
+static uint32_t
 jml_bytecode_instruction_const(const char *name,
-    jml_bytecode_t *bytecode, int offset)
+    jml_bytecode_t *bytecode, uint32_t offset)
 {
     uint8_t constant    = bytecode->code[offset + 1];
     printf("%-16s %4d '", name, constant);
@@ -144,9 +145,9 @@ jml_bytecode_instruction_const(const char *name,
 }
 
 
-static int
+static uint32_t
 jml_bytecode_instruction_consts(const char *name,
-    jml_bytecode_t *bytecode, int offset)
+    jml_bytecode_t *bytecode, uint32_t offset)
 {
     uint8_t byte1       = bytecode->code[offset + 1];
     uint8_t byte2       = bytecode->code[offset + 2];
@@ -161,9 +162,9 @@ jml_bytecode_instruction_consts(const char *name,
 }
 
 
-int
+uint32_t
 jml_bytecode_instruction_disassemble(
-    jml_bytecode_t *bytecode, int offset)
+    jml_bytecode_t *bytecode, uint32_t offset)
 {
     printf("%04d    ", offset);
     if (offset > 0 &&
@@ -175,6 +176,7 @@ jml_bytecode_instruction_disassemble(
     }
 
     uint8_t instruction = bytecode->code[offset];
+
     switch (instruction) {
         case OP_NOP:
             return jml_bytecode_instruction_simple("OP_NOP", offset);

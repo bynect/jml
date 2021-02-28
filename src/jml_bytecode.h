@@ -90,8 +90,8 @@ int jml_bytecode_add_const(jml_bytecode_t *bytecode,
 void jml_bytecode_disassemble(jml_bytecode_t *bytecode,
     const char *name);
 
-int jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode,
-    int offset);
+uint32_t jml_bytecode_instruction_disassemble(
+    jml_bytecode_t *bytecode, uint32_t offset);
 
 
 #endif /* JML_BYTECODE_H_ */

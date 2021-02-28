@@ -1957,7 +1957,8 @@ jml_vm_interpret(const char *source)
 }
 
 
-jml_value_t jml_vm_eval(const char *source)
+jml_value_t
+jml_vm_eval(const char *source)
 {
 #ifdef JML_EVAL
     jml_obj_function_t *function = jml_compiler_compile(
