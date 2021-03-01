@@ -173,9 +173,9 @@ jml_vm_t *jml_vm_new(void);
 
 void jml_vm_free(jml_vm_t *vm);
 
-jml_interpret_result jml_vm_interpret(const char *source);
+jml_interpret_result jml_vm_interpret(jml_vm_t *_vm, const char *source);
 
-jml_value_t jml_vm_eval(const char *source);
+jml_value_t jml_vm_eval(jml_vm_t *_vm, const char *source);
 
 
 /*UTILITY*/

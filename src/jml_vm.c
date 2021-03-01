@@ -591,8 +591,8 @@ jml_vm_method_bind(jml_obj_class_t *klass,
 static void
 jml_vm_method_define(jml_obj_string_t *name)
 {
-    jml_value_t method = jml_vm_peek(0);
-    jml_obj_class_t *klass = AS_CLASS(jml_vm_peek(1));
+    jml_value_t method      = jml_vm_peek(0);
+    jml_obj_class_t *klass  = AS_CLASS(jml_vm_peek(1));
     jml_hashmap_set(&klass->methods, name, method);
     jml_vm_pop();
 }
@@ -810,10 +810,16 @@ jml_vm_run(jml_value_t *last)
 
 #define READ_BYTE()                 (*pc++)
 #define READ_SHORT()                (pc += 2, (uint16_t)((pc[-2] << 8) | pc[-1]))
+
 #define READ_STRING()               AS_STRING(READ_CONST())
 #define READ_CSTRING()              AS_CSTRING(READ_CONST())
 #define READ_CONST()                                    \
     (frame->closure->function->bytecode.constants.values[READ_BYTE()])
+
+#define READ_STRING_EXTENDED()      AS_STRING(READ_CONST_EXTENDED())
+#define READ_CSTRING_EXTENDED()     AS_CSTRING(READ_CONST_EXTENDED())
+#define READ_CONST_EXTENDED()                           \
+    (frame->closure->function->bytecode.constants.values[READ_SHORT()])
 
 
 #define BINARY_OP(type, op, num_type, verb, string)     \
@@ -938,8 +944,11 @@ jml_vm_run(jml_value_t *last)
 
 #ifdef JML_COMPUTED_GOTO
 
+#define EXEC_OP_(op)                exec_ ## op
+#define TABLE_OP(op)                &&EXEC_OP_(op)
+
 #define DISPATCH()                  goto *dispatcher[READ_BYTE()]
-#define EXEC_OP(op)                 exec_##op:
+#define EXEC_OP(op)                 EXEC_OP_(op):
 
 #ifdef JML_TRACE_STACK
 #define END_OP()                    goto trace_stack
@@ -948,65 +957,80 @@ jml_vm_run(jml_value_t *last)
 #endif
 
     static const void *dispatcher[] = {
-        &&exec_OP_END,
-        &&exec_OP_NOP,
-        &&exec_OP_POP,
-        &&exec_OP_POP_TWO,
-        &&exec_OP_ROT,
-        &&exec_OP_SAVE,
-        &&exec_OP_CONST,
-        &&exec_OP_NUM,
-        &&exec_OP_NONE,
-        &&exec_OP_TRUE,
-        &&exec_OP_FALSE,
-        &&exec_OP_BOOL,
-        &&exec_OP_ADD,
-        &&exec_OP_SUB,
-        &&exec_OP_MUL,
-        &&exec_OP_POW,
-        &&exec_OP_DIV,
-        &&exec_OP_MOD,
-        &&exec_OP_NOT,
-        &&exec_OP_NEG,
-        &&exec_OP_EQUAL,
-        &&exec_OP_GREATER,
-        &&exec_OP_GREATEREQ,
-        &&exec_OP_LESS,
-        &&exec_OP_LESSEQ,
-        &&exec_OP_NOTEQ,
-        &&exec_OP_CONCAT,
-        &&exec_OP_CONTAIN,
-        &&exec_OP_JUMP,
-        &&exec_OP_JUMP_IF_FALSE,
-        &&exec_OP_LOOP,
-        &&exec_OP_CALL,
-        &&exec_OP_METHOD,
-        &&exec_OP_INVOKE,
-        &&exec_OP_SUPER_INVOKE,
-        &&exec_OP_CLOSURE,
-        &&exec_OP_RETURN,
-        &&exec_OP_CLASS,
-        &&exec_OP_INHERIT,
-        &&exec_OP_SET_LOCAL,
-        &&exec_OP_GET_LOCAL,
-        &&exec_OP_SET_UPVALUE,
-        &&exec_OP_GET_UPVALUE,
-        &&exec_OP_CLOSE_UPVALUE,
-        &&exec_OP_SET_GLOBAL,
-        &&exec_OP_GET_GLOBAL,
-        &&exec_OP_DEF_GLOBAL,
-        &&exec_OP_SET_MEMBER,
-        &&exec_OP_GET_MEMBER,
-        &&exec_OP_SET_INDEX,
-        &&exec_OP_GET_INDEX,
-        &&exec_OP_SWAP_GLOBAL,
-        &&exec_OP_SWAP_LOCAL,
-        &&exec_OP_SUPER,
-        &&exec_OP_ARRAY,
-        &&exec_OP_MAP,
-        &&exec_OP_IMPORT_GLOBAL,
-        &&exec_OP_IMPORT_LOCAL,
-        &&exec_OP_IMPORT_WILDCARD
+        TABLE_OP(OP_END),
+        TABLE_OP(OP_NOP),
+        TABLE_OP(OP_POP),
+        TABLE_OP(OP_POP_TWO),
+        TABLE_OP(OP_ROT),
+        TABLE_OP(OP_SAVE),
+        TABLE_OP(OP_CONST),
+        TABLE_OP(EXTENDED_OP(OP_CONST)),
+        TABLE_OP(OP_NONE),
+        TABLE_OP(OP_TRUE),
+        TABLE_OP(OP_FALSE),
+        TABLE_OP(OP_BOOL),
+        TABLE_OP(OP_ADD),
+        TABLE_OP(OP_SUB),
+        TABLE_OP(OP_MUL),
+        TABLE_OP(OP_POW),
+        TABLE_OP(OP_DIV),
+        TABLE_OP(OP_MOD),
+        TABLE_OP(OP_NOT),
+        TABLE_OP(OP_NEG),
+        TABLE_OP(OP_EQUAL),
+        TABLE_OP(OP_GREATER),
+        TABLE_OP(OP_GREATEREQ),
+        TABLE_OP(OP_LESS),
+        TABLE_OP(OP_LESSEQ),
+        TABLE_OP(OP_NOTEQ),
+        TABLE_OP(OP_CONCAT),
+        TABLE_OP(OP_CONTAIN),
+        TABLE_OP(OP_JUMP),
+        TABLE_OP(OP_JUMP_IF_FALSE),
+        TABLE_OP(OP_LOOP),
+        TABLE_OP(OP_CALL),
+        TABLE_OP(OP_METHOD),
+        TABLE_OP(EXTENDED_OP(OP_METHOD)),
+        TABLE_OP(OP_INVOKE),
+        TABLE_OP(EXTENDED_OP(OP_INVOKE)),
+        TABLE_OP(OP_SUPER_INVOKE),
+        TABLE_OP(EXTENDED_OP(OP_SUPER_INVOKE)),
+        TABLE_OP(OP_CLOSURE),
+        TABLE_OP(EXTENDED_OP(OP_CLOSURE)),
+        TABLE_OP(OP_RETURN),
+        TABLE_OP(OP_CLASS),
+        TABLE_OP(EXTENDED_OP(OP_CLASS)),
+        TABLE_OP(OP_INHERIT),
+        TABLE_OP(OP_SET_LOCAL),
+        TABLE_OP(OP_GET_LOCAL),
+        TABLE_OP(OP_SET_UPVALUE),
+        TABLE_OP(OP_GET_UPVALUE),
+        TABLE_OP(OP_CLOSE_UPVALUE),
+        TABLE_OP(OP_SET_GLOBAL),
+        TABLE_OP(EXTENDED_OP(OP_SET_GLOBAL)),
+        TABLE_OP(OP_GET_GLOBAL),
+        TABLE_OP(EXTENDED_OP(OP_GET_GLOBAL)),
+        TABLE_OP(OP_DEF_GLOBAL),
+        TABLE_OP(EXTENDED_OP(OP_DEF_GLOBAL)),
+        TABLE_OP(OP_SET_MEMBER),
+        TABLE_OP(EXTENDED_OP(OP_SET_MEMBER)),
+        TABLE_OP(OP_GET_MEMBER),
+        TABLE_OP(EXTENDED_OP(OP_GET_MEMBER)),
+        TABLE_OP(OP_SET_INDEX),
+        TABLE_OP(OP_GET_INDEX),
+        TABLE_OP(OP_SWAP_GLOBAL),
+        TABLE_OP(EXTENDED_OP(OP_SWAP_GLOBAL)),
+        TABLE_OP(OP_SWAP_LOCAL),
+        TABLE_OP(OP_SUPER),
+        TABLE_OP(EXTENDED_OP(OP_SUPER)),
+        TABLE_OP(OP_ARRAY),
+        TABLE_OP(OP_MAP),
+        TABLE_OP(OP_IMPORT_GLOBAL),
+        TABLE_OP(EXTENDED_OP(OP_IMPORT_GLOBAL)),
+        TABLE_OP(OP_IMPORT_LOCAL),
+        TABLE_OP(EXTENDED_OP(OP_IMPORT_LOCAL)),
+        TABLE_OP(OP_IMPORT_WILDCARD),
+        TABLE_OP(EXTENDED_OP(OP_IMPORT_WILDCARD)),
     };
 
     DISPATCH();
@@ -1092,8 +1116,9 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
-            EXEC_OP(OP_NUM) {
-                jml_vm_push(NUM_VAL(READ_BYTE()));
+            EXEC_OP(EXTENDED_OP(OP_CONST)) {
+                jml_value_t constant = READ_CONST_EXTENDED();
+                jml_vm_push(constant);
                 END_OP();
             }
 
@@ -1301,20 +1326,20 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_JUMP_IF_FALSE) {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset     = READ_SHORT();
                 if (jml_value_falsey(jml_vm_peek(0)))
                     pc += offset;
                 END_OP();
             }
 
             EXEC_OP(OP_LOOP) {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset     = READ_SHORT();
                 pc -= offset;
                 END_OP();
             }
 
             EXEC_OP(OP_CALL) {
-                int             arg_count = READ_BYTE();
+                uint8_t arg_count   = READ_BYTE();
                 SAVE_FRAME();
                 if (!jml_vm_call_value(jml_vm_peek(arg_count), arg_count))
                     return INTERPRET_RUNTIME_ERROR;
@@ -1325,6 +1350,11 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_METHOD) {
                 jml_vm_method_define(READ_STRING());
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_METHOD)) {
+                jml_vm_method_define(READ_STRING_EXTENDED());
                 END_OP();
             }
 
@@ -1340,9 +1370,38 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(EXTENDED_OP(OP_INVOKE)) {
+                jml_obj_string_t *name      = READ_STRING_EXTENDED();
+                int               arg_count = READ_SHORT();
+
+                SAVE_FRAME();
+                if (!jml_vm_invoke(name, arg_count))
+                    return INTERPRET_RUNTIME_ERROR;
+
+                LOAD_FRAME();
+                END_OP();
+            }
+
             EXEC_OP(OP_SUPER_INVOKE) {
                 jml_obj_string_t *method    = READ_STRING();
                 int               arg_count = READ_BYTE();
+
+                SAVE_FRAME();
+                jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
+                if (!jml_vm_invoke_class(superclass, method, arg_count)) {
+                    jml_vm_error(
+                        "UndefErr: Undefined property '%s'.", method->chars
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                LOAD_FRAME();
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_SUPER_INVOKE)) {
+                jml_obj_string_t *method    = READ_STRING_EXTENDED();
+                int               arg_count = READ_SHORT();
 
                 SAVE_FRAME();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
@@ -1374,6 +1433,23 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(EXTENDED_OP(OP_CLOSURE)) {
+                jml_obj_function_t *function = AS_FUNCTION(READ_CONST_EXTENDED());
+                jml_obj_closure_t  *closure  = jml_obj_closure_new(function);
+                jml_vm_push(OBJ_VAL(closure));
+
+                for (int i = 0; i < closure->upvalue_count; ++i) {
+                    uint8_t local = READ_SHORT();
+                    uint8_t index = READ_SHORT();
+
+                    if (local)
+                        closure->upvalues[i] = jml_vm_upvalue_capture(frame->slots + index);
+                    else
+                        closure->upvalues[i] = frame->closure->upvalues[index];
+                }
+                END_OP();
+            }
+
             EXEC_OP(OP_RETURN) {
                 jml_value_t result          = jml_vm_pop();
                 jml_vm_upvalue_close(frame->slots);
@@ -1394,6 +1470,13 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_CLASS) {
                 jml_vm_push(
                     OBJ_VAL(jml_obj_class_new(READ_STRING()))
+                );
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_CLASS)) {
+                jml_vm_push(
+                    OBJ_VAL(jml_obj_class_new(READ_STRING_EXTENDED()))
                 );
                 END_OP();
             }
@@ -1471,7 +1554,21 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_SET_GLOBAL) {
-                jml_obj_string_t *name = READ_STRING();
+                jml_obj_string_t *name  = READ_STRING();
+                if (jml_vm_global_set(name, jml_vm_peek(0))) {
+                    jml_vm_global_del(name);
+
+                    SAVE_FRAME();
+                    jml_vm_error(
+                        "UndefErr: Undefined variable '%s'.", name->chars
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_SET_GLOBAL)) {
+                jml_obj_string_t *name  = READ_STRING_EXTENDED();
                 if (jml_vm_global_set(name, jml_vm_peek(0))) {
                     jml_vm_global_del(name);
 
@@ -1485,7 +1582,22 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_GET_GLOBAL) {
-                jml_obj_string_t *name = READ_STRING();
+                jml_obj_string_t *name  = READ_STRING();
+                jml_value_t *value;
+
+                if (!jml_vm_global_get(name, &value)) {
+                    SAVE_FRAME();
+                    jml_vm_error(
+                        "UndefErr: Undefined variable '%s'.", name->chars
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                jml_vm_push(*value);
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_GET_GLOBAL)) {
+                jml_obj_string_t *name  = READ_STRING_EXTENDED();
                 jml_value_t *value;
 
                 if (!jml_vm_global_get(name, &value)) {
@@ -1500,17 +1612,24 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_DEF_GLOBAL) {
-                jml_obj_string_t *name = READ_STRING();
+                jml_obj_string_t *name  = READ_STRING();
+                jml_vm_global_set(name, jml_vm_peek(0));
+                jml_vm_pop();
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_DEF_GLOBAL)) {
+                jml_obj_string_t *name  = READ_STRING_EXTENDED();
                 jml_vm_global_set(name, jml_vm_peek(0));
                 jml_vm_pop();
                 END_OP();
             }
 
             EXEC_OP(OP_SET_MEMBER) {
-                jml_value_t             peeked      = jml_vm_peek(1);
+                jml_value_t              peeked = jml_vm_peek(1);
 
                 if (IS_INSTANCE(peeked)) {
-                    jml_obj_instance_t *instance    = AS_INSTANCE(peeked);
+                    jml_obj_instance_t *instance = AS_INSTANCE(peeked);
                     jml_hashmap_set(
                         &instance->fields, READ_STRING(), jml_vm_peek(0)
                     );
@@ -1521,9 +1640,44 @@ jml_vm_run(jml_value_t *last)
                     END_OP();
 
                 } else if (IS_MODULE(peeked)) {
-                    jml_obj_module_t   *module      = AS_MODULE(peeked);
+                    jml_obj_module_t   *module  = AS_MODULE(peeked);
                     jml_hashmap_set(
                         &module->globals, READ_STRING(), jml_vm_peek(0)
+                    );
+
+                    jml_value_t value = jml_vm_pop();
+                    jml_vm_pop();
+                    jml_vm_push(value);
+                    END_OP();
+
+                } else {
+                    SAVE_FRAME();
+                    jml_vm_error(
+                        "SyntaxErr: Only instances and modules have properties."
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_SET_MEMBER)) {
+                jml_value_t              peeked = jml_vm_peek(1);
+
+                if (IS_INSTANCE(peeked)) {
+                    jml_obj_instance_t *instance = AS_INSTANCE(peeked);
+                    jml_hashmap_set(
+                        &instance->fields, READ_STRING_EXTENDED(), jml_vm_peek(0)
+                    );
+
+                    jml_value_t value = jml_vm_pop();
+                    jml_vm_pop();
+                    jml_vm_push(value);
+                    END_OP();
+
+                } else if (IS_MODULE(peeked)) {
+                    jml_obj_module_t   *module  = AS_MODULE(peeked);
+                    jml_hashmap_set(
+                        &module->globals, READ_STRING_EXTENDED(), jml_vm_peek(0)
                     );
 
                     jml_value_t value = jml_vm_pop();
@@ -1544,6 +1698,48 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(OP_GET_MEMBER) {
                 jml_value_t             peeked      = jml_vm_peek(0);
                 jml_obj_string_t       *name        = READ_STRING();
+
+                if (IS_INSTANCE(peeked)) {
+                    jml_obj_instance_t *instance    = AS_INSTANCE(peeked);
+
+                    jml_value_t *value;
+                    if (jml_hashmap_get(&instance->fields, name, &value)) {
+                        jml_vm_pop();
+                        jml_vm_push(*value);
+                        END_OP();
+                    }
+
+                    SAVE_FRAME();
+                    if (!jml_vm_method_bind(instance->klass, name))
+                        return INTERPRET_RUNTIME_ERROR;
+
+                } else if (IS_MODULE(peeked)) {
+                    jml_obj_module_t   *module      = AS_MODULE(peeked);
+
+                    jml_value_t *value;
+                    if (jml_hashmap_get(&module->globals, name, &value)) {
+                        jml_vm_pop();
+                        jml_vm_push(*value);
+                        END_OP();
+                    }
+
+                    SAVE_FRAME();
+                    if (!jml_vm_module_bind(module, name))
+                        return INTERPRET_RUNTIME_ERROR;
+
+                } else {
+                    SAVE_FRAME();
+                    jml_vm_error(
+                        "SyntaxErr: Only instances and modules have properties."
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_GET_MEMBER)) {
+                jml_value_t             peeked      = jml_vm_peek(0);
+                jml_obj_string_t       *name        = READ_STRING_EXTENDED();
 
                 if (IS_INSTANCE(peeked)) {
                     jml_obj_instance_t *instance    = AS_INSTANCE(peeked);
@@ -1726,6 +1922,27 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(EXTENDED_OP(OP_SWAP_GLOBAL)) {
+                jml_obj_string_t *old_name  = READ_STRING_EXTENDED();
+                jml_obj_string_t *new_name  = READ_STRING_EXTENDED();
+
+                jml_value_t value;
+                if (!jml_vm_global_pop(old_name, &value)) {
+                    SAVE_FRAME();
+                    jml_vm_error("UndefErr: Undefined variable '%s'.", old_name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+
+                } else if (jml_string_equal(old_name, new_name)) {
+                    jml_vm_global_set(old_name, value);
+                    SAVE_FRAME();
+                    jml_vm_error("SyntaxErr: Can't swap variable to itself.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_vm_global_set(new_name, value);
+                END_OP();
+            }
+
             EXEC_OP(OP_SWAP_LOCAL) {
                 /*placeholder*/
                 END_OP();
@@ -1733,6 +1950,17 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_SUPER) {
                 jml_obj_string_t *name       = READ_STRING();
+                jml_obj_class_t  *superclass = AS_CLASS(jml_vm_pop());
+
+                SAVE_FRAME();
+                if (!jml_vm_method_bind(superclass, name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_SUPER)) {
+                jml_obj_string_t *name       = READ_STRING_EXTENDED();
                 jml_obj_class_t  *superclass = AS_CLASS(jml_vm_pop());
 
                 SAVE_FRAME();
@@ -1801,6 +2029,21 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(EXTENDED_OP(OP_IMPORT_GLOBAL)) {
+                jml_obj_string_t *fullname   = READ_STRING_EXTENDED();
+                jml_obj_string_t *name       = READ_STRING_EXTENDED();
+
+                SAVE_FRAME();
+                if (!jml_vm_module_import(fullname, name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_vm_global_set(name, jml_vm_peek(0));
+
+                jml_vm_pop();
+                END_OP();
+            }
+
             EXEC_OP(OP_IMPORT_LOCAL) {
                 jml_obj_string_t *fullname   = READ_STRING();
                 jml_obj_string_t *name       = READ_STRING();
@@ -1815,9 +2058,42 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(EXTENDED_OP(OP_IMPORT_LOCAL)) {
+                jml_obj_string_t *fullname   = READ_STRING_EXTENDED();
+                jml_obj_string_t *name       = READ_STRING_EXTENDED();
+
+                SAVE_FRAME();
+                if (!jml_vm_module_import(fullname, name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                uint8_t slot = READ_SHORT();
+                frame->slots[slot] = jml_vm_pop();
+                END_OP();
+            }
+
             EXEC_OP(OP_IMPORT_WILDCARD) {
                 jml_obj_string_t *fullname   = READ_STRING();
                 jml_obj_string_t *name       = READ_STRING();
+
+                SAVE_FRAME();
+                if (!jml_vm_module_import(fullname, name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                jml_hashmap_add(
+                    &AS_MODULE(jml_vm_peek(0))->globals,
+                    (vm->current == NULL || vm->current == (void*)1)
+                    ? &vm->globals : &vm->current->globals
+                );
+
+                jml_vm_pop();
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_IMPORT_WILDCARD)) {
+                jml_obj_string_t *fullname   = READ_STRING_EXTENDED();
+                jml_obj_string_t *name       = READ_STRING_EXTENDED();
 
                 SAVE_FRAME();
                 if (!jml_vm_module_import(fullname, name)) {
@@ -1847,9 +2123,14 @@ jml_vm_run(jml_value_t *last)
 
 #undef READ_BYTE
 #undef READ_SHORT
+
 #undef READ_STRING
 #undef READ_CSTRING
 #undef READ_CONST
+
+#undef READ_STRING_EXTENDED
+#undef READ_CSTRING_EXTENDED
+#undef READ_CSTRING_EXTENDED
 
 #undef BINARY_OP
 #undef BINARY_DIV
@@ -1944,8 +2225,10 @@ jml_cfunction_register(const char *name,
 
 
 jml_interpret_result
-jml_vm_interpret(const char *source)
+jml_vm_interpret(jml_vm_t *_vm, const char *source)
 {
+    vm = _vm;
+
     jml_obj_function_t *function = jml_compiler_compile(
         source, NULL, true);
 
@@ -1967,9 +2250,11 @@ jml_vm_interpret(const char *source)
 
 
 jml_value_t
-jml_vm_eval(const char *source)
+jml_vm_eval(jml_vm_t *_vm, const char *source)
 {
 #ifdef JML_EVAL
+    vm = _vm;
+
     jml_obj_function_t *function = jml_compiler_compile(
         source, NULL, true);
 

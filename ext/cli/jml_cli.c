@@ -48,10 +48,10 @@ jml_cli_fread(const char *path)
 
 
 static bool
-jml_cli_run(const char *path)
+jml_cli_run(jml_vm_t *vm, const char *path)
 {
     char *source = jml_cli_fread(path);
-    jml_interpret_result result = jml_vm_interpret(source);
+    jml_interpret_result result = jml_vm_interpret(vm, source);
     free(source);
 
     return result == INTERPRET_OK;
@@ -59,7 +59,7 @@ jml_cli_run(const char *path)
 
 
 static void
-jml_cli_repl(void)
+jml_cli_repl(jml_vm_t *vm)
 {
     signal(SIGINT, SIG_IGN);
 
@@ -89,7 +89,7 @@ jml_cli_repl(void)
 #endif
 
 #ifdef JML_EVAL
-        jml_value_t result = jml_vm_eval(line);
+        jml_value_t result = jml_vm_eval(vm, line);
 
         if (!jml_value_sentinel(result) && !IS_NONE(result)) {
             printf("   ");
@@ -97,7 +97,7 @@ jml_cli_repl(void)
             printf("\n");
         }
 #else
-        jml_vm_interpret(line);
+        jml_vm_interpret(vm, line);
 #endif
 
 #ifdef JML_CLI_READLINE
@@ -122,13 +122,13 @@ main(int argc, char **argv)
 
     switch (argc) {
         case 1:
-            jml_cli_repl();
+            jml_cli_repl(vm);
             printf("\n");
             success = true;
             break;
 
         case 2:
-            success = jml_cli_run(argv[1]);
+            success = jml_cli_run(vm, argv[1]);
             break;
 
         default:

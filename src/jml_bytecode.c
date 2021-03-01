@@ -108,7 +108,7 @@ jml_bytecode_instruction_jump(const char *name,
     int sign, jml_bytecode_t *bytecode, uint32_t offset)
 {
     uint16_t jump       = (uint16_t)(bytecode->code[offset + 1] << 8);
-    jump |= bytecode->code[offset + 2];
+    jump                |= bytecode->code[offset + 2];
 
     printf("%-16s %4d -> %d\n",
         name, offset, offset + 3 + sign * jump
@@ -133,6 +133,24 @@ jml_bytecode_instruction_invoke(const char *name,
 
 
 static uint32_t
+jml_bytecode_instruction_invoke_extended(const char *name,
+    jml_bytecode_t *bytecode, uint32_t offset)
+{
+    uint16_t constant   = (uint16_t)(bytecode->code[offset + 1] << 8);
+    constant            |= bytecode->code[offset + 2];
+
+    uint16_t arg_count  = (uint16_t)(bytecode->code[offset + 3] << 8);
+    arg_count           |= bytecode->code[offset + 4];
+
+    printf("%-16s (%d args) %d '", name, arg_count, constant);
+    jml_value_print(bytecode->constants.values[constant]);
+    printf("'\n");
+
+    return offset + 5;
+}
+
+
+static uint32_t
 jml_bytecode_instruction_const(const char *name,
     jml_bytecode_t *bytecode, uint32_t offset)
 {
@@ -142,6 +160,21 @@ jml_bytecode_instruction_const(const char *name,
     printf("'\n");
 
     return offset + 2;
+}
+
+
+static uint32_t
+jml_bytecode_instruction_const_extended(const char *name,
+    jml_bytecode_t *bytecode, uint32_t offset)
+{
+    uint16_t constant   = (uint16_t)(bytecode->code[offset + 1] << 8);
+    constant            |= bytecode->code[offset + 2];
+
+    printf("%-16s %d '", name, constant);
+    jml_value_print(bytecode->constants.values[constant]);
+    printf("'\n");
+
+    return offset + 3;
 }
 
 
@@ -159,6 +192,26 @@ jml_bytecode_instruction_consts(const char *name,
     printf("'\n");
 
     return offset + 3;
+}
+
+
+static uint32_t
+jml_bytecode_instruction_consts_extended(const char *name,
+    jml_bytecode_t *bytecode, uint32_t offset)
+{
+    uint16_t short1     = (uint16_t)(bytecode->code[offset + 1] << 8);
+    short1              |= bytecode->code[offset + 2];
+
+    uint16_t short2     = (uint16_t)(bytecode->code[offset + 3] << 8);
+    short2              |= bytecode->code[offset + 4];
+
+    printf("%-16s %4d '", name, short1);
+    jml_value_print(bytecode->constants.values[short1]);
+    printf("'    %4d '", short2);
+    jml_value_print(bytecode->constants.values[short2]);
+    printf("'\n");
+
+    return offset + 5;
 }
 
 
@@ -199,8 +252,8 @@ jml_bytecode_instruction_disassemble(
         case OP_CONST:
             return jml_bytecode_instruction_const("OP_CONST", bytecode, offset);
 
-        case OP_NUM:
-            return jml_bytecode_instruction_byte("OP_NUM", bytecode, offset);
+        case EXTENDED_OP(OP_CONST):
+            return jml_bytecode_instruction_const_extended("OP_CONST_EXTENDED", bytecode, offset);
 
         case OP_NONE:
             return jml_bytecode_instruction_simple("OP_NONE", offset);
@@ -277,16 +330,47 @@ jml_bytecode_instruction_disassemble(
         case OP_METHOD:
             return jml_bytecode_instruction_const("OP_METHOD", bytecode, offset);
 
+        case EXTENDED_OP(OP_METHOD):
+            return jml_bytecode_instruction_const_extended("OP_METHOD_EXTENDED", bytecode, offset);
+
         case OP_INVOKE:
             return jml_bytecode_instruction_invoke("OP_INVOKE", bytecode, offset);
+
+        case EXTENDED_OP(OP_INVOKE):
+            return jml_bytecode_instruction_invoke_extended("OP_INVOKE_EXTENDED", bytecode, offset);
 
         case OP_SUPER_INVOKE:
             return jml_bytecode_instruction_invoke("OP_SUPER_INVOKE", bytecode, offset);
 
+        case EXTENDED_OP(OP_SUPER_INVOKE):
+            return jml_bytecode_instruction_invoke_extended("OP_SUPER_INVOKE_EXTENDED", bytecode, offset);
+
         case OP_CLOSURE: {
             ++offset;
-            uint8_t constant = bytecode->code[offset++];
+            uint8_t constant    = bytecode->code[offset++];
+
             printf("%-16s %4d   ", "OP_CLOSURE", constant);
+            jml_value_print(bytecode->constants.values[constant]);
+            printf("\n");
+
+            jml_obj_function_t *function = AS_FUNCTION(bytecode->constants.values[constant]);
+
+            for (int i = 0; i < function->upvalue_count; ++i) {
+                int local       = bytecode->code[offset++];
+                int index       = bytecode->code[offset++];
+
+                printf("%04d    |                   %s %d\n",
+                    offset - 2, local ? "local" : "upvalue", index);
+            }
+            return offset;
+        }
+
+        case EXTENDED_OP(OP_CLOSURE): {
+            ++offset;
+            uint16_t constant   = (uint16_t)(bytecode->code[offset++] << 8);
+            constant            |= bytecode->code[offset++];
+
+            printf("%-16s %4d   ", "OP_CLOSURE_EXTENDED", constant);
             jml_value_print(bytecode->constants.values[constant]);
             printf("\n");
 
@@ -306,6 +390,9 @@ jml_bytecode_instruction_disassemble(
 
         case OP_CLASS:
             return jml_bytecode_instruction_const("OP_CLASS", bytecode, offset);
+
+        case EXTENDED_OP(OP_CLASS):
+            return jml_bytecode_instruction_const_extended("OP_CLASS_EXTENDED", bytecode, offset);
 
         case OP_INHERIT:
             return jml_bytecode_instruction_simple("OP_INHERIT", offset);
@@ -328,17 +415,32 @@ jml_bytecode_instruction_disassemble(
         case OP_SET_GLOBAL:
             return jml_bytecode_instruction_const("OP_SET_GLOBAL", bytecode, offset);
 
+        case EXTENDED_OP(OP_SET_GLOBAL):
+            return jml_bytecode_instruction_const_extended("OP_SET_GLOBAL_EXTENDED", bytecode, offset);
+
         case OP_GET_GLOBAL:
             return jml_bytecode_instruction_const("OP_GET_GLOBAL", bytecode, offset);
+
+        case EXTENDED_OP(OP_GET_GLOBAL):
+            return jml_bytecode_instruction_const_extended("OP_GET_GLOBAL_EXTENDED", bytecode, offset);
 
         case OP_DEF_GLOBAL:
             return jml_bytecode_instruction_const("OP_DEF_GLOBAL", bytecode, offset);
 
+        case EXTENDED_OP(OP_DEF_GLOBAL):
+            return jml_bytecode_instruction_const_extended("OP_DEF_GLOBAL_EXTENDED", bytecode, offset);
+
         case OP_SET_MEMBER:
             return jml_bytecode_instruction_const("OP_SET_MEMBER", bytecode, offset);
 
+        case EXTENDED_OP(OP_SET_MEMBER):
+            return jml_bytecode_instruction_const_extended("OP_SET_MEMBER_EXTENDED", bytecode, offset);
+
         case OP_GET_MEMBER:
             return jml_bytecode_instruction_const("OP_GET_MEMBER", bytecode, offset);
+
+        case EXTENDED_OP(OP_GET_MEMBER):
+            return jml_bytecode_instruction_const_extended("OP_GET_MEMBER_EXTENDED", bytecode, offset);
 
         case OP_SET_INDEX:
             return jml_bytecode_instruction_simple("OP_SET_INDEX", offset);
@@ -349,11 +451,17 @@ jml_bytecode_instruction_disassemble(
         case OP_SWAP_GLOBAL:
             return jml_bytecode_instruction_consts("OP_SWAP_GLOBAL", bytecode, offset);
 
+        case EXTENDED_OP(OP_SWAP_GLOBAL):
+            return jml_bytecode_instruction_consts_extended("OP_SWAP_GLOBAL_EXTENDED", bytecode, offset);
+
         case OP_SWAP_LOCAL:
             return jml_bytecode_instruction_consts("OP_SWAP_LOCAL", bytecode, offset);
 
         case OP_SUPER:
             return jml_bytecode_instruction_const("OP_SUPER", bytecode, offset);
+
+        case EXTENDED_OP(OP_SUPER):
+            return jml_bytecode_instruction_const_extended("OP_SUPER_EXTENDED", bytecode, offset);
 
         case OP_ARRAY:
             return jml_bytecode_instruction_byte("OP_ARRAY", bytecode, offset);
@@ -364,11 +472,49 @@ jml_bytecode_instruction_disassemble(
         case OP_IMPORT_GLOBAL:
             return jml_bytecode_instruction_consts("OP_IMPORT_GLOBAL", bytecode, offset);
 
-        case OP_IMPORT_LOCAL:
-            return jml_bytecode_instruction_consts("OP_IMPORT_LOCAL", bytecode, offset);
+        case EXTENDED_OP(OP_IMPORT_GLOBAL):
+            return jml_bytecode_instruction_consts_extended("OP_IMPORT_GLOBAL_EXTENDED", bytecode, offset);
+
+        case OP_IMPORT_LOCAL: {
+            ++offset;
+            uint8_t byte1       = bytecode->code[offset++];
+            uint8_t byte2       = bytecode->code[offset++];
+            uint8_t byte3       = bytecode->code[offset++];
+
+            printf("%-16s %4d '", "OP_IMPORT_LOCAL", byte1);
+            jml_value_print(bytecode->constants.values[byte1]);
+            printf("'    %4d '", byte2);
+            jml_value_print(bytecode->constants.values[byte2]);
+            printf("'   (slot %d)\n", byte3);
+
+            return offset;
+        }
+
+        case EXTENDED_OP(OP_IMPORT_LOCAL): {
+            ++offset;
+            uint16_t short1     = (uint16_t)(bytecode->code[offset++] << 8);
+            short1              |= bytecode->code[offset++];
+
+            uint16_t short2     = (uint16_t)(bytecode->code[offset++] << 8);
+            short2              |= bytecode->code[offset++];
+
+            uint16_t short3     = (uint16_t)(bytecode->code[offset++] << 8);
+            short3              |= bytecode->code[offset++];
+
+            printf("%-16s %4d '", "OP_IMPORT_LOCAL_EXTENDED", short1);
+            jml_value_print(bytecode->constants.values[short1]);
+            printf("'    %4d '", short2);
+            jml_value_print(bytecode->constants.values[short2]);
+            printf("'   (slot %d)\n", short3);
+
+            return offset;
+        }
 
         case OP_IMPORT_WILDCARD:
             return jml_bytecode_instruction_consts("OP_IMPORT_WILDCARD", bytecode, offset);
+
+        case EXTENDED_OP(OP_IMPORT_WILDCARD):
+            return jml_bytecode_instruction_consts_extended("OP_IMPORT_GLOBAL_EXTENDED", bytecode, offset);
 
         default:
             printf("unknown opcode %d\n", instruction);

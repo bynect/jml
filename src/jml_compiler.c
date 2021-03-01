@@ -9,6 +9,56 @@
 #include <jml_string.h>
 
 
+#define EMIT_EXTENDED_OP1(compiler, op1, op2, b)        \
+    do {                                                \
+        if (b > UINT8_MAX) {                            \
+            jml_bytecode_emit_byte(compiler, op2);      \
+            jml_bytecode_emit_bytes(compiler,           \
+                (b >> 8) & 0xff, b & 0xff);             \
+        } else                                          \
+            jml_bytecode_emit_bytes(compiler, op1, b);  \
+    } while (false)
+
+
+#define EMIT_EXTENDED_OP2(compiler, op1, op2, b, b2)    \
+    do {                                                \
+        if (b > UINT8_MAX || b2 > UINT8_MAX) {          \
+                                                        \
+            jml_bytecode_emit_byte(compiler, op2);      \
+            jml_bytecode_emit_bytes(compiler,           \
+                (b >> 8) & 0xff, b & 0xff);             \
+                                                        \
+            jml_bytecode_emit_bytes(compiler,           \
+                (b2 >> 8) & 0xff, b2 & 0xff);           \
+        } else {                                        \
+            jml_bytecode_emit_bytes(compiler, op1, b);  \
+            jml_bytecode_emit_byte(compiler, b2);       \
+        }                                               \
+    } while (false)
+
+
+#define EMIT_EXTENDED_OP3(compiler, op1, op2, b, b2, b3)\
+    do {                                                \
+        if (b > UINT8_MAX                               \
+            || b2 > UINT8_MAX                           \
+            || b3 > UINT8_MAX) {                        \
+                                                        \
+            jml_bytecode_emit_byte(compiler, op2);      \
+            jml_bytecode_emit_bytes(compiler,           \
+                (b >> 8) & 0xff, b & 0xff);             \
+                                                        \
+            jml_bytecode_emit_bytes(compiler,           \
+                (b2 >> 8) & 0xff, b2 & 0xff);           \
+                                                        \
+            jml_bytecode_emit_bytes(compiler,           \
+                (b3 >> 8) & 0xff, b3 & 0xff);           \
+        } else {                                        \
+            jml_bytecode_emit_bytes(compiler, op1, b);  \
+            jml_bytecode_emit_bytes(compiler, b2, b3);  \
+        }                                               \
+    } while (false)
+
+
 static inline jml_bytecode_t *
 jml_bytecode_current(jml_compiler_t *compiler)
 {
@@ -156,7 +206,7 @@ jml_parser_newline(jml_compiler_t *compiler, const char *message)
 }
 
 
-static uint8_t
+static uint16_t
 jml_bytecode_make_const(jml_compiler_t *compiler, jml_value_t value)
 {
     int constant = jml_bytecode_add_const(
@@ -164,11 +214,15 @@ jml_bytecode_make_const(jml_compiler_t *compiler, jml_value_t value)
     );
 
     if (constant > UINT8_MAX) {
-        jml_parser_error(
-            compiler,
-            "Too many constants in one chunk."
-        );
-        return 0;
+        if (constant > UINT16_MAX) {
+            jml_parser_error(
+                compiler,
+                "Too many constants in one chunk."
+            );
+            return 0;
+        }
+
+        return (uint16_t)constant;
     }
 
     return (uint8_t)constant;
@@ -269,10 +323,9 @@ jml_bytecode_emit_return(jml_compiler_t *compiler)
 static void
 jml_bytecode_emit_const(jml_compiler_t *compiler, jml_value_t value)
 {
-    jml_bytecode_emit_bytes(
-        compiler,
-        OP_CONST,
-        jml_bytecode_make_const(compiler, value)
+    uint16_t constant = jml_bytecode_make_const(compiler, value);
+    EMIT_EXTENDED_OP1(
+        compiler, OP_CONST, EXTENDED_OP(OP_CONST), constant
     );
 }
 
@@ -387,7 +440,7 @@ jml_scope_end(jml_compiler_t *compiler)
 }
 
 
-static inline uint8_t
+static inline uint16_t
 jml_identifier_const(jml_compiler_t *compiler, jml_token_t *name)
 {
     return jml_bytecode_make_const(
@@ -581,7 +634,7 @@ jml_variable_declaration(jml_compiler_t *compiler)
 }
 
 
-static uint8_t
+static uint16_t
 jml_variable_parse(jml_compiler_t *compiler, const char *message)
 {
     jml_parser_consume(compiler, TOKEN_NAME, message);
@@ -596,14 +649,16 @@ jml_variable_parse(jml_compiler_t *compiler, const char *message)
 
 
 static void
-jml_variable_definition(jml_compiler_t *compiler, uint8_t global)
+jml_variable_definition(jml_compiler_t *compiler, uint16_t global)
 {
     if (compiler->scope_depth > 0) {
         jml_local_mark(compiler);
         return;
     }
 
-    jml_bytecode_emit_bytes(compiler, OP_DEF_GLOBAL, global);
+    EMIT_EXTENDED_OP1(
+        compiler, OP_DEF_GLOBAL, EXTENDED_OP(OP_DEF_GLOBAL), global
+    );
 }
 
 
@@ -780,20 +835,27 @@ static void
 jml_dot(jml_compiler_t *compiler, bool assignable)
 {
     jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '.'.");
-    uint8_t name = jml_identifier_const(compiler, &compiler->parser->previous);
+    uint16_t name = jml_identifier_const(compiler, &compiler->parser->previous);
 
-    if (assignable && jml_parser_match(compiler, TOKEN_EQUAL)) {
+    if (assignable
+        && jml_parser_match(compiler, TOKEN_EQUAL)) {
+
         jml_parser_match_line(compiler);
         jml_expression(compiler);
-        jml_bytecode_emit_bytes(compiler, OP_SET_MEMBER, name);
+        EMIT_EXTENDED_OP1(
+            compiler, OP_SET_MEMBER, EXTENDED_OP(OP_SET_MEMBER), name
+        );
 
     } else if (jml_parser_match(compiler, TOKEN_LPAREN)) {
-        uint8_t arg_count = jml_arguments_list(compiler);
-        jml_bytecode_emit_bytes(compiler, OP_INVOKE, name);
-        jml_bytecode_emit_byte(compiler, arg_count);
+        uint16_t arg_count = jml_arguments_list(compiler);
+        EMIT_EXTENDED_OP2(
+            compiler, OP_INVOKE, EXTENDED_OP(OP_INVOKE), name, arg_count
+        );
 
     } else
-        jml_bytecode_emit_bytes(compiler, OP_GET_MEMBER, name);
+        EMIT_EXTENDED_OP1(
+            compiler, OP_GET_MEMBER, EXTENDED_OP(OP_GET_MEMBER), name
+        );
 }
 
 
@@ -1069,11 +1131,11 @@ jml_map(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 
 static void
 jml_variable_assignment(jml_compiler_t *compiler, bool index,
-    uint8_t get_op, uint8_t set_op, uint8_t arg, uint8_t op)
+    uint8_t get_op, uint8_t set_op, uint16_t arg, uint8_t op)
 {
     if (index) {
         jml_bytecode_emit_byte(compiler, OP_SAVE);
-        jml_bytecode_emit_bytes(compiler, get_op, arg);
+        EMIT_EXTENDED_OP1(compiler, get_op, get_op, arg);
         jml_bytecode_emit_bytes(compiler, OP_ROT, OP_GET_INDEX);
 
         jml_parser_match_line(compiler);
@@ -1082,12 +1144,12 @@ jml_variable_assignment(jml_compiler_t *compiler, bool index,
         jml_bytecode_emit_bytes(compiler, op, OP_SET_INDEX);
 
     } else {
-        jml_bytecode_emit_bytes(compiler, get_op, arg);
+        EMIT_EXTENDED_OP1(compiler, get_op, get_op, arg);
         jml_parser_match_line(compiler);
         jml_expression(compiler);
 
-        jml_bytecode_emit_bytes(compiler, op, set_op);
-        jml_bytecode_emit_byte(compiler, arg);
+        jml_bytecode_emit_byte(compiler, op);
+        EMIT_EXTENDED_OP1(compiler, set_op, set_op, arg);
     }
 }
 
@@ -1110,12 +1172,12 @@ jml_variable_named(jml_compiler_t *compiler,
 
     } else {
         arg     = jml_identifier_const(compiler, &name);
-        get_op  = OP_GET_GLOBAL;
-        set_op  = OP_SET_GLOBAL;
+        get_op  = arg > UINT8_MAX ? EXTENDED_OP(OP_GET_GLOBAL) : OP_GET_GLOBAL;
+        set_op  = arg > UINT8_MAX ? EXTENDED_OP(OP_SET_GLOBAL) : OP_SET_GLOBAL;
     }
 
     if (jml_parser_match(compiler, TOKEN_LSQARE)) {
-        jml_bytecode_emit_bytes(compiler, get_op, (uint8_t)arg);
+        EMIT_EXTENDED_OP1(compiler, get_op, get_op, arg);
 
         jml_parser_match_line(compiler);
         jml_expression(compiler);
@@ -1135,55 +1197,55 @@ jml_variable_named(jml_compiler_t *compiler,
         if (index)
             jml_bytecode_emit_byte(compiler, OP_SET_INDEX);
         else
-            jml_bytecode_emit_bytes(compiler, set_op, (uint8_t)arg);
+            EMIT_EXTENDED_OP1(compiler, set_op, set_op, arg);
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_COLCOLONEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, (uint8_t)arg, OP_CONCAT
+            compiler, index, get_op, set_op, arg, OP_CONCAT
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_PLUSEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, (uint8_t)arg, OP_ADD
+            compiler, index, get_op, set_op, arg, OP_ADD
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_MINUSEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, (uint8_t)arg, OP_SUB
+            compiler, index, get_op, set_op, arg, OP_SUB
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_STAREQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, (uint8_t)arg, OP_MUL
+            compiler, index, get_op, set_op, arg, OP_MUL
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_STARSTAREQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, (uint8_t)arg, OP_POW
+            compiler, index, get_op, set_op, arg, OP_POW
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_SLASHEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, (uint8_t)arg, OP_DIV
+            compiler, index, get_op, set_op, arg, OP_DIV
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_PERCENTEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, (uint8_t)arg, OP_MOD
+            compiler, index, get_op, set_op, arg, OP_MOD
         );
 
     } else if (jml_parser_match(compiler, TOKEN_ARROW)) {
@@ -1194,10 +1256,9 @@ jml_variable_named(jml_compiler_t *compiler,
             jml_bytecode_emit_byte(compiler, OP_NONE);
 
             if (get_op == OP_GET_GLOBAL) {
-                jml_bytecode_emit_bytes(compiler, OP_SWAP_GLOBAL, (uint8_t)arg);
-                jml_bytecode_emit_byte(
-                    compiler,
-                    jml_identifier_const(compiler, &compiler->parser->previous)
+                uint16_t new_arg = jml_identifier_const(compiler, &compiler->parser->previous);
+                EMIT_EXTENDED_OP2(
+                    compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL), arg, new_arg
                 );
 
             } else
@@ -1207,8 +1268,12 @@ jml_variable_named(jml_compiler_t *compiler,
 
     } else if (index)
         jml_bytecode_emit_byte(compiler, OP_GET_INDEX);
-    else
-        jml_bytecode_emit_bytes(compiler, get_op, (uint8_t)arg);
+
+    else {
+        EMIT_EXTENDED_OP1(
+            compiler, get_op, get_op, arg
+        );
+    }
 }
 
 
@@ -1235,20 +1300,23 @@ jml_super(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
     jml_parser_consume(compiler, TOKEN_DOT, "Expect '.' after 'super'.");
     jml_parser_consume(compiler, TOKEN_NAME, "Expect superclass method name.");
 
-    uint8_t name = jml_identifier_const(compiler, &compiler->parser->previous);
+    uint16_t name = jml_identifier_const(compiler, &compiler->parser->previous);
     jml_variable_named(compiler,
         jml_token_emit_synthetic(compiler->parser, "self"), false);
 
     if (jml_parser_match(compiler, TOKEN_LPAREN)) {
-        uint8_t arg_count = jml_arguments_list(compiler);
+        uint16_t arg_count = jml_arguments_list(compiler);
         jml_variable_named(compiler, jml_token_emit_synthetic(compiler->parser, "super"), false);
 
-        jml_bytecode_emit_bytes(compiler, OP_SUPER_INVOKE, name);
-        jml_bytecode_emit_byte(compiler, arg_count);
+        EMIT_EXTENDED_OP2(
+            compiler, OP_SUPER_INVOKE, EXTENDED_OP(OP_SUPER_INVOKE), name, arg_count
+        );
 
     } else {
         jml_variable_named(compiler, jml_token_emit_synthetic(compiler->parser, "super"), false);
-        jml_bytecode_emit_bytes(compiler, OP_SUPER, name);
+        EMIT_EXTENDED_OP1(
+            compiler, OP_SUPER, EXTENDED_OP(OP_SUPER), name
+        );
     }
 }
 
@@ -1289,7 +1357,7 @@ jml_lambda(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
                 );
             }
 
-            uint8_t param_const = jml_variable_parse(&sub_compiler, "Expect parameter name.");
+            uint16_t param_const = jml_variable_parse(&sub_compiler, "Expect parameter name.");
             jml_variable_definition(&sub_compiler, param_const);
         } while (jml_parser_match(&sub_compiler, TOKEN_COMMA));
     }
@@ -1299,10 +1367,9 @@ jml_lambda(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
     jml_block(&sub_compiler);
 
     jml_obj_function_t *function = jml_compiler_end(&sub_compiler);
-    jml_bytecode_emit_bytes(
-        compiler,
-        OP_CLOSURE,
-        jml_bytecode_make_const(compiler, OBJ_VAL(function))
+    uint16_t constant = jml_bytecode_make_const(compiler, OBJ_VAL(function));
+    EMIT_EXTENDED_OP1(
+        compiler, OP_CLOSURE, EXTENDED_OP(OP_CLOSURE), constant
     );
 
     for (int i = 0; i < function->upvalue_count; ++i) {
@@ -1506,7 +1573,7 @@ jml_function(jml_compiler_t *compiler, jml_function_type type)
                 );
             }
 
-            uint8_t param_const = jml_variable_parse(&sub_compiler, "Expect parameter name.");
+            uint16_t param_const = jml_variable_parse(&sub_compiler, "Expect parameter name.");
             jml_variable_definition(&sub_compiler, param_const);
         } while (jml_parser_match(&sub_compiler, TOKEN_COMMA));
     }
@@ -1518,10 +1585,9 @@ jml_function(jml_compiler_t *compiler, jml_function_type type)
     jml_parser_newline(&sub_compiler, "Expect newline after 'fn' declaration.");
 
     jml_obj_function_t *function = jml_compiler_end(&sub_compiler);
-    jml_bytecode_emit_bytes(
-        compiler,
-        OP_CLOSURE,
-        jml_bytecode_make_const(compiler, OBJ_VAL(function))
+    uint16_t constant = jml_bytecode_make_const(compiler, OBJ_VAL(function));
+    EMIT_EXTENDED_OP1(
+        compiler, OP_CLOSURE, EXTENDED_OP(OP_CLOSURE), constant
     );
 
     for (int i = 0; i < function->upvalue_count; ++i) {
@@ -1537,7 +1603,7 @@ jml_method(jml_compiler_t *compiler)
     jml_parser_match_line(compiler);
 
     jml_parser_consume(compiler, TOKEN_NAME, "Expect method name.");
-    uint8_t constant = jml_identifier_const(compiler, &compiler->parser->previous);
+    uint16_t constant = jml_identifier_const(compiler, &compiler->parser->previous);
 
     jml_function_type type = FUNCTION_METHOD;
 
@@ -1546,7 +1612,9 @@ jml_method(jml_compiler_t *compiler)
         type = FUNCTION_INIT;
 
     jml_function(compiler, type);
-    jml_bytecode_emit_bytes(compiler, OP_METHOD, constant);
+    EMIT_EXTENDED_OP1(
+        compiler, OP_METHOD, EXTENDED_OP(OP_METHOD), constant
+    );
 }
 
 
@@ -1556,19 +1624,22 @@ jml_class_declaration(jml_compiler_t *compiler)
     jml_parser_match_line(compiler);
 
     jml_parser_consume(compiler, TOKEN_NAME, "Expect class name.");
-    jml_token_t class_name = compiler->parser->previous;
+    jml_token_t class_name      = compiler->parser->previous;
 
-    uint8_t name_const = jml_identifier_const(compiler, &compiler->parser->previous);
+    uint16_t name_const         = jml_identifier_const(
+        compiler, &compiler->parser->previous);
     jml_variable_declaration(compiler);
 
-    jml_bytecode_emit_bytes(compiler, OP_CLASS, name_const);
+    EMIT_EXTENDED_OP1(
+        compiler, OP_CLASS, EXTENDED_OP(OP_CLASS), name_const
+    );
     jml_variable_definition(compiler, name_const);
 
     jml_class_compiler_t class_compiler;
     class_compiler.name         = compiler->parser->previous;
     class_compiler.enclosing    = compiler->klass;
     class_compiler.w_superclass = false;
-    compiler->klass               = &class_compiler;
+    compiler->klass             = &class_compiler;
 
     if (jml_parser_match(compiler, TOKEN_LESS)) {
         jml_parser_match_line(compiler);
@@ -1578,10 +1649,12 @@ jml_class_declaration(jml_compiler_t *compiler)
 
         while (jml_parser_match(compiler, TOKEN_DOT)) {
             jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '.'.");
-            uint8_t name        = jml_identifier_const(
+            uint16_t name       = jml_identifier_const(
                 compiler, &compiler->parser->previous);
 
-            jml_bytecode_emit_bytes(compiler, OP_GET_MEMBER, name);
+            EMIT_EXTENDED_OP1(
+                compiler, OP_GET_MEMBER, EXTENDED_OP(OP_GET_MEMBER), name
+            );
         }
 
         if (jml_identifier_equal(&class_name, &compiler->parser->previous)) {
@@ -1639,7 +1712,7 @@ jml_class_declaration(jml_compiler_t *compiler)
 static void
 jml_function_declaration(jml_compiler_t *compiler)
 {
-    uint8_t global = jml_variable_parse(compiler, "Expect function name.");
+    uint16_t global = jml_variable_parse(compiler, "Expect function name.");
     jml_local_mark(compiler);
 
     jml_function(compiler, FUNCTION_FN);
@@ -1650,7 +1723,7 @@ jml_function_declaration(jml_compiler_t *compiler)
 static void
 jml_let_declaration(jml_compiler_t *compiler)
 {
-    uint8_t global = jml_variable_parse(compiler, "Expect variable name.");
+    uint16_t global = jml_variable_parse(compiler, "Expect variable name.");
 
     if (jml_parser_match(compiler, TOKEN_EQUAL))
         jml_expression(compiler);
@@ -1774,20 +1847,21 @@ jml_import_statement(jml_compiler_t *compiler)
     fullname[length]  = '\0';
     name[name_length] = '\0';
 
-    uint8_t full_arg = jml_bytecode_make_const(
+    uint16_t full_arg = jml_bytecode_make_const(
         compiler,
         OBJ_VAL(jml_obj_string_take(fullname, length))
     );
 
-    uint8_t name_arg = jml_bytecode_make_const(
+    uint16_t name_arg = jml_bytecode_make_const(
         compiler,
         OBJ_VAL(jml_obj_string_copy(name, name_length))
     );
 
     if (wildcard) {
         if (compiler->type == FUNCTION_MAIN) {
-            jml_bytecode_emit_bytes(compiler, OP_IMPORT_WILDCARD, full_arg);
-            jml_bytecode_emit_byte(compiler, name_arg);
+            EMIT_EXTENDED_OP2(
+                compiler, OP_IMPORT_WILDCARD, EXTENDED_OP(OP_IMPORT_WILDCARD), full_arg, name_arg
+            );
 
         } else {
             jml_parser_error(
@@ -1797,15 +1871,17 @@ jml_import_statement(jml_compiler_t *compiler)
         }
 
     } else if (compiler->type == FUNCTION_MAIN) {
-        jml_bytecode_emit_bytes(compiler, OP_IMPORT_GLOBAL, full_arg);
-        jml_bytecode_emit_byte(compiler, name_arg);
+        EMIT_EXTENDED_OP2(
+            compiler, OP_IMPORT_GLOBAL, EXTENDED_OP(OP_IMPORT_GLOBAL), full_arg, name_arg
+        );
 
         if (jml_parser_match(compiler, TOKEN_ARROW)) {
             jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
-            uint8_t new_name = jml_identifier_const(compiler, &compiler->parser->previous);
+            uint16_t new_name = jml_identifier_const(compiler, &compiler->parser->previous);
 
-            jml_bytecode_emit_bytes(compiler, OP_SWAP_GLOBAL, name_arg);
-            jml_bytecode_emit_byte(compiler, new_name);
+            EMIT_EXTENDED_OP2(
+                compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL), name_arg, new_name
+            );
         }
 
     } else {
@@ -1815,8 +1891,9 @@ jml_import_statement(jml_compiler_t *compiler)
         if (local == -1)
             local = jml_local_add_synthetic(compiler, &token_name);
 
-        jml_bytecode_emit_bytes(compiler, OP_IMPORT_LOCAL, full_arg);
-        jml_bytecode_emit_bytes(compiler, name_arg, local);
+        EMIT_EXTENDED_OP3(
+            compiler, OP_IMPORT_LOCAL, EXTENDED_OP(OP_IMPORT_LOCAL), full_arg, name_arg, local
+        );
 
         if (jml_parser_match(compiler, TOKEN_ARROW)) {
             jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
