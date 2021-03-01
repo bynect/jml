@@ -427,7 +427,7 @@ jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
 
     else {
         jml_hashmap_add(&vm->current->globals, &map->hashmap);
-        jml_core_register(&map->hashmap);
+        jml_hashmap_add(&vm->builtins, &map->hashmap);
     }
 
     return jml_vm_pop();
@@ -569,23 +569,21 @@ static jml_module_function core_table[] = {
 
 
 void
-jml_core_register(jml_hashmap_t *map)
+jml_core_register(jml_vm_t *vm)
 {
-    static jml_obj_module_t *core_module = NULL;
+    jml_obj_string_t *core_string   = jml_obj_string_copy(
+        "core", 4);
+    jml_vm_push(OBJ_VAL(core_string));
 
-    if (core_module == NULL) {
-        jml_obj_string_t *core_string    = jml_obj_string_copy(
-            "core", 4);
-        jml_vm_push(OBJ_VAL(core_string));
+    jml_obj_module_t *core_module   = jml_obj_module_new(
+        core_string, NULL);
+    jml_vm_push(OBJ_VAL(core_module));
 
-        core_module = jml_obj_module_new(core_string, NULL);
-        jml_vm_push(OBJ_VAL(core_module));
+    jml_module_register(core_module, core_table);
+    jml_hashmap_set(&vm->modules, core_string, jml_vm_peek(0));
 
-        jml_module_register(core_module, core_table);
-        jml_hashmap_set(&vm->modules, core_string, jml_vm_peek(0));
+    jml_vm_pop_two();
 
-        jml_vm_pop_two();
-    }
-
-    jml_hashmap_add(&core_module->globals, map);
+    jml_hashmap_add(&core_module->globals, &vm->builtins);
+    jml_hashmap_add(&core_module->globals, &vm->globals);
 }

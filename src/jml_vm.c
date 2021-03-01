@@ -37,8 +37,9 @@ jml_vm_init(jml_vm_t *vm)
 
     vm->sentinel            = sentinel;
     vm->objects             = vm->sentinel;
-    vm->external            = NULL;
+
     vm->current             = NULL;
+    vm->external            = NULL;
 
     vm->allocated           = 0;
     vm->next_gc             = 1024 * 1024 * 2;
@@ -52,6 +53,7 @@ jml_vm_init(jml_vm_t *vm)
     jml_hashmap_init(&vm->globals);
     jml_hashmap_init(&vm->strings);
     jml_hashmap_init(&vm->modules);
+    jml_hashmap_init(&vm->builtins);
 
     vm->main_string         = NULL;
     vm->module_string       = NULL;
@@ -99,7 +101,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->print_string        = jml_obj_string_copy("__print", 7);
     vm->string_string       = jml_obj_string_copy("__string", 8);
 
-    jml_core_register(&vm->globals);
+    jml_core_register(vm);
 }
 
 
@@ -109,6 +111,7 @@ jml_vm_free(jml_vm_t *vm)
     jml_hashmap_free(&vm->globals);
     jml_hashmap_free(&vm->strings);
     jml_hashmap_free(&vm->modules);
+    jml_hashmap_free(&vm->builtins);
 
     vm->main_string         = NULL;
     vm->module_string       = NULL;
@@ -133,14 +136,14 @@ jml_vm_free(jml_vm_t *vm)
     vm->print_string        = NULL;
     vm->string_string       = NULL;
 
-    vm->external            = NULL;
     vm->current             = NULL;
+    vm->external            = NULL;
 
     jml_gc_free_objs();
 
     JML_ASSERT(
         vm->allocated == 0,
-        "\n[VM]  |%zu bytes not freed|\n",
+        "%zu bytes not freed\n",
         vm->allocated
     );
 
@@ -294,17 +297,10 @@ static inline bool
 jml_vm_global_get(jml_obj_string_t *name,
     jml_value_t **value)
 {
-    static jml_hashmap_t core_functions;
-
-    if (core_functions.count == 0) {
-        jml_hashmap_init(&core_functions);
-        jml_core_register(&core_functions);
-    }
-
     if (vm->current == NULL || vm->current == (void*)1)
         return jml_hashmap_get(&vm->globals, name, value);
 
-    if (jml_hashmap_get(&core_functions, name, value))
+    if (jml_hashmap_get(&vm->builtins, name, value))
         return true;
 
     return jml_hashmap_get(&vm->current->globals, name, value);

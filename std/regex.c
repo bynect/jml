@@ -16,7 +16,6 @@
 
 
 static regex_t                      last_rule;
-static int                          last_result = -1;
 static char                        *last_string = NULL;
 
 
@@ -43,12 +42,10 @@ static char                        *last_string = NULL;
                                                         \
             if ((result = regcomp(&last_rule,           \
                 rule->chars, REG_EXTENDED)) != 0) {     \
-                last_result = result;                   \
                 goto regerr;                            \
-            } else {                                    \
-                last_result = result;                   \
+                                                        \
+            } else                                      \
                 last_string = rule->chars;              \
-            }                                           \
         }                                               \
     } while (false)
 
@@ -184,6 +181,5 @@ module_init(JML_UNUSED(jml_obj_module_t *module))
 MODULE_FUNC_HEAD
 module_free(JML_UNUSED(jml_obj_module_t *module))
 {
-    if (!last_result)
-        regfree(&last_rule);
+    regfree(&last_rule);
 }

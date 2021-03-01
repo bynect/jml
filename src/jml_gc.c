@@ -147,6 +147,7 @@ jml_gc_mark_roots(void)
 
     jml_hashmap_mark(&vm->globals);
     jml_hashmap_mark(&vm->modules);
+    jml_hashmap_mark(&vm->builtins);
 
     for (jml_compiler_t **compiler = vm->compilers;
         compiler < vm->compiler_top; ++compiler) {
@@ -177,6 +178,7 @@ jml_gc_mark_roots(void)
     jml_gc_mark_obj((jml_obj_t*)vm->print_string);
     jml_gc_mark_obj((jml_obj_t*)vm->string_string);
 
+    jml_gc_mark_obj((jml_obj_t*)vm->current);
     jml_gc_mark_obj((jml_obj_t*)vm->external);
 
     jml_gc_mark_obj(vm->sentinel);
