@@ -9,24 +9,26 @@ import glob
 import re
 
 
+def sub_command(sub, cmd) -> None:
+    sub.stdin.write(f"{cmd}\r\n".encode())
+
+
+def parse_symbols(raw: str, out_name: str) -> None:
+    str_1 = f"Dump of file {out_name}\r\n\r\nFile Type: LIBRARY\r\n\r\nArchive member name at "
+    str_2 = "Archive member name at"
+    str_3 = "correct header end\r\n\r\n    "
+    str_4 = "public symbols\r\n\r\n"
+
+    start = raw.find(str_1)
+    start = raw.find(str_3, start) + len(str_3)
+    start = raw.find(str_4, start) + len(str_4)
+    stop = raw.find(str_2, start + len(str_2)) - 4
+
+    return re.findall(r"^(?:[a-fA-F\d ]{10})(\w*)", raw[start:stop], re.M)
+
+
 def jml_defgen() -> None:
-    def sub_command(sub, cmd) -> None:
-        sub.stdin.write(f"{cmd}\r\n".encode())
-
-    def parse_symbols(raw: str, out_name: str) -> None:
-        str_1 = f"Dump of file {out_name}\r\n\r\nFile Type: LIBRARY\r\n\r\nArchive member name at "
-        str_2 = "Archive member name at"
-        str_3 = "correct header end\r\n\r\n    "
-        str_4 = "public symbols\r\n\r\n"
-
-        start = raw.find(str_1)
-        start = raw.find(str_3, start) + len(str_3)
-        start = raw.find(str_4, start) + len(str_4)
-        stop = raw.find(str_2, start + len(str_2)) - 4
-
-        return re.findall(r"^(?:[a-fA-F\d ]{10})(\w*)", raw[start:stop], re.M)
-
-    # config
+    # configuration
     src_dir = "src"
     out_dir = "lib"
     out_name = "lib\\tmpstatic.lib"

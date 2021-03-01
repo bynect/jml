@@ -4,7 +4,6 @@
 
 
 from distutils.core import setup, Extension
-import sys
 
 
 def jml_setup() -> None:
@@ -33,6 +32,7 @@ def jml_setup() -> None:
                     "src/jml_bytecode.c",
                     "src/jml_compiler.c",
                     "src/jml_core.c",
+                    "src/jml_error.c",
                     "src/jml_gc.c",
                     "src/jml_lexer.c",
                     "src/jml_module.c",

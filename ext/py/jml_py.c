@@ -68,7 +68,7 @@ jml_py_vm_eval(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &source))
         return NULL;
 
-    jml_value_t value = jml_vm_eval(source);
+    jml_value_t value = jml_vm_eval(((jml_py_vm*)self)->internal_vm, source);
 
     if (!jml_value_sentinel(value)) {
         if (IS_NUM(value))
@@ -98,7 +98,7 @@ jml_py_vm_interpret(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &source))
         return NULL;
 
-    switch (jml_vm_interpret(source)) {
+    switch (jml_vm_interpret(((jml_py_vm*)self)->internal_vm, source)) {
         case INTERPRET_OK:
             return Py_None;
 

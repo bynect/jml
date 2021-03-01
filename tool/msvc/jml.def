@@ -95,7 +95,7 @@ jml_error_types
 jml_error_value
 jml_core_register
 jml_compiler_compile
-jml_compiler_mark_roots
+jml_compiler_mark
 jml_bytecode_add_const
 jml_bytecode_disassemble
 jml_bytecode_free
