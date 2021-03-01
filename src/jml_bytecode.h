@@ -9,7 +9,6 @@
 
 
 typedef enum {
-    OP_END,
     OP_NOP,
     OP_POP,
     OP_POP_TWO,
@@ -84,7 +83,8 @@ typedef enum {
     OP_IMPORT_LOCAL,
     EXTENDED_OP(OP_IMPORT_LOCAL),
     OP_IMPORT_WILDCARD,
-    EXTENDED_OP(OP_IMPORT_WILDCARD)
+    EXTENDED_OP(OP_IMPORT_WILDCARD),
+    OP_END
 } jml_bytecode_op;
 
 

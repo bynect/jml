@@ -965,14 +965,35 @@ jml_vm_run(jml_value_t *last)
 #define DISPATCH()                  goto *dispatcher[READ_BYTE()]
 #define EXEC_OP(op)                 EXEC_OP_(op):
 
+
 #ifdef JML_TRACE_STACK
-#define END_OP()                    goto trace_stack
+
+#define END_OP_()                   goto trace_stack
+
 #else
-#define END_OP()                    DISPATCH()
+
+#define END_OP_()                   DISPATCH()
+
+#endif
+
+
+#ifdef JML_ASSERTION
+
+#define END_OP()                                        \
+    do {                                                \
+        JML_ASSERT(*pc >= OP_NOP && *pc <= OP_END,      \
+            "Out of range pc (%u)", *pc);               \
+                                                        \
+        END_OP_();                                      \
+    } while (false)
+
+#else
+
+#define END_OP()                    END_OP_()
+
 #endif
 
     static const void *dispatcher[] = {
-        TABLE_OP(OP_END),
         TABLE_OP(OP_NOP),
         TABLE_OP(OP_POP),
         TABLE_OP(OP_POP_TWO),
@@ -1047,8 +1068,11 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(OP_IMPORT_LOCAL),
         TABLE_OP(EXTENDED_OP(OP_IMPORT_LOCAL)),
         TABLE_OP(OP_IMPORT_WILDCARD),
-        TABLE_OP(EXTENDED_OP(OP_IMPORT_WILDCARD))
+        TABLE_OP(EXTENDED_OP(OP_IMPORT_WILDCARD)),
+        TABLE_OP(OP_END)
     };
+
+#undef TABLE_OP
 
     DISPATCH();
 
@@ -1089,11 +1113,6 @@ jml_vm_run(jml_value_t *last)
 #ifndef JML_COMPUTED_GOTO
         switch (instruction = READ_BYTE()) {
 #endif
-            EXEC_OP(OP_END) {
-                JML_UNREACHABLE();
-                END_OP();
-            }
-
             EXEC_OP(OP_NOP) {
                 /*nothing*/
                 END_OP();
@@ -2187,6 +2206,11 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(OP_END) {
+                JML_UNREACHABLE();
+                END_OP();
+            }
+
 #ifndef JML_COMPUTED_GOTO
             default:
                 JML_UNREACHABLE();
@@ -2207,13 +2231,15 @@ jml_vm_run(jml_value_t *last)
 
 #undef READ_STRING_EXTENDED
 #undef READ_CSTRING_EXTENDED
-#undef READ_CSTRING_EXTENDED
+#undef READ_CONST_EXTENDED
 
 #undef BINARY_OP
 #undef BINARY_DIV
 #undef BINARY_FN
 
+#undef EXEC_OP_
 #undef EXEC_OP
+#undef END_OP_
 #undef END_OP
 }
 

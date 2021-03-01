@@ -297,7 +297,7 @@ jml_bytecode_emit_return(jml_compiler_t *compiler)
 
     else if (compiler->type != FUNCTION_MAIN
         && compiler->function->bytecode.count > 0) {
-        for (int i = jml_bytecode_current(compiler)->count - 1; i >= 0; ++i) {
+        for (int i = jml_bytecode_current(compiler)->count - 1; i >= 0; --i) {
 
             if (jml_bytecode_current(compiler)->code[i] == OP_POP) {
                 jml_bytecode_current(compiler)->code[i] = OP_NOP;
