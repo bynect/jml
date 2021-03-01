@@ -148,7 +148,11 @@ jml_gc_mark_roots(void)
     jml_hashmap_mark(&vm->globals);
     jml_hashmap_mark(&vm->modules);
 
-    jml_compiler_mark_roots();
+    for (jml_compiler_t **compiler = vm->compilers;
+        compiler < vm->compiler_top; ++compiler) {
+
+        jml_compiler_mark(*compiler);
+    }
 
     jml_gc_mark_obj((jml_obj_t*)vm->main_string);
     jml_gc_mark_obj((jml_obj_t*)vm->module_string);
@@ -346,8 +350,12 @@ jml_gc_sweep(void)
     jml_obj_t *object            = vm->objects;
 
     while (object != NULL) {
-        if (object->marked || object->exempt) {
+        if (object->marked) {
             object->marked       = false;
+            previous             = object;
+            object               = object->next;
+
+        } else if (object->exempt) {
             previous             = object;
             object               = object->next;
 

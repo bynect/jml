@@ -4,7 +4,6 @@
 #include <jml.h>
 
 #include <jml_type.h>
-#include <jml_vm.h>
 #include <jml_lexer.h>
 
 
@@ -99,7 +98,7 @@ struct jml_compiler {
 };
 
 
-void jml_compiler_mark_roots(void);
+void jml_compiler_mark(jml_compiler_t *compiler);
 
 jml_obj_function_t *jml_compiler_compile(const char *source,
     jml_obj_module_t *module, bool output);

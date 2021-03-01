@@ -40,7 +40,7 @@
 #undef  JML_STEP_STACK
 #undef  JML_STRESS_GC
 #undef  JML_TRACE_GC
-#undef  JML_ROUND_GC
+#define JML_ROUND_GC
 #undef  JML_TRACE_MEM
 #undef  JML_PRINT_TOKEN
 #undef  JML_ASSERTION

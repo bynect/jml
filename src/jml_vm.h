@@ -3,6 +3,7 @@
 
 #include <jml_value.h>
 #include <jml_type.h>
+#include <jml_compiler.h>
 
 
 struct jml_vm {
@@ -51,6 +52,9 @@ struct jml_vm {
     int64_t                         gray_count;
     int64_t                         gray_capacity;
     jml_obj_t                     **gray_stack;
+
+    jml_compiler_t                 *compilers[12];
+    jml_compiler_t                 **compiler_top;
 };
 
 

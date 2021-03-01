@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <jml_compiler.h>
+#include <jml_vm.h>
 #include <jml_gc.h>
 #include <jml_util.h>
 #include <jml_string.h>
@@ -280,9 +281,14 @@ static void
 jml_compiler_init(jml_compiler_t *compiler, jml_compiler_t *enclosing,
     jml_parser_t *parser, jml_function_type type, jml_obj_module_t *module, bool output)
 {
+    if (type == FUNCTION_MAIN)
+        ++vm->compiler_top;
+
+    vm->compiler_top[-1]    = compiler;
+
     compiler->enclosing     = enclosing;
     compiler->function      = NULL;
-    compiler->type      = type;
+    compiler->type          = type;
 
     compiler->module        = module;
     compiler->parser        = parser;
@@ -315,16 +321,16 @@ jml_compiler_init(jml_compiler_t *compiler, jml_compiler_t *enclosing,
 
     jml_local_t *local      = &compiler->locals[compiler->local_count++];
     local->depth            = 0;
+    local->captured         = false;
 
     if (type == FUNCTION_METHOD || type == FUNCTION_INIT) {
         local->name.start   = "self";
         local->name.length  = 4;
+
     } else {
         local->name.start   = "";
         local->name.length  = 0;
     }
-
-    local->captured         = false;
 
     compiler->loop          = NULL;
     compiler->output        = output;
@@ -345,6 +351,11 @@ jml_compiler_end(jml_compiler_t *compiler)
             function->name != NULL ? function->name->chars : "__main");
     }
 #endif
+
+    vm->compiler_top[-1]         = compiler->enclosing;
+
+    if (compiler->type == FUNCTION_MAIN)
+        --vm->compiler_top;
 
     return function;
 }
@@ -1957,8 +1968,8 @@ jml_obj_function_t *
 jml_compiler_compile(const char *source,
     jml_obj_module_t *module, bool output)
 {
-    jml_parser_t parser;
-    jml_compiler_t compiler;
+    jml_parser_t    parser;
+    jml_compiler_t  compiler;
 
     jml_lexer_init(&parser.lexer, source);
     jml_compiler_init(&compiler, NULL, &parser,
@@ -1970,9 +1981,8 @@ jml_compiler_compile(const char *source,
     jml_parser_advance(&compiler);
     jml_parser_match_line(&compiler);
 
-    while (!jml_parser_match(&compiler, TOKEN_EOF)) {
+    while (!jml_parser_match(&compiler, TOKEN_EOF))
         jml_declaration(&compiler);
-    }
 
     jml_obj_function_t *function = jml_compiler_end(&compiler);
     return parser.w_error ? NULL : function;
@@ -1980,7 +1990,12 @@ jml_compiler_compile(const char *source,
 
 
 void
-jml_compiler_mark_roots(void)
+jml_compiler_mark(jml_compiler_t *compiler)
 {
-    /*TODO*/
+    jml_compiler_t *current = compiler;
+
+    while (current != NULL) {
+        jml_gc_mark_obj((jml_obj_t*)current->function);
+        current = current->enclosing;
+    }
 }

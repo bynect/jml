@@ -42,10 +42,12 @@ jml_vm_init(jml_vm_t *vm)
 
     vm->allocated           = 0;
     vm->next_gc             = 1024 * 1024 * 2;
-
     vm->gray_count          = 0;
     vm->gray_capacity       = 0;
     vm->gray_stack          = NULL;
+
+    vm->compilers[0]        = NULL;
+    vm->compiler_top        = vm->compilers;
 
     jml_hashmap_init(&vm->globals);
     jml_hashmap_init(&vm->strings);
