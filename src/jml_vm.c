@@ -1024,13 +1024,15 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(OP_SUPER),
         TABLE_OP(EXTENDED_OP(OP_SUPER)),
         TABLE_OP(OP_ARRAY),
+        TABLE_OP(EXTENDED_OP(OP_ARRAY)),
         TABLE_OP(OP_MAP),
+        TABLE_OP(EXTENDED_OP(OP_MAP)),
         TABLE_OP(OP_IMPORT_GLOBAL),
         TABLE_OP(EXTENDED_OP(OP_IMPORT_GLOBAL)),
         TABLE_OP(OP_IMPORT_LOCAL),
         TABLE_OP(EXTENDED_OP(OP_IMPORT_LOCAL)),
         TABLE_OP(OP_IMPORT_WILDCARD),
-        TABLE_OP(EXTENDED_OP(OP_IMPORT_WILDCARD)),
+        TABLE_OP(EXTENDED_OP(OP_IMPORT_WILDCARD))
     };
 
     DISPATCH();
@@ -1988,6 +1990,24 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(EXTENDED_OP(OP_ARRAY)) {
+                uint16_t         item_count  = READ_SHORT();
+                jml_value_t     *values      = vm->stack_top -= item_count;
+                jml_obj_array_t *array       = jml_obj_array_new();
+                jml_value_t      array_value = OBJ_VAL(array);
+                jml_gc_exempt(array_value);
+
+                for (uint16_t i = 0; i < item_count; ++i) {
+                    jml_obj_array_append(
+                        array, values[i]
+                    );
+                }
+
+                jml_gc_unexempt(array_value);
+                jml_vm_push(array_value);
+                END_OP();
+            }
+
             EXEC_OP(OP_MAP) {
                 uint8_t          item_count  = READ_BYTE();
                 jml_value_t     *values      = vm->stack_top -= item_count;
@@ -1996,6 +2016,32 @@ jml_vm_run(jml_value_t *last)
                 jml_gc_exempt(map_value);
 
                 for (uint8_t i = 0; i < item_count; i += 2) {
+                    if (!IS_STRING(values[i])) {
+                        SAVE_FRAME();
+                        jml_vm_error("DiffTypes: Map key must be a string.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    jml_hashmap_set(
+                        &map->hashmap,
+                        AS_STRING(values[i]),
+                        values[i + 1]
+                    );
+                }
+
+                jml_gc_unexempt(map_value);
+                jml_vm_push(map_value);
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_MAP)) {
+                uint16_t         item_count  = READ_SHORT();
+                jml_value_t     *values      = vm->stack_top -= item_count;
+                jml_obj_map_t   *map         = jml_obj_map_new();
+                jml_value_t      map_value   = OBJ_VAL(map);
+                jml_gc_exempt(map_value);
+
+                for (uint16_t i = 0; i < item_count; i += 2) {
                     if (!IS_STRING(values[i])) {
                         SAVE_FRAME();
                         jml_vm_error("DiffTypes: Map key must be a string.");

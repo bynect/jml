@@ -96,10 +96,20 @@ static uint32_t
 jml_bytecode_instruction_byte(const char *name,
     jml_bytecode_t *bytecode, uint32_t offset)
 {
-    uint8_t slot        = bytecode->code[offset + 1];
-    printf("%-16s %4d\n", name, slot);
-
+    printf("%-16s %4d\n", name, bytecode->code[offset + 1]);
     return offset + 2;
+}
+
+
+static uint32_t
+jml_bytecode_instruction_short(const char *name,
+    jml_bytecode_t *bytecode, uint32_t offset)
+{
+    uint16_t short1     = (uint16_t)(bytecode->code[offset + 1] << 8);
+    short1              |= bytecode->code[offset + 2];
+
+    printf("%-16s %d\n", name, short1);
+    return offset + 3;
 }
 
 
@@ -466,8 +476,14 @@ jml_bytecode_instruction_disassemble(
         case OP_ARRAY:
             return jml_bytecode_instruction_byte("OP_ARRAY", bytecode, offset);
 
+        case EXTENDED_OP(OP_ARRAY):
+            return jml_bytecode_instruction_short("OP_ARRAY_EXTENDED", bytecode, offset);
+
         case OP_MAP:
             return jml_bytecode_instruction_byte("OP_MAP", bytecode, offset);
+
+        case EXTENDED_OP(OP_MAP):
+            return jml_bytecode_instruction_short("OP_MAP_EXTENDED", bytecode, offset);
 
         case OP_IMPORT_GLOBAL:
             return jml_bytecode_instruction_consts("OP_IMPORT_GLOBAL", bytecode, offset);

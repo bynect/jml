@@ -261,6 +261,9 @@ jml_core_size(int arg_count, jml_value_t *args)
         case OBJ_ARRAY:
             return NUM_VAL(AS_ARRAY(value)->values.count);
 
+        case OBJ_MAP:
+            return NUM_VAL(AS_MAP(value)->hashmap.count);
+
         case OBJ_INSTANCE: {
             jml_obj_instance_t *instance    = AS_INSTANCE(value);
             jml_value_t         last        = NONE_VAL;

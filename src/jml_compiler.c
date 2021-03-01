@@ -9,43 +9,43 @@
 #include <jml_string.h>
 
 
-#define EMIT_EXTENDED_OP1(compiler, op1, op2, b)        \
+#define EMIT_EXTENDED_OP1(compiler, o1, o2, b1)         \
     do {                                                \
-        if (b > UINT8_MAX) {                            \
-            jml_bytecode_emit_byte(compiler, op2);      \
+        if (b1 > UINT8_MAX) {                           \
+            jml_bytecode_emit_byte(compiler, o2);       \
             jml_bytecode_emit_bytes(compiler,           \
-                (b >> 8) & 0xff, b & 0xff);             \
+                (b1 >> 8) & 0xff, b1 & 0xff);           \
         } else                                          \
-            jml_bytecode_emit_bytes(compiler, op1, b);  \
+            jml_bytecode_emit_bytes(compiler, o1, b1);  \
     } while (false)
 
 
-#define EMIT_EXTENDED_OP2(compiler, op1, op2, b, b2)    \
+#define EMIT_EXTENDED_OP2(compiler, o1, o2, b1, b2)     \
     do {                                                \
-        if (b > UINT8_MAX || b2 > UINT8_MAX) {          \
+        if (b1 > UINT8_MAX || b2 > UINT8_MAX) {         \
                                                         \
-            jml_bytecode_emit_byte(compiler, op2);      \
+            jml_bytecode_emit_byte(compiler, o2);       \
             jml_bytecode_emit_bytes(compiler,           \
-                (b >> 8) & 0xff, b & 0xff);             \
+                (b1 >> 8) & 0xff, b1 & 0xff);           \
                                                         \
             jml_bytecode_emit_bytes(compiler,           \
                 (b2 >> 8) & 0xff, b2 & 0xff);           \
         } else {                                        \
-            jml_bytecode_emit_bytes(compiler, op1, b);  \
+            jml_bytecode_emit_bytes(compiler, o1, b1);  \
             jml_bytecode_emit_byte(compiler, b2);       \
         }                                               \
     } while (false)
 
 
-#define EMIT_EXTENDED_OP3(compiler, op1, op2, b, b2, b3)\
+#define EMIT_EXTENDED_OP3(compiler, o1, o2, b1, b2, b3) \
     do {                                                \
-        if (b > UINT8_MAX                               \
+        if (b1 > UINT8_MAX                              \
             || b2 > UINT8_MAX                           \
             || b3 > UINT8_MAX) {                        \
                                                         \
-            jml_bytecode_emit_byte(compiler, op2);      \
+            jml_bytecode_emit_byte(compiler, o2);       \
             jml_bytecode_emit_bytes(compiler,           \
-                (b >> 8) & 0xff, b & 0xff);             \
+                (b1 >> 8) & 0xff, b1 & 0xff);           \
                                                         \
             jml_bytecode_emit_bytes(compiler,           \
                 (b2 >> 8) & 0xff, b2 & 0xff);           \
@@ -53,7 +53,7 @@
             jml_bytecode_emit_bytes(compiler,           \
                 (b3 >> 8) & 0xff, b3 & 0xff);           \
         } else {                                        \
-            jml_bytecode_emit_bytes(compiler, op1, b);  \
+            jml_bytecode_emit_bytes(compiler, o1, b1);  \
             jml_bytecode_emit_bytes(compiler, b2, b3);  \
         }                                               \
     } while (false)
@@ -1068,16 +1068,16 @@ jml_array(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 {
     jml_parser_match_line(compiler);
 
-    uint8_t item_count = 0;
+    uint16_t item_count = 0;
     if (!jml_parser_check(compiler->parser, TOKEN_RSQARE)) {
         do {
             jml_parser_match_line(compiler);
             jml_expression(compiler);
 
-            if (item_count == 255) {
+            if (item_count == 65535) {
                 jml_parser_error(
                     compiler,
-                    "Can't have more than 255 items in an array."
+                    "Can't have more than 65535 items in an array."
                 );
             }
 
@@ -1088,7 +1088,10 @@ jml_array(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 
     jml_parser_match_line(compiler);
     jml_parser_consume(compiler, TOKEN_RSQARE, "Expect ']' after array.");
-    jml_bytecode_emit_bytes(compiler, OP_ARRAY, item_count);
+
+    EMIT_EXTENDED_OP1(
+        compiler, OP_ARRAY, OP_ARRAY_EXTENDED, item_count
+    );
 }
 
 
@@ -1097,7 +1100,7 @@ jml_map(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 {
     jml_parser_match_line(compiler);
 
-    uint8_t item_count = 0;
+    uint16_t item_count = 0;
     if (!jml_parser_check(compiler->parser, TOKEN_RBRACE)) {
         do {
             jml_parser_match_line(compiler);
@@ -1111,10 +1114,10 @@ jml_map(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
             jml_parser_match_line(compiler);
             jml_expression(compiler);
 
-            if (item_count == 254) {
+            if (item_count == 65534) {
                 jml_parser_error(
                     compiler,
-                    "Can't have more than 254 items in map."
+                    "Can't have more than 65534 items in map."
                 );
             }
 
@@ -1125,7 +1128,10 @@ jml_map(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 
     jml_parser_match_line(compiler);
     jml_parser_consume(compiler, TOKEN_RBRACE, "Expect '}' after map.");
-    jml_bytecode_emit_bytes(compiler, OP_MAP, item_count);
+
+    EMIT_EXTENDED_OP1(
+        compiler, OP_MAP, OP_MAP_EXTENDED, item_count
+    );
 }
 
 
