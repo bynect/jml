@@ -57,13 +57,13 @@ jml_std_fs_dir_init(int arg_count, jml_value_t *args)
     if (exc != NULL)
         goto err;
 
-    if (!IS_STRING(args[1])) {
+    if (!IS_STRING(args[0])) {
         exc = jml_error_types(false, 1, "string");
         goto err;
     }
 
-    jml_obj_instance_t  *self   = AS_INSTANCE(args[0]);
-    const char          *name   = AS_CSTRING(args[1]);
+    jml_obj_instance_t  *self   = AS_INSTANCE(args[1]);
+    const char          *name   = AS_CSTRING(args[0]);
 
     if (!jml_file_isdir(name)) {
         exc = jml_obj_exception_new(
@@ -88,7 +88,8 @@ jml_std_fs_dir_init(int arg_count, jml_value_t *args)
 
     self->extra                 = internal;
 
-    jml_hashmap_set(&self->fields, name_string, args[1]);
+    jml_hashmap_set(&self->fields, name_string, args[0]);
+
     return NONE_VAL;
 
 err:
@@ -357,7 +358,8 @@ typedef struct {
 
 
 static jml_std_fs_file_t *
-jml_std_fs_file_internal_init(const char *name, FILE *handle, jml_file_mode mode)
+jml_std_fs_file_internal_init(const char *name,
+    FILE *handle, jml_file_mode mode)
 {
     jml_std_fs_file_t *internal = jml_alloc(sizeof(jml_std_fs_file_t));
 
@@ -379,14 +381,14 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
     if (exc != NULL)
         goto err;
 
-    if (!IS_STRING(args[1]) || !IS_STRING(args[2])) {
+    if (!IS_STRING(args[0]) || !IS_STRING(args[1])) {
         exc = jml_error_types(false, 2, "string", "string");
         goto err;
     }
 
-    jml_obj_instance_t  *self   = AS_INSTANCE(args[0]);
-    const char          *name   = AS_CSTRING(args[1]);
-    jml_obj_string_t    *mode   = AS_STRING(args[2]);
+    jml_obj_instance_t  *self   = AS_INSTANCE(args[2]);
+    const char          *name   = AS_CSTRING(args[0]);
+    jml_obj_string_t    *mode   = AS_STRING(args[1]);
     jml_file_mode       open_mode;
 
     if ((open_mode = jml_std_fs_file_open_mode(mode)) == INVALID) {
@@ -418,8 +420,9 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
     self->extra                 = internal;
     fseek(internal->handle, 0, SEEK_SET);
 
-    jml_hashmap_set(&self->fields, mode_string, args[2]);
-    jml_hashmap_set(&self->fields, name_string, args[1]);
+    jml_hashmap_set(&self->fields, mode_string, args[1]);
+    jml_hashmap_set(&self->fields, name_string, args[0]);
+
     return NONE_VAL;
 
 err:

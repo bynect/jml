@@ -140,7 +140,7 @@ jml_vm_free(jml_vm_t *vm)
 
     JML_ASSERT(
         vm->allocated == 0,
-        "[VM]  |%zu bytes not freed|\n",
+        "\n[VM]  |%zu bytes not freed|\n",
         vm->allocated
     );
 
@@ -344,8 +344,7 @@ jml_vm_global_pop(jml_obj_string_t *name,
 
 
 static bool
-jml_vm_call(jml_obj_closure_t *closure,
-    int arg_count)
+jml_vm_call(jml_obj_closure_t *closure, int arg_count)
 {
     if (arg_count < closure->function->arity) {
         jml_vm_error(
@@ -403,9 +402,25 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
                 if (jml_hashmap_get(&klass->methods, vm->init_string, &initializer)) {
                     if (IS_CFUNCTION(*initializer)) {
-                        bool result = jml_vm_call_value(*initializer, arg_count + 1);
                         jml_vm_push(instance);
-                        return result;
+                        ++arg_count;
+
+                        jml_obj_cfunction_t *cfunction_obj  = AS_CFUNCTION(*initializer);
+                        jml_cfunction        cfunction      = cfunction_obj->function;
+                        jml_value_t          result         = cfunction(
+                            arg_count, vm->stack_top - arg_count);
+
+                        vm->stack_top -= arg_count + 1;
+
+                        if (IS_EXCEPTION(result)) {
+                            vm->external = cfunction_obj;
+                            jml_vm_exception(AS_EXCEPTION(result));
+                            return false;
+
+                        } else {
+                            jml_vm_push(instance);
+                            return true;
+                        }
 
                     } else
                         return jml_vm_call(AS_CLOSURE(*initializer), arg_count);
@@ -1789,7 +1804,9 @@ jml_vm_run(jml_value_t *last)
                 if (IS_MAP(box)) {
                     if (!IS_STRING(index)) {
                         SAVE_FRAME();
-                        jml_vm_error("DiffTypes: Maps can be indexed only by strings.");
+                        jml_vm_error(
+                            "DiffTypes: Maps can be indexed only by strings."
+                        );
                         return INTERPRET_RUNTIME_ERROR;
                     }
 
@@ -1800,7 +1817,9 @@ jml_vm_run(jml_value_t *last)
                 } else if (IS_ARRAY(box)) {
                     if (!IS_NUM(index)) {
                         SAVE_FRAME();
-                        jml_vm_error("DiffTypes: Arrays can be indexed only by numbers.");
+                        jml_vm_error(
+                            "DiffTypes: Arrays can be indexed only by numbers."
+                        );
                         return INTERPRET_RUNTIME_ERROR;
                     }
 
@@ -1809,7 +1828,9 @@ jml_vm_run(jml_value_t *last)
 
                     if (num_index >= array.count || num_index < -array.count) {
                         SAVE_FRAME();
-                        jml_vm_error("RangeErr: Out of bounds assignment to array.");
+                        jml_vm_error(
+                            "RangeErr: Out of bounds assignment to array."
+                        );
                         return INTERPRET_RUNTIME_ERROR;
 
                     }
@@ -1834,7 +1855,9 @@ jml_vm_run(jml_value_t *last)
 
                 } else {
                     SAVE_FRAME();
-                    jml_vm_error("DiffTypes: Can index only arrays, maps and instances.");
+                    jml_vm_error(
+                        "DiffTypes: Can index only arrays, maps and instances."
+                    );
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1852,7 +1875,9 @@ jml_vm_run(jml_value_t *last)
                 if (IS_MAP(box)) {
                     if (!IS_STRING(index)) {
                         SAVE_FRAME();
-                        jml_vm_error("DiffTypes: Maps can be indexed only by strings.");
+                        jml_vm_error(
+                            "DiffTypes: Maps can be indexed only by strings."
+                        );
                         return INTERPRET_RUNTIME_ERROR;
                     }
 
@@ -1865,7 +1890,9 @@ jml_vm_run(jml_value_t *last)
                 } else if (IS_ARRAY(box)) {
                     if (!IS_NUM(index)) {
                         SAVE_FRAME();
-                        jml_vm_error("DiffTypes: Arrays can be indexed only by numbers.");
+                        jml_vm_error(
+                            "DiffTypes: Arrays can be indexed only by numbers."
+                        );
                         return INTERPRET_RUNTIME_ERROR;
                     }
 
@@ -1894,7 +1921,9 @@ jml_vm_run(jml_value_t *last)
 
                 } else {
                     SAVE_FRAME();
-                    jml_vm_error("DiffTypes: Can index only arrays, maps and instances.");
+                    jml_vm_error(
+                        "DiffTypes: Can index only arrays, maps and instances."
+                    );
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -1910,7 +1939,9 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t value;
                 if (!jml_vm_global_pop(old_name, &value)) {
                     SAVE_FRAME();
-                    jml_vm_error("UndefErr: Undefined variable '%s'.", old_name->chars);
+                    jml_vm_error(
+                        "UndefErr: Undefined variable '%s'.", old_name->chars
+                    );
                     return INTERPRET_RUNTIME_ERROR;
 
                 } else if (jml_string_equal(old_name, new_name)) {

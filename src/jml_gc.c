@@ -275,8 +275,23 @@ jml_gc_free_object(jml_obj_t *object)
         case OBJ_INSTANCE: {
             jml_obj_instance_t *instance = (jml_obj_instance_t*)object;
 
-            if (vm->free_string != NULL)
-                jml_vm_invoke_cstack(instance, vm->free_string, 0, NULL);
+            if (vm->free_string != NULL) {
+                jml_value_t *destructor;
+                if (jml_hashmap_get(&instance->klass->methods,
+                    vm->free_string, &destructor)) {
+
+                    if (IS_CFUNCTION(*destructor)) {
+                        jml_vm_push(OBJ_VAL(*destructor));
+                        jml_vm_push(OBJ_VAL(instance));
+
+                        jml_vm_call_value(*destructor, 1);
+                        jml_vm_pop();
+
+                    } else {
+                        /*jml_vm_call_cstack(*destructor, 0, NULL);*/
+                    }
+                }
+            }
 
             instance->extra = NULL;
             jml_hashmap_free(&instance->fields);
@@ -299,7 +314,7 @@ jml_gc_free_object(jml_obj_t *object)
         case OBJ_CLOSURE: {
             jml_obj_closure_t *closure = (jml_obj_closure_t*)object;
             FREE_ARRAY(jml_obj_upvalue_t*, closure->upvalues, closure->upvalue_count);
-            FREE(jml_obj_upvalue_t, object);
+            FREE(jml_obj_closure_t, object);
             break;
         }
 

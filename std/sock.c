@@ -74,15 +74,15 @@ jml_std_sock_socket_init(int arg_count, jml_value_t *args)
     if (exc != NULL)
         goto err;
 
-    if (!IS_NUM(args[1]) || !IS_NUM(args[2])) {
+    if (!IS_NUM(args[0]) || !IS_NUM(args[1])) {
         return OBJ_VAL(jml_error_types(
             false, 2, "number", "number"
         ));
     }
 
-    jml_obj_instance_t  *self   = AS_INSTANCE(args[0]);
-    int                  domain = AS_NUM(args[1]);
-    int                  type   = AS_NUM(args[2]);
+    jml_obj_instance_t  *self   = AS_INSTANCE(args[2]);
+    int                  domain = AS_NUM(args[0]);
+    int                  type   = AS_NUM(args[1]);
     int                  fd     = -1;
 
     if ((fd = socket(domain, type, 0)) < 0) {
@@ -97,8 +97,9 @@ jml_std_sock_socket_init(int arg_count, jml_value_t *args)
 
     self->extra = internal;
 
-    jml_hashmap_set(&self->fields, domain_string, args[1]);
-    jml_hashmap_set(&self->fields, type_string, args[2]);
+    jml_hashmap_set(&self->fields, domain_string, args[0]);
+    jml_hashmap_set(&self->fields, type_string, args[1]);
+
     return NONE_VAL;
 
 err:

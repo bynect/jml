@@ -56,12 +56,13 @@
 
 #define JML_ASSERT(condition, format, ...)              \
     do {                                                \
-        if (!condition) {                               \
+        if (!(condition)) {                             \
             fprintf(                                    \
                 stderr,                                 \
                 "[%s:%d] Assertion failed in %s: ",     \
                 __FILE__, __LINE__, __func__            \
             );                                          \
+                                                        \
             fprintf(                                    \
                 stderr,                                 \
                 format, __VA_ARGS__                     \
