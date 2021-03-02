@@ -9,52 +9,58 @@
 #include <jml_string.h>
 
 
-#define EMIT_EXTENDED_OP1(compiler, o1, o2, b1)         \
+#define EMIT_SHORT(compiler, s)                         \
+    jml_bytecode_emit_bytes(compiler, (s >> 8) & 0xff, s & 0xff)
+
+
+#define EMIT_LONG(compiler, l)                          \
     do {                                                \
-        if (b1 > UINT8_MAX) {                           \
-            jml_bytecode_emit_byte(compiler, o2);       \
-            jml_bytecode_emit_bytes(compiler,           \
-                (b1 >> 8) & 0xff, b1 & 0xff);           \
-        } else                                          \
-            jml_bytecode_emit_bytes(compiler, o1, b1);  \
+        jml_bytecode_emit_bytes(compiler,               \
+            (l >> 24) & 0xff, (l >> 16) & 0xff);        \
+                                                        \
+        jml_bytecode_emit_bytes(compiler,               \
+            (l >> 8) & 0xff, l & 0xff);                 \
     } while (false)
 
 
-#define EMIT_EXTENDED_OP2(compiler, o1, o2, b1, b2)     \
+#define EMIT_EXTENDED_OP1(compiler, o1, o2, a1)         \
     do {                                                \
-        if (b1 > UINT8_MAX || b2 > UINT8_MAX) {         \
-                                                        \
+        if (a1 > UINT8_MAX) {                           \
             jml_bytecode_emit_byte(compiler, o2);       \
-            jml_bytecode_emit_bytes(compiler,           \
-                (b1 >> 8) & 0xff, b1 & 0xff);           \
+            EMIT_SHORT(compiler, a1);                   \
                                                         \
-            jml_bytecode_emit_bytes(compiler,           \
-                (b2 >> 8) & 0xff, b2 & 0xff);           \
+        } else                                          \
+            jml_bytecode_emit_bytes(compiler, o1, a1);  \
+    } while (false)
+
+
+#define EMIT_EXTENDED_OP2(compiler, o1, o2, a1, a2)     \
+    do {                                                \
+        if (a1 > UINT8_MAX || a2 > UINT8_MAX) {         \
+            jml_bytecode_emit_byte(compiler, o2);       \
+            EMIT_SHORT(compiler, a1);                   \
+            EMIT_SHORT(compiler, a2);                   \
+                                                        \
         } else {                                        \
-            jml_bytecode_emit_bytes(compiler, o1, b1);  \
-            jml_bytecode_emit_byte(compiler, b2);       \
+            jml_bytecode_emit_bytes(compiler, o1, a1);  \
+            jml_bytecode_emit_byte(compiler, a2);       \
         }                                               \
     } while (false)
 
 
-#define EMIT_EXTENDED_OP3(compiler, o1, o2, b1, b2, b3) \
+#define EMIT_EXTENDED_OP3(compiler, o1, o2, a1, a2, a3) \
     do {                                                \
-        if (b1 > UINT8_MAX                              \
-            || b2 > UINT8_MAX                           \
-            || b3 > UINT8_MAX) {                        \
-                                                        \
+        if (a1 > UINT8_MAX                              \
+            || a2 > UINT8_MAX                           \
+            || a3 > UINT8_MAX) {                        \
             jml_bytecode_emit_byte(compiler, o2);       \
-            jml_bytecode_emit_bytes(compiler,           \
-                (b1 >> 8) & 0xff, b1 & 0xff);           \
+            EMIT_SHORT(compiler, a1);                   \
+            EMIT_SHORT(compiler, a2);                   \
+            EMIT_SHORT(compiler, a3);                   \
                                                         \
-            jml_bytecode_emit_bytes(compiler,           \
-                (b2 >> 8) & 0xff, b2 & 0xff);           \
-                                                        \
-            jml_bytecode_emit_bytes(compiler,           \
-                (b3 >> 8) & 0xff, b3 & 0xff);           \
         } else {                                        \
-            jml_bytecode_emit_bytes(compiler, o1, b1);  \
-            jml_bytecode_emit_bytes(compiler, b2, b3);  \
+            jml_bytecode_emit_bytes(compiler, o1, a1);  \
+            jml_bytecode_emit_bytes(compiler, a2, a3);  \
         }                                               \
     } while (false)
 
@@ -254,13 +260,12 @@ jml_bytecode_emit_loop(jml_compiler_t *compiler, int start)
 {
     jml_bytecode_emit_byte(compiler, OP_LOOP);
 
-    int offset = jml_bytecode_current(compiler)->count - start + 2;
+    int32_t offset = jml_bytecode_current(compiler)->count - start + 2;
 
     if (offset > UINT16_MAX)
         jml_parser_error(compiler, "Loop body too large.");
 
-    jml_bytecode_emit_byte(compiler, (offset >> 8) & 0xff);
-    jml_bytecode_emit_byte(compiler, offset & 0xff);
+    EMIT_SHORT(compiler, offset);
 }
 
 
@@ -268,8 +273,7 @@ static int
 jml_bytecode_emit_jump(jml_compiler_t *compiler, uint8_t instruction)
 {
     jml_bytecode_emit_byte(compiler, instruction);
-    jml_bytecode_emit_byte(compiler, 0xff);
-    jml_bytecode_emit_byte(compiler, 0xff);
+    jml_bytecode_emit_bytes(compiler, 0xff, 0xff);
 
     return jml_bytecode_current(compiler)->count - 2;
 }
@@ -594,7 +598,7 @@ jml_loop_end(jml_compiler_t *compiler)
         int count = jml_bytecode_current(compiler)->count;
 
         for (int i = loop->body; i < count; ) {
-            if (jml_bytecode_current(compiler)->code[i] == UINT8_MAX) {
+            if (jml_bytecode_current(compiler)->code[i] == UINT8_MAX >> 1) {
                 jml_bytecode_current(compiler)->code[i] = OP_JUMP;
                 jml_bytecode_patch_jump(compiler, i + 1);
                 i += 3;
@@ -1977,7 +1981,7 @@ jml_break_statement(jml_compiler_t *compiler)
     }
 
     /*placeholder*/
-    jml_bytecode_emit_jump(compiler, UINT8_MAX);
+    jml_bytecode_emit_jump(compiler, UINT8_MAX >> 1);
 }
 
 

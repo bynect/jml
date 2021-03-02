@@ -811,6 +811,8 @@ jml_vm_run(jml_value_t *last)
 
 #define READ_BYTE()                 (*pc++)
 #define READ_SHORT()                (pc += 2, (uint16_t)((pc[-2] << 8) | pc[-1]))
+#define READ_LONG()                                     \
+    (pc += 4, (uint32_t)((pc[-4] << 24) | (pc[-3] << 16) | (pc[-2] << 8) | pc[-1]))
 
 #define READ_STRING()               AS_STRING(READ_CONST())
 #define READ_CSTRING()              AS_CSTRING(READ_CONST())
@@ -2198,6 +2200,7 @@ jml_vm_run(jml_value_t *last)
 
 #undef READ_BYTE
 #undef READ_SHORT
+#undef READ_LONG
 
 #undef READ_STRING
 #undef READ_CSTRING

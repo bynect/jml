@@ -54,7 +54,7 @@ struct jml_vm {
     int64_t                         gray_capacity;
     jml_obj_t                     **gray_stack;
 
-    jml_compiler_t                 *compilers[12];
+    jml_compiler_t                 *compilers[4];
     jml_compiler_t                 **compiler_top;
 };
 

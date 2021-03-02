@@ -364,7 +364,7 @@ jml_obj_instance_stringify(jml_obj_instance_t *instance)
                 jml_vm_push(OBJ_VAL(instance));
 
                 jml_vm_call_value(*str, 1);
-                return jml_obj_stringify(jml_vm_pop());
+                return jml_value_stringify(jml_vm_pop());
 
             } else {
                 /*jml_vm_call_cstack(*str, 0, NULL);*/
