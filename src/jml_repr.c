@@ -160,14 +160,31 @@ jml_obj_print(jml_value_t value)
         case OBJ_INSTANCE: {
             jml_obj_instance_t *instance    = AS_INSTANCE(value);
 
-            if (!jml_vm_invoke_cstack(instance, vm->print_string, 0, NULL)) {
-                printf("<instance of ");
+            if (vm->print_string != NULL) {
+                jml_value_t *print;
+                if (jml_hashmap_get(&instance->klass->methods,
+                    vm->print_string, &print)) {
 
-                if (instance->klass->module != NULL)
-                    printf("%s.", instance->klass->module->name->chars);
+                    if (IS_CFUNCTION(*print)) {
+                        jml_vm_push(OBJ_VAL(*print));
+                        jml_vm_push(OBJ_VAL(instance));
 
-                printf("%s>", instance->klass->name->chars);
+                        jml_vm_call_value(*print, 1);
+                        jml_vm_pop();
+                        break;
+
+                    } else {
+                        /*jml_vm_call_cstack(*print, 0, NULL);*/
+                    }
+                }
             }
+
+            printf("<instance of ");
+
+            if (instance->klass->module != NULL)
+                printf("%s.", instance->klass->module->name->chars);
+
+            printf("%s>", instance->klass->name->chars);
             break;
         }
 
@@ -337,10 +354,23 @@ jml_obj_class_stringify(jml_obj_class_t *klass)
 static char *
 jml_obj_instance_stringify(jml_obj_instance_t *instance)
 {
-    jml_value_t last = NONE_VAL;
+    if (vm->str_string != NULL) {
+        jml_value_t *str;
+        if (jml_hashmap_get(&instance->klass->methods,
+            vm->str_string, &str)) {
 
-    if (jml_vm_invoke_cstack(instance, vm->str_string, 0, &last))
-        return jml_obj_stringify(last);
+            if (IS_CFUNCTION(*str)) {
+                jml_vm_push(OBJ_VAL(*str));
+                jml_vm_push(OBJ_VAL(instance));
+
+                jml_vm_call_value(*str, 1);
+                return jml_obj_stringify(jml_vm_pop());
+
+            } else {
+                /*jml_vm_call_cstack(*str, 0, NULL);*/
+            }
+        }
+    }
 
     size_t size = instance->klass->name->length * GC_HEAP_GROW_FACTOR;
     char *buffer = jml_realloc(NULL, size);

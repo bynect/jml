@@ -1703,6 +1703,7 @@ jml_class_declaration(jml_compiler_t *compiler)
                 compiler,
                 "Expect method declaration."
             );
+            break;
         }
     }
 
