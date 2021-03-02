@@ -1261,6 +1261,9 @@ jml_variable_named(jml_compiler_t *compiler,
 
             jml_bytecode_emit_byte(compiler, OP_NONE);
 
+            if (jml_identifier_equal(&name, &compiler->parser->previous))
+                jml_parser_error(compiler, "Can't swap variable to itself.");
+
             if (get_op == OP_GET_GLOBAL) {
                 uint16_t new_arg = jml_identifier_const(compiler, &compiler->parser->previous);
                 EMIT_EXTENDED_OP2(

@@ -24,8 +24,10 @@
         double num1 = AS_NUM(args[0]);                  \
         double num2 = AS_NUM(args[1]);                  \
                                                         \
-        if ((num1 >= INT64_MAX || num1 < INT64_MIN)     \
-            ||(num2 >= INT64_MAX || num2 < INT64_MIN)) {\
+        if ((num1 > (double)INT64_MAX                   \
+            || num1 < (double)INT64_MIN)                \
+            ||(num2 > (double)INT64_MAX                 \
+            || num2 < (double)INT64_MIN)) {             \
                                                         \
             exc = jml_error_value("number");            \
             goto err;                                   \
@@ -61,7 +63,7 @@ jml_std_bit_not(int arg_count, jml_value_t *args)
 
     double num = AS_NUM(args[0]);
 
-    if ((num >= INT64_MAX || num < INT64_MIN)) {
+    if (num > (double)INT64_MAX || num < (double)INT64_MIN) {
         exc = jml_error_value("number");
         goto err;
     }

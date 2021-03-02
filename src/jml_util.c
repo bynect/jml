@@ -257,12 +257,17 @@ jml_file_read(const char *path)
     rewind(file);
 
     char *buffer = jml_realloc(NULL, size + 1);
-    if (buffer == NULL)
+    if (buffer == NULL) {
+        fclose(file);
         return NULL;
+    }
 
     size_t read = fread(buffer, sizeof(char), size, file);
-    if (read < size)
+    if (read < size) {
+        fclose(file);
+        jml_free(buffer);
         return NULL;
+    }
 
     buffer[read] = '\0';
     fclose(file);

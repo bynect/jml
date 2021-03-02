@@ -149,6 +149,7 @@ jml_std_sock_socket_open(int arg_count, jml_value_t *args)
         goto err;
     }
 
+    internal->fd                = fd;
     internal->domain            = domain;
     internal->type              = type;
     internal->open              = true;
@@ -292,6 +293,9 @@ jml_std_sock_socket_accept(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc    = jml_error_args(
         arg_count - 1, 0);
+
+    if (exc != NULL)
+        goto err;
 
     jml_obj_instance_t *self    = AS_INSTANCE(args[0]);
     jml_std_sock_socket_t *internal;

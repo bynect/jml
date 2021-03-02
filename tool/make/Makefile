@@ -65,6 +65,7 @@ ifdef LINK_STD
 	LSHARED+=-Llib -ljml
 endif
 
+
 all: prelude
 
 all: $(TARGET_BIN) $(TARGET_LIB) $(TARGET_SO)

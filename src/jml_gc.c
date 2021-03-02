@@ -176,7 +176,7 @@ jml_gc_mark_roots(void)
     jml_gc_mark_obj((jml_obj_t*)vm->set_string);
     jml_gc_mark_obj((jml_obj_t*)vm->size_string);
     jml_gc_mark_obj((jml_obj_t*)vm->print_string);
-    jml_gc_mark_obj((jml_obj_t*)vm->string_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->str_string);
 
     jml_gc_mark_obj((jml_obj_t*)vm->current);
     jml_gc_mark_obj((jml_obj_t*)vm->external);
@@ -341,13 +341,12 @@ jml_gc_free_object(jml_obj_t *object)
 void
 jml_gc_free_objs(void)
 {
-    jml_obj_t *object           = vm->objects;
+    jml_obj_t *object           = vm->objects->next;
 
     while (object != NULL) {
         jml_obj_t *next         = object->next;
 
-        if (object != vm->sentinel
-            && object != (jml_obj_t*)vm->free_string)
+        if (object != (jml_obj_t*)vm->free_string)
             jml_gc_free_object(object);
 
         object                  = next;

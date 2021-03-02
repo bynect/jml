@@ -97,6 +97,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc;
     int result;
+
     REGEX_CHECK(exc, arg_count, args, 2, "string", "string");
 
     jml_obj_string_t *rule          = AS_STRING(args[0]);
@@ -123,7 +124,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
             matches = jml_realloc(matches, max_match * sizeof(regmatch_t));
         }
 
-        if ((result = regexec(&last_rule, current, max_match, matches, 0)))
+        if (regexec(&last_rule, current, max_match, matches, 0))
             break;
 
         int groups  = 0;

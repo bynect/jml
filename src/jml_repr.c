@@ -339,7 +339,7 @@ jml_obj_instance_stringify(jml_obj_instance_t *instance)
 {
     jml_value_t last = NONE_VAL;
 
-    if (jml_vm_invoke_cstack(instance, vm->string_string, 0, &last))
+    if (jml_vm_invoke_cstack(instance, vm->str_string, 0, &last))
         return jml_obj_stringify(last);
 
     size_t size = instance->klass->name->length * GC_HEAP_GROW_FACTOR;

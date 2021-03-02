@@ -41,7 +41,7 @@ struct jml_vm {
     jml_obj_string_t               *set_string;
     jml_obj_string_t               *size_string;
     jml_obj_string_t               *print_string;
-    jml_obj_string_t               *string_string;
+    jml_obj_string_t               *str_string;
 
     jml_obj_module_t               *current;
     jml_obj_cfunction_t            *external;

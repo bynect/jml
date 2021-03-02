@@ -76,7 +76,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->set_string          = NULL;
     vm->size_string         = NULL;
     vm->print_string        = NULL;
-    vm->string_string       = NULL;
+    vm->str_string          = NULL;
 
     vm->main_string         = jml_obj_string_copy("__main", 6);
     vm->module_string       = jml_obj_string_copy("__module", 8);
@@ -99,7 +99,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->set_string          = jml_obj_string_copy("__set", 5);
     vm->size_string         = jml_obj_string_copy("__size", 6);
     vm->print_string        = jml_obj_string_copy("__print", 7);
-    vm->string_string       = jml_obj_string_copy("__string", 8);
+    vm->str_string          = jml_obj_string_copy("__str", 5);
 
     jml_core_register(vm);
 }
@@ -134,7 +134,7 @@ jml_vm_free(jml_vm_t *vm)
     vm->set_string          = NULL;
     vm->size_string         = NULL;
     vm->print_string        = NULL;
-    vm->string_string       = NULL;
+    vm->str_string          = NULL;
 
     vm->current             = NULL;
     vm->external            = NULL;
@@ -673,16 +673,6 @@ jml_string_concatenate(void)
 }
 
 
-static bool
-jml_string_equal(jml_obj_string_t *string1,
-    jml_obj_string_t *string2)
-{
-    return (string1->length == string2->length)
-        && (strncmp(string1->chars, string2->chars,
-            string1->length) == 0);
-}
-
-
 static jml_obj_array_t *
 jml_array_copy(jml_obj_array_t *array)
 {
@@ -978,7 +968,7 @@ jml_vm_run(jml_value_t *last)
 #define END_OP()                                        \
     do {                                                \
         JML_ASSERT(*pc >= OP_NOP && *pc <= OP_END,      \
-            "Out of range pc (%u)", *pc);               \
+            "Out of range op (%u)", *pc);               \
                                                         \
         END_OP_();                                      \
     } while (false)
@@ -1685,7 +1675,7 @@ jml_vm_run(jml_value_t *last)
                 } else {
                     SAVE_FRAME();
                     jml_vm_error(
-                        "SyntaxErr: Only instances and modules have properties."
+                        "DiffTypes: Only instances and modules have properties."
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1720,7 +1710,7 @@ jml_vm_run(jml_value_t *last)
                 } else {
                     SAVE_FRAME();
                     jml_vm_error(
-                        "SyntaxErr: Only instances and modules have properties."
+                        "DiffTypes: Only instances and modules have properties."
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1762,7 +1752,7 @@ jml_vm_run(jml_value_t *last)
                 } else {
                     SAVE_FRAME();
                     jml_vm_error(
-                        "SyntaxErr: Only instances and modules have properties."
+                        "DiffTypes: Only instances and modules have properties."
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1804,7 +1794,7 @@ jml_vm_run(jml_value_t *last)
                 } else {
                     SAVE_FRAME();
                     jml_vm_error(
-                        "SyntaxErr: Only instances and modules have properties."
+                        "DiffTypes: Only instances and modules have properties."
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1958,12 +1948,6 @@ jml_vm_run(jml_value_t *last)
                         "UndefErr: Undefined variable '%s'.", old_name->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
-
-                } else if (jml_string_equal(old_name, new_name)) {
-                    jml_vm_global_set(old_name, value);
-                    SAVE_FRAME();
-                    jml_vm_error("SyntaxErr: Can't swap variable to itself.");
-                    return INTERPRET_RUNTIME_ERROR;
                 }
 
                 jml_vm_global_set(new_name, value);
@@ -1978,12 +1962,6 @@ jml_vm_run(jml_value_t *last)
                 if (!jml_vm_global_pop(old_name, &value)) {
                     SAVE_FRAME();
                     jml_vm_error("UndefErr: Undefined variable '%s'.", old_name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
-
-                } else if (jml_string_equal(old_name, new_name)) {
-                    jml_vm_global_set(old_name, value);
-                    SAVE_FRAME();
-                    jml_vm_error("SyntaxErr: Can't swap variable to itself.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
