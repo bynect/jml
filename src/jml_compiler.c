@@ -1644,7 +1644,7 @@ jml_method(jml_compiler_t *compiler)
 
     jml_function(compiler, type);
     EMIT_EXTENDED_OP1(
-        compiler, OP_METHOD, EXTENDED_OP(OP_METHOD), constant
+        compiler, OP_CLASS_FIELD, EXTENDED_OP(OP_CLASS_FIELD), constant
     );
 }
 
@@ -1655,9 +1655,9 @@ jml_class_declaration(jml_compiler_t *compiler)
     jml_parser_match_line(compiler);
 
     jml_parser_consume(compiler, TOKEN_NAME, "Expect class name.");
-    jml_token_t class_name      = compiler->parser->previous;
+    jml_token_t class_name              = compiler->parser->previous;
 
-    uint16_t name_const         = jml_identifier_const(
+    uint16_t name_const                 = jml_identifier_const(
         compiler, &compiler->parser->previous);
     jml_variable_declaration(compiler);
 
@@ -1667,10 +1667,10 @@ jml_class_declaration(jml_compiler_t *compiler)
     jml_variable_definition(compiler, name_const);
 
     jml_class_compiler_t class_compiler;
-    class_compiler.name         = compiler->parser->previous;
-    class_compiler.enclosing    = compiler->klass;
-    class_compiler.w_superclass = false;
-    compiler->klass             = &class_compiler;
+    class_compiler.name                 = compiler->parser->previous;
+    class_compiler.enclosing            = compiler->klass;
+    class_compiler.w_superclass         = false;
+    compiler->klass                     = &class_compiler;
 
     if (jml_parser_match(compiler, TOKEN_LESS)) {
         jml_parser_match_line(compiler);
@@ -1680,7 +1680,7 @@ jml_class_declaration(jml_compiler_t *compiler)
 
         while (jml_parser_match(compiler, TOKEN_DOT)) {
             jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '.'.");
-            uint16_t name       = jml_identifier_const(
+            uint16_t name               = jml_identifier_const(
                 compiler, &compiler->parser->previous);
 
             EMIT_EXTENDED_OP1(
@@ -1695,13 +1695,26 @@ jml_class_declaration(jml_compiler_t *compiler)
             );
         }
 
+        jml_class_compiler_t *enclosing = class_compiler.enclosing;
+
+        while (enclosing != NULL) {
+            if (jml_identifier_equal(&compiler->parser->previous, &enclosing->name)) {
+                jml_parser_error(
+                    compiler,
+                    "A class can't inherit from enclosing class."
+                );
+            }
+            enclosing                   = enclosing->enclosing;
+        }
+
         jml_scope_begin(compiler);
         jml_local_add(compiler, jml_token_emit_synthetic(compiler->parser, "super"));
         jml_variable_definition(compiler, 0);
 
         jml_variable_named(compiler, class_name, false);
         jml_bytecode_emit_byte(compiler, OP_INHERIT);
-        class_compiler.w_superclass = true;
+
+        class_compiler.w_superclass     = true;
     }
 
     jml_variable_named(compiler, class_name, false);
@@ -1715,27 +1728,42 @@ jml_class_declaration(jml_compiler_t *compiler)
             jml_method(compiler);
 
         } else if (jml_parser_match(compiler, TOKEN_LET)) {
-            /*TODO*/
+            uint16_t variable           = jml_variable_parse(
+                compiler, "Expect variable name.");
+
+            if (jml_parser_match(compiler, TOKEN_EQUAL))
+                jml_expression(compiler);
+            else
+                jml_bytecode_emit_byte(compiler, OP_NONE);
+
+            jml_parser_newline(compiler, "Expect newline after 'let' declaration.");
+            EMIT_EXTENDED_OP1(
+                compiler, OP_CLASS_FIELD, EXTENDED_OP(OP_CLASS_FIELD), variable
+            );
 
         } else if (jml_parser_match(compiler, TOKEN_CLASS)) {
-            /*TODO*/
+            uint16_t name               = jml_identifier_const(
+                compiler, &compiler->parser->current);
+            jml_class_declaration(compiler);
+
+            EMIT_EXTENDED_OP1(
+                compiler, OP_CLASS_FIELD, EXTENDED_OP(OP_CLASS_FIELD), name
+            );
 
         } else {
             jml_parser_error(
                 compiler,
                 "Expect method declaration."
             );
-            break;
+            jml_parser_advance(compiler);
         }
     }
 
     jml_parser_consume(compiler, TOKEN_RBRACE, "Expect '}' after class body.");
     jml_parser_newline(compiler, "Expect newline after 'class' declaration.");
-    jml_bytecode_emit_byte(compiler, OP_POP);
 
-    if (class_compiler.w_superclass) {
+    if (class_compiler.w_superclass)
         jml_scope_end(compiler);
-    }
 
     compiler->klass = compiler->klass->enclosing;
 }
@@ -1770,10 +1798,11 @@ jml_let_declaration(jml_compiler_t *compiler)
 static void
 jml_declaration(jml_compiler_t *compiler)
 {
-    if (jml_parser_match(compiler, TOKEN_CLASS))
+    if (jml_parser_match(compiler, TOKEN_CLASS)) {
         jml_class_declaration(compiler);
+        jml_bytecode_emit_byte(compiler, OP_POP);
 
-    else if (jml_parser_match(compiler, TOKEN_FN))
+    } else if (jml_parser_match(compiler, TOKEN_FN))
         jml_function_declaration(compiler);
 
     else if (jml_parser_match(compiler, TOKEN_LET))

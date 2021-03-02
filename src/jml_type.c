@@ -194,7 +194,7 @@ jml_obj_class_new(jml_obj_string_t *name)
     klass->inheritable          = true;
     klass->module               = NULL;
 
-    jml_hashmap_init(&klass->methods);
+    jml_hashmap_init(&klass->statics);
 
     return klass;
 }

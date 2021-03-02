@@ -162,7 +162,7 @@ jml_obj_print(jml_value_t value)
 
             if (vm->print_string != NULL) {
                 jml_value_t *print;
-                if (jml_hashmap_get(&instance->klass->methods,
+                if (jml_hashmap_get(&instance->klass->statics,
                     vm->print_string, &print)) {
 
                     if (IS_CFUNCTION(*print)) {
@@ -356,7 +356,7 @@ jml_obj_instance_stringify(jml_obj_instance_t *instance)
 {
     if (vm->str_string != NULL) {
         jml_value_t *str;
-        if (jml_hashmap_get(&instance->klass->methods,
+        if (jml_hashmap_get(&instance->klass->statics,
             vm->str_string, &str)) {
 
             if (IS_CFUNCTION(*str)) {

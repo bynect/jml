@@ -105,7 +105,7 @@ struct jml_obj_module {
 struct jml_obj_class {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
-    jml_hashmap_t                   methods;
+    jml_hashmap_t                   statics;
     bool                            inheritable;
     struct jml_obj_class           *super;
     jml_obj_module_t               *module;

@@ -269,10 +269,11 @@ jml_vm_pop(void)
 }
 
 
-void
+jml_value_t
 jml_vm_pop_two(void)
 {
     vm->stack_top -= 2;
+    return *vm->stack_top;
 }
 
 
@@ -396,7 +397,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 vm->stack_top[-arg_count - 1]   = instance;
                 jml_value_t *initializer;
 
-                if (jml_hashmap_get(&klass->methods, vm->init_string, &initializer)) {
+                if (jml_hashmap_get(&klass->statics, vm->init_string, &initializer)) {
                     if (IS_CFUNCTION(*initializer)) {
                         jml_vm_push(instance);
                         ++arg_count;
@@ -434,7 +435,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
                 jml_obj_instance_t *instance    = AS_INSTANCE(callee);
                 jml_value_t *caller;
 
-                if (jml_hashmap_get(&instance->klass->methods, vm->call_string, &caller)) {
+                if (jml_hashmap_get(&instance->klass->statics, vm->call_string, &caller)) {
                     if (IS_CFUNCTION(*caller)) {
                         jml_vm_push(callee);
                         return jml_vm_call_value(*caller, arg_count + 1);
@@ -485,15 +486,20 @@ static bool
 jml_vm_invoke_class(jml_obj_class_t *klass,
     jml_obj_string_t *name, int arg_count)
 {
-    jml_value_t *method;
+    jml_value_t *value;
 
-    if (!jml_hashmap_get(&klass->methods, name, &method))
+    if (!jml_hashmap_get(&klass->statics, name, &value))
         return false;
 
-    if (IS_CFUNCTION(*method))
-        return jml_vm_call_value(*method, arg_count + 1);
-    else
-        return jml_vm_call(AS_CLOSURE(*method), arg_count);
+    if (IS_CLOSURE(*value))
+        return jml_vm_call(AS_CLOSURE(*value), arg_count);
+
+    else if (IS_CFUNCTION(*value)) {
+        jml_vm_push(OBJ_VAL(jml_vm_peek(arg_count)));
+        return jml_vm_call_value(*value, arg_count + 1);
+
+    } else
+        return jml_vm_call_value(*value, arg_count);
 }
 
 
@@ -501,17 +507,20 @@ static bool
 jml_vm_invoke_instance(jml_obj_instance_t *instance,
     jml_obj_string_t *name, int arg_count)
 {
-    jml_value_t *method;
+    jml_value_t *value;
 
-    if (!jml_hashmap_get(&instance->klass->methods, name, &method))
+    if (!jml_hashmap_get(&instance->klass->statics, name, &value))
         return false;
 
-    if (IS_CFUNCTION(*method)) {
+    if (IS_CLOSURE(*value))
+        return jml_vm_call(AS_CLOSURE(*value), arg_count);
+
+    else if (IS_CFUNCTION(*value)) {
         jml_vm_push(OBJ_VAL(instance));
-        return jml_vm_call_value(*method, arg_count + 1);
+        return jml_vm_call_value(*value, arg_count + 1);
 
     } else
-        return jml_vm_call(AS_CLOSURE(*method), arg_count);
+        return jml_vm_call_value(*value, arg_count);
 }
 
 
@@ -535,6 +544,22 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
         }
         return true;
 
+    } else if (IS_CLASS(receiver)) {
+        jml_value_t *value;
+
+        if (!jml_hashmap_get(&AS_CLASS(receiver)->statics, name, &value))
+            return false;
+
+        if (!IS_CLOSURE(*value)
+            && !IS_CFUNCTION(*value)
+            && !IS_METHOD(*value))
+            return jml_vm_call_value(*value, arg_count);
+
+        jml_vm_error(
+            "DiffTypes: Can call only instance methods."
+        );
+        return false;
+
     } else if (IS_MODULE(receiver)) {
         jml_obj_module_t *module    = AS_MODULE(receiver);
         jml_value_t      *value;
@@ -544,7 +569,9 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 
 #ifndef JML_LAZY_IMPORT
         else {
-            jml_vm_error("UndefErr: Undefined property '%s'.", name->chars);
+            jml_vm_error(
+                "UndefErr: Undefined property '%s'.", name->chars
+            );
             return false;
         }
 #else
@@ -565,46 +592,50 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
 #endif
     }
 
-    jml_vm_error("DiffTypes: Can't call '%s'.", name->chars);
+    jml_vm_error(
+        "DiffTypes: Can't call '%s'.", name->chars
+    );
     return false;
 }
 
 
 static bool
-jml_vm_method_bind(jml_obj_class_t *klass,
-    jml_obj_string_t *name)
+jml_vm_class_field_bind(jml_obj_class_t *klass, jml_obj_string_t *name)
 {
-    jml_value_t *method;
+    jml_value_t *value;
 
-    if (!jml_hashmap_get(&klass->methods, name, &method)) {
+    if (!jml_hashmap_get(&klass->statics, name, &value)) {
         jml_vm_error(
             "UndefErr: Undefined property '%s'.", name->chars
         );
         return false;
     }
 
-    jml_value_t bound;
-    if (IS_CFUNCTION(*method)) {
-        bound = OBJ_VAL(AS_CFUNCTION(*method));
+    jml_value_t field;
+    if (IS_CFUNCTION(*value)) {
+        field = OBJ_VAL(AS_CFUNCTION(*value));
 
-    } else {
-        bound = OBJ_VAL(jml_obj_method_new(
-            jml_vm_peek(0), AS_CLOSURE(*method)
+    } else if (IS_CLOSURE(*value)) {
+        field = OBJ_VAL(jml_obj_method_new(
+            jml_vm_peek(0), AS_CLOSURE(*value)
         ));
-    }
+
+    } else
+        field = *value;
 
     jml_vm_pop();
-    jml_vm_push(bound);
+    jml_vm_push(field);
     return true;
 }
 
 
 static void
-jml_vm_method_define(jml_obj_string_t *name)
+jml_vm_class_field_define(jml_obj_string_t *name)
 {
-    jml_value_t method      = jml_vm_peek(0);
-    jml_obj_class_t *klass  = AS_CLASS(jml_vm_peek(1));
-    jml_hashmap_set(&klass->methods, name, method);
+    jml_value_t      value      = jml_vm_peek(0);
+    jml_obj_class_t *klass      = AS_CLASS(jml_vm_peek(1));
+
+    jml_hashmap_set(&klass->statics, name, value);
     jml_vm_pop();
 }
 
@@ -1013,8 +1044,6 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(OP_JUMP_IF_FALSE),
         TABLE_OP(OP_LOOP),
         TABLE_OP(OP_CALL),
-        TABLE_OP(OP_METHOD),
-        TABLE_OP(EXTENDED_OP(OP_METHOD)),
         TABLE_OP(OP_INVOKE),
         TABLE_OP(EXTENDED_OP(OP_INVOKE)),
         TABLE_OP(OP_SUPER_INVOKE),
@@ -1024,6 +1053,8 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(OP_RETURN),
         TABLE_OP(OP_CLASS),
         TABLE_OP(EXTENDED_OP(OP_CLASS)),
+        TABLE_OP(OP_CLASS_FIELD),
+        TABLE_OP(EXTENDED_OP(OP_CLASS_FIELD)),
         TABLE_OP(OP_INHERIT),
         TABLE_OP(OP_SET_LOCAL),
         TABLE_OP(OP_GET_LOCAL),
@@ -1372,16 +1403,6 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
-            EXEC_OP(OP_METHOD) {
-                jml_vm_method_define(READ_STRING());
-                END_OP();
-            }
-
-            EXEC_OP(EXTENDED_OP(OP_METHOD)) {
-                jml_vm_method_define(READ_STRING_EXTENDED());
-                END_OP();
-            }
-
             EXEC_OP(OP_INVOKE) {
                 jml_obj_string_t *name      = READ_STRING();
                 int               arg_count = READ_BYTE();
@@ -1505,6 +1526,16 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(OP_CLASS_FIELD) {
+                jml_vm_class_field_define(READ_STRING());
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_CLASS_FIELD)) {
+                jml_vm_class_field_define(READ_STRING_EXTENDED());
+                END_OP();
+            }
+
             EXEC_OP(OP_INHERIT) {
                 jml_value_t superclass = jml_vm_peek(1);
                 if (!IS_CLASS(superclass)) {
@@ -1523,8 +1554,8 @@ jml_vm_run(jml_value_t *last)
                 subclass->super             = AS_CLASS(superclass);
 
                 jml_hashmap_add(
-                    &AS_CLASS(superclass)->methods,
-                    &subclass->methods
+                    &AS_CLASS(superclass)->statics,
+                    &subclass->statics
                 );
                 jml_vm_pop();
                 END_OP();
@@ -1663,6 +1694,13 @@ jml_vm_run(jml_value_t *last)
                     jml_vm_push(value);
                     END_OP();
 
+                } else if (IS_CLASS(peeked)) {
+                    SAVE_FRAME();
+                    jml_vm_error(
+                        "DiffTypes: Class properties are immutable."
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+
                 } else if (IS_MODULE(peeked)) {
                     jml_obj_module_t   *module  = AS_MODULE(peeked);
                     jml_hashmap_set(
@@ -1697,6 +1735,13 @@ jml_vm_run(jml_value_t *last)
                     jml_vm_pop();
                     jml_vm_push(value);
                     END_OP();
+
+                } else if (IS_CLASS(peeked)) {
+                    SAVE_FRAME();
+                    jml_vm_error(
+                        "DiffTypes: Class properties are immutable."
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
 
                 } else if (IS_MODULE(peeked)) {
                     jml_obj_module_t   *module  = AS_MODULE(peeked);
@@ -1734,8 +1779,22 @@ jml_vm_run(jml_value_t *last)
                     }
 
                     SAVE_FRAME();
-                    if (!jml_vm_method_bind(instance->klass, name))
+                    if (!jml_vm_class_field_bind(instance->klass, name))
                         return INTERPRET_RUNTIME_ERROR;
+
+                } else if (IS_CLASS(peeked)) {
+                    jml_value_t *value;
+                    if (jml_hashmap_get(&AS_CLASS(peeked)->statics, name, &value)) {
+                        jml_vm_pop();
+                        jml_vm_push(*value);
+                        END_OP();
+                    }
+
+                    SAVE_FRAME();
+                    jml_vm_error(
+                        "UndefErr: Undefined property '%s'.", name->chars
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
 
                 } else if (IS_MODULE(peeked)) {
                     jml_obj_module_t   *module      = AS_MODULE(peeked);
@@ -1776,8 +1835,22 @@ jml_vm_run(jml_value_t *last)
                     }
 
                     SAVE_FRAME();
-                    if (!jml_vm_method_bind(instance->klass, name))
+                    if (!jml_vm_class_field_bind(instance->klass, name))
                         return INTERPRET_RUNTIME_ERROR;
+
+                } else if (IS_CLASS(peeked)) {
+                    jml_value_t *value;
+                    if (jml_hashmap_get(&AS_CLASS(peeked)->statics, name, &value)) {
+                        jml_vm_pop();
+                        jml_vm_push(*value);
+                        END_OP();
+                    }
+
+                    SAVE_FRAME();
+                    jml_vm_error(
+                        "UndefErr: Undefined property '%s'.", name->chars
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
 
                 } else if (IS_MODULE(peeked)) {
                     jml_obj_module_t   *module      = AS_MODULE(peeked);
@@ -1981,7 +2054,7 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_class_t  *superclass = AS_CLASS(jml_vm_pop());
 
                 SAVE_FRAME();
-                if (!jml_vm_method_bind(superclass, name)) {
+                if (!jml_vm_class_field_bind(superclass, name)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 END_OP();
@@ -1992,7 +2065,7 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_class_t  *superclass = AS_CLASS(jml_vm_pop());
 
                 SAVE_FRAME();
-                if (!jml_vm_method_bind(superclass, name)) {
+                if (!jml_vm_class_field_bind(superclass, name)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 END_OP();

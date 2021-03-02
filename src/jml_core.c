@@ -459,7 +459,7 @@ jml_core_attr(int arg_count, jml_value_t *args)
         case OBJ_CLASS: {
             jml_obj_map_t *map      = jml_obj_map_new();
             jml_vm_push(OBJ_VAL(map));
-            jml_hashmap_add(&AS_CLASS(value)->methods, &map->hashmap);
+            jml_hashmap_add(&AS_CLASS(value)->statics, &map->hashmap);
             return jml_vm_pop();
         }
 
@@ -467,7 +467,7 @@ jml_core_attr(int arg_count, jml_value_t *args)
             jml_obj_map_t *map      = jml_obj_map_new();
             jml_vm_push(OBJ_VAL(map));
             jml_hashmap_add(&AS_INSTANCE(value)->fields, &map->hashmap);
-            jml_hashmap_add(&AS_INSTANCE(value)->klass->methods, &map->hashmap);
+            jml_hashmap_add(&AS_INSTANCE(value)->klass->statics, &map->hashmap);
             return jml_vm_pop();
         }
 

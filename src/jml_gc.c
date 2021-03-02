@@ -269,7 +269,7 @@ jml_gc_free_object(jml_obj_t *object)
 
         case OBJ_CLASS: {
             jml_obj_class_t *klass = (jml_obj_class_t*)object;
-            jml_hashmap_free(&klass->methods);
+            jml_hashmap_free(&klass->statics);
             FREE(jml_obj_class_t, object);
             break;
         }
@@ -279,7 +279,7 @@ jml_gc_free_object(jml_obj_t *object)
 
             if (vm->free_string != NULL) {
                 jml_value_t *destructor;
-                if (jml_hashmap_get(&instance->klass->methods,
+                if (jml_hashmap_get(&instance->klass->statics,
                     vm->free_string, &destructor)) {
 
                     if (IS_CFUNCTION(*destructor)) {
@@ -431,7 +431,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
             jml_obj_class_t *klass = (jml_obj_class_t*)object;
             jml_gc_mark_obj((jml_obj_t*)klass->name);
             jml_gc_mark_obj((jml_obj_t*)klass->super);
-            jml_hashmap_mark(&klass->methods);
+            jml_hashmap_mark(&klass->statics);
             break;
         }
 

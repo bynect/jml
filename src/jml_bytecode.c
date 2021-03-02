@@ -334,12 +334,6 @@ jml_bytecode_instruction_disassemble(
         case OP_CALL:
             return jml_bytecode_instruction_byte("OP_CALL", bytecode, offset);
 
-        case OP_METHOD:
-            return jml_bytecode_instruction_const("OP_METHOD", bytecode, offset);
-
-        case EXTENDED_OP(OP_METHOD):
-            return jml_bytecode_instruction_const_extended("OP_METHOD_EXTENDED", bytecode, offset);
-
         case OP_INVOKE:
             return jml_bytecode_instruction_invoke("OP_INVOKE", bytecode, offset);
 
@@ -366,7 +360,7 @@ jml_bytecode_instruction_disassemble(
                 int local       = bytecode->code[offset++];
                 int index       = bytecode->code[offset++];
 
-                printf("%04d    |                   %s %d\n",
+                printf("%04d       |    %-16s %4d\n",
                     offset - 2, local ? "local" : "upvalue", index);
             }
             return offset;
@@ -386,7 +380,8 @@ jml_bytecode_instruction_disassemble(
             for (int i = 0; i < function->upvalue_count; ++i) {
                 int local = bytecode->code[offset++];
                 int index = bytecode->code[offset++];
-                printf("%04d    |                   %s %d\n",
+
+                printf("%04d       |    %-16s %4d\n",
                     offset - 2, local ? "local" : "upvalue", index);
             }
             return offset;
@@ -400,6 +395,12 @@ jml_bytecode_instruction_disassemble(
 
         case EXTENDED_OP(OP_CLASS):
             return jml_bytecode_instruction_const_extended("OP_CLASS_EXTENDED", bytecode, offset);
+
+        case OP_CLASS_FIELD:
+            return jml_bytecode_instruction_const("OP_CLASS_FIELD", bytecode, offset);
+
+        case EXTENDED_OP(OP_CLASS_FIELD):
+            return jml_bytecode_instruction_const_extended("OP_CLASS_FIELD_EXTENDED", bytecode, offset);
 
         case OP_INHERIT:
             return jml_bytecode_instruction_simple("OP_INHERIT", offset);

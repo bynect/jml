@@ -432,7 +432,7 @@ jml_module_add_class(jml_obj_module_t *module, const char *name,
             method->klass_name = klass->name;
 
             jml_hashmap_set(
-                &klass->methods,
+                &klass->statics,
                 AS_STRING(jml_vm_peek(1)),
                 jml_vm_peek(0)
             );
