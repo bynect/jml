@@ -47,6 +47,20 @@ jml_is_hex(char c)
 
 
 static inline bool
+jml_is_oct(char c)
+{
+    return (c >= '0' && c <= '7');
+}
+
+
+static inline bool
+jml_is_bin(char c)
+{
+    return (c == '0' || c == '1');
+}
+
+
+static inline bool
 jml_is_alpha(char c)
 {
     return (c >= 'a' && c <= 'z')

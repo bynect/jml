@@ -280,23 +280,57 @@ jml_string_literal(const char delimiter, jml_lexer_t *lexer)
 static jml_token_t
 jml_number_literal(jml_lexer_t *lexer)
 {
-    if (jml_lexer_peek_previous(lexer) == '0'
-        && jml_lexer_peek(lexer) == 'x') {
-
-        jml_lexer_advance(lexer);
-        if (!jml_is_hex(jml_lexer_peek(lexer)))
-            return jml_token_emit_error("Unterminated hex literal.", lexer);
-
-        while (jml_is_hex(jml_lexer_peek(lexer)))
-            jml_lexer_advance(lexer);
-
-        if ((jml_lexer_peek(lexer) == '.')
-            && jml_is_hex(jml_lexer_peek_next(lexer))) {
-
-            jml_lexer_advance(lexer);
-            while (jml_is_hex(jml_lexer_peek(lexer)))
+    if (jml_lexer_peek_previous(lexer) == '0') {
+        switch (jml_lexer_peek(lexer)) {
+            case 'x':
+            case 'X': {
                 jml_lexer_advance(lexer);
+                if (!jml_is_hex(jml_lexer_peek(lexer)))
+                    return jml_token_emit_error("Unterminated hexadecimal literal.", lexer);
+
+                while (jml_is_hex(jml_lexer_peek(lexer)))
+                    jml_lexer_advance(lexer);
+
+                if ((jml_lexer_peek(lexer) == '.'))
+                    return jml_token_emit_error("Invalid dot after hexadecimal literal.", lexer);
+
+                break;
+            }
+
+            case 'o':
+            case 'O': {
+                jml_lexer_advance(lexer);
+                if (!jml_is_oct(jml_lexer_peek(lexer)))
+                    return jml_token_emit_error("Unterminated octal literal.", lexer);
+
+                while (jml_is_oct(jml_lexer_peek(lexer)))
+                    jml_lexer_advance(lexer);
+
+                if ((jml_lexer_peek(lexer) == '.'))
+                    return jml_token_emit_error("Invalid dot after octal literal.", lexer);
+
+                break;
+            }
+
+            case 'b':
+            case 'B': {
+                jml_lexer_advance(lexer);
+                if (!jml_is_bin(jml_lexer_peek(lexer)))
+                    return jml_token_emit_error("Unterminated binary literal.", lexer);
+
+                while (jml_is_bin(jml_lexer_peek(lexer)))
+                    jml_lexer_advance(lexer);
+
+                if ((jml_lexer_peek(lexer) == '.'))
+                    return jml_token_emit_error("Invalid dot after binary literal.", lexer);
+
+                break;
+            }
+
+            default:
+                return jml_token_emit_error("Invalid leading zeroes.", lexer);
         }
+
     } else {
         while (jml_is_digit(jml_lexer_peek(lexer)))
             jml_lexer_advance(lexer);

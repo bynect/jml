@@ -907,7 +907,23 @@ jml_literal(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 static void
 jml_number(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 {
-    double value = strtod(compiler->parser->previous.start, NULL);
+    double value;
+
+    if (compiler->parser->previous.length > 2) {
+
+        if (compiler->parser->previous.start[1] == 'o'
+            || compiler->parser->previous.start[1] == 'O')
+            value = strtoll(compiler->parser->previous.start + 2, NULL, 8);
+
+        else if (compiler->parser->previous.start[1] == 'b'
+            || compiler->parser->previous.start[1] == 'B')
+            value = strtoll(compiler->parser->previous.start + 2, NULL, 2);
+
+        else
+            value = strtod(compiler->parser->previous.start, NULL);
+    } else
+        value = strtod(compiler->parser->previous.start, NULL);
+
     jml_bytecode_emit_const(compiler, NUM_VAL(value));
 }
 
