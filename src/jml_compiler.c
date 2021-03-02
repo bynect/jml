@@ -300,9 +300,11 @@ jml_bytecode_emit_return(jml_compiler_t *compiler)
         jml_bytecode_emit_bytes(compiler, OP_GET_LOCAL, 0);
 
     else if (compiler->type != FUNCTION_MAIN
-        && compiler->function->bytecode.count > 0) {
-        for (int i = jml_bytecode_current(compiler)->count - 1; i >= 0; --i) {
+        && jml_bytecode_current(compiler)->count > 0
+        && jml_bytecode_current(compiler)->code[
+            jml_bytecode_current(compiler)->count - 1] != OP_RETURN) {
 
+        for (int i = jml_bytecode_current(compiler)->count - 1; i >= 0; --i) {
             if (jml_bytecode_current(compiler)->code[i] == OP_POP) {
                 jml_bytecode_current(compiler)->code[i] = OP_NOP;
                 jml_bytecode_emit_byte(compiler, OP_RETURN);
@@ -1805,16 +1807,15 @@ jml_return_statement(jml_compiler_t *compiler)
     }
 
     if (jml_parser_match_line(compiler))
-        jml_bytecode_emit_return(compiler);
+        jml_bytecode_emit_bytes(compiler, OP_NONE, OP_RETURN);
 
-    else {
-        if (compiler->type == FUNCTION_INIT) {
+    else if (compiler->type == FUNCTION_INIT) {
             jml_parser_error(
                 compiler,
                 "Can't return a value from an initializer."
             );
-        }
 
+    } else {
         jml_expression(compiler);
         jml_parser_match_line(compiler);
         jml_bytecode_emit_byte(compiler, OP_RETURN);
