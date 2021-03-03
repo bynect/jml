@@ -2236,6 +2236,99 @@ jml_if_statement(jml_compiler_t *compiler)
 
 
 static void
+jml_match_statement(jml_compiler_t *compiler)
+{
+    int wildcard        = 0;
+    bool done           = false;
+
+    int case_jump;
+    int cases[LOCAL_MAX];
+    int case_count      = 0;
+
+    jml_token_t tok1    = jml_token_emit_synthetic(compiler->parser, "$$$_1");
+    int condition       = jml_local_add_synthetic(compiler, &tok1);
+    jml_expression(compiler);
+
+    jml_parser_match_line(compiler);
+    jml_parser_consume(compiler, TOKEN_LBRACE, "Expect '{' after 'match'.");
+
+    do {
+        if (jml_parser_match(compiler, TOKEN_STRING))
+            jml_string(compiler, false);
+
+        else if (jml_parser_match(compiler, TOKEN_NUMBER))
+            jml_number(compiler, false);
+
+        else if (jml_parser_match(compiler, TOKEN_NONE)
+            || jml_parser_match(compiler, TOKEN_FALSE)
+            || jml_parser_match(compiler, TOKEN_TRUE))
+            jml_literal(compiler, false);
+
+        else if (jml_parser_match(compiler, TOKEN_USCORE)) {
+            if (++wildcard > 1) {
+                jml_parser_error(
+                    compiler,
+                    "Can't have more than one wildcard for 'match' statement."
+                );
+            }
+
+        } else
+            jml_parser_error(compiler, "Expected literal.");
+
+        if (done)
+            jml_parser_error(compiler, "Unreachable case after wildcard.");
+
+        if (case_count >= LOCAL_MAX) {
+            jml_parser_error(compiler, "Too many cases in 'match' statement.");
+            break;
+        }
+
+        jml_parser_consume(compiler, TOKEN_ARROW, "Expect '->' after literal.");
+        jml_parser_consume(compiler, TOKEN_LBRACE, "Expect '{' after '->'.");
+
+        if (wildcard != 1) {
+            EMIT_EXTENDED_OP1(
+                compiler, OP_GET_LOCAL, EXTENDED_OP(OP_GET_LOCAL), condition
+            );
+            jml_bytecode_emit_byte(compiler, OP_EQUAL);
+
+            case_jump = jml_bytecode_emit_jump(compiler, OP_JUMP_IF_FALSE);
+            jml_bytecode_emit_byte(compiler, OP_POP);
+        }
+
+        jml_scope_begin(compiler);
+        jml_block(compiler);
+        jml_scope_end(compiler);
+
+        jml_parser_newline(compiler, "Expect newline after block.");
+
+        if (wildcard == 1) {
+            done = true;
+            continue;
+        }
+
+        cases[case_count++] = jml_bytecode_emit_jump(compiler, OP_JUMP);
+        jml_bytecode_patch_jump(compiler, case_jump);
+        jml_bytecode_emit_byte(compiler, OP_POP);
+
+    } while (jml_parser_check(compiler->parser, TOKEN_STRING)
+        || jml_parser_check(compiler->parser, TOKEN_NUMBER)
+        || jml_parser_check(compiler->parser, TOKEN_NONE)
+        || jml_parser_check(compiler->parser, TOKEN_FALSE)
+        || jml_parser_check(compiler->parser, TOKEN_TRUE)
+        || jml_parser_check(compiler->parser, TOKEN_USCORE));
+
+    for (int i = 0; i < case_count; ++i)
+        jml_bytecode_patch_jump(compiler, cases[i]);
+
+    jml_parser_consume(compiler, TOKEN_RBRACE, "Expect '}' after 'match' block.");
+
+    if (!wildcard)
+        jml_parser_error(compiler, "Non exhaustive 'match' statement.");
+}
+
+
+static void
 jml_statement(jml_compiler_t *compiler)
 {
     jml_parser_match_line(compiler);
@@ -2260,6 +2353,9 @@ jml_statement(jml_compiler_t *compiler)
 
     else if (jml_parser_match(compiler, TOKEN_IF))
         jml_if_statement(compiler);
+
+    else if (jml_parser_match(compiler, TOKEN_MATCH))
+        jml_match_statement(compiler);
 
     else if (jml_parser_match(compiler, TOKEN_LBRACE)) {
         jml_scope_begin(compiler);
