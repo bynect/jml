@@ -408,14 +408,26 @@ jml_bytecode_instruction_disassemble(
         case OP_SET_LOCAL:
             return jml_bytecode_instruction_byte("OP_SET_LOCAL", bytecode, offset);
 
+        case EXTENDED_OP(OP_SET_LOCAL):
+            return jml_bytecode_instruction_short("OP_SET_LOCAL_EXTENDED", bytecode, offset);
+
         case OP_GET_LOCAL:
             return jml_bytecode_instruction_byte("OP_GET_LOCAL", bytecode, offset);
+
+        case EXTENDED_OP(OP_GET_LOCAL):
+            return jml_bytecode_instruction_short("OP_GET_LOCAL_EXTENDED", bytecode, offset);
 
         case OP_SET_UPVALUE:
             return jml_bytecode_instruction_byte("OP_SET_UPVALUE", bytecode, offset);
 
+        case EXTENDED_OP(OP_SET_UPVALUE):
+            return jml_bytecode_instruction_short("OP_SET_UPVALUE_EXTENDED", bytecode, offset);
+
         case OP_GET_UPVALUE:
             return jml_bytecode_instruction_byte("OP_GET_UPVALUE", bytecode, offset);
+
+        case EXTENDED_OP(OP_GET_UPVALUE):
+            return jml_bytecode_instruction_short("OP_GET_UPVALUE_EXTENDED", bytecode, offset);
 
         case OP_CLOSE_UPVALUE:
             return jml_bytecode_instruction_simple("OP_CLOSE_UPVALUE", offset);

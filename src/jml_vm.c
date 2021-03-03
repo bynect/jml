@@ -1057,9 +1057,13 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(EXTENDED_OP(OP_CLASS_FIELD)),
         TABLE_OP(OP_INHERIT),
         TABLE_OP(OP_SET_LOCAL),
+        TABLE_OP(EXTENDED_OP(OP_SET_LOCAL)),
         TABLE_OP(OP_GET_LOCAL),
+        TABLE_OP(EXTENDED_OP(OP_GET_LOCAL)),
         TABLE_OP(OP_SET_UPVALUE),
+        TABLE_OP(EXTENDED_OP(OP_SET_UPVALUE)),
         TABLE_OP(OP_GET_UPVALUE),
+        TABLE_OP(EXTENDED_OP(OP_GET_UPVALUE)),
         TABLE_OP(OP_CLOSE_UPVALUE),
         TABLE_OP(OP_SET_GLOBAL),
         TABLE_OP(EXTENDED_OP(OP_SET_GLOBAL)),
@@ -1573,7 +1577,20 @@ jml_vm_run(jml_value_t *last)
                 jml_value_print(jml_vm_peek(0));
                 printf(" ]\n");
 #endif
+                frame->slots[slot] = jml_vm_peek(0);
+                END_OP();
+            }
 
+            EXEC_OP(EXTENDED_OP(OP_SET_LOCAL)) {
+                uint16_t slot = READ_SHORT();
+
+#ifdef JML_TRACE_SLOT
+                printf("          (slot %d)     [ ", slot);
+                jml_value_print(frame->slots[slot]);
+                printf(" ]     ->     [ ");
+                jml_value_print(jml_vm_peek(0));
+                printf(" ]\n");
+#endif
                 frame->slots[slot] = jml_vm_peek(0);
                 END_OP();
             }
@@ -1586,7 +1603,18 @@ jml_vm_run(jml_value_t *last)
                 jml_value_print(frame->slots[slot]);
                 printf(" ]\n");
 #endif
+                jml_vm_push(frame->slots[slot]);
+                END_OP();
+            }
 
+            EXEC_OP(EXTENDED_OP(OP_GET_LOCAL)) {
+                uint16_t slot = READ_SHORT();
+
+#ifdef JML_TRACE_SLOT
+                printf("          (slot %d)     [ ", slot);
+                jml_value_print(frame->slots[slot]);
+                printf(" ]\n");
+#endif
                 jml_vm_push(frame->slots[slot]);
                 END_OP();
             }
@@ -1597,15 +1625,26 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
+            EXEC_OP(EXTENDED_OP(OP_SET_UPVALUE)) {
+                uint16_t slot = READ_SHORT();
+                *frame->closure->upvalues[slot]->location = jml_vm_peek(0);
+                END_OP();
+            }
+
             EXEC_OP(OP_GET_UPVALUE) {
                 uint8_t slot = READ_BYTE();
                 jml_vm_push(*frame->closure->upvalues[slot]->location);
                 END_OP();
             }
 
+            EXEC_OP(EXTENDED_OP(OP_GET_UPVALUE)) {
+                uint16_t slot = READ_SHORT();
+                jml_vm_push(*frame->closure->upvalues[slot]->location);
+                END_OP();
+            }
+
             EXEC_OP(OP_CLOSE_UPVALUE) {
                 jml_vm_upvalue_close(vm->stack_top - 1);
-
                 jml_vm_pop();
                 END_OP();
             }

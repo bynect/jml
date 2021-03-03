@@ -1191,12 +1191,12 @@ jml_variable_named(jml_compiler_t *compiler,
     int  arg    = jml_local_resolve(compiler, &name);
 
     if (arg != -1) {
-        get_op  = OP_GET_LOCAL;
-        set_op  = OP_SET_LOCAL;
+        get_op  = arg > UINT8_MAX ? EXTENDED_OP(OP_GET_LOCAL) : OP_GET_LOCAL;
+        set_op  = arg > UINT8_MAX ? EXTENDED_OP(OP_SET_LOCAL) : OP_SET_LOCAL;
 
     } else if ((arg = jml_upvalue_resolve(compiler, &name)) != -1) {
-        get_op  = OP_GET_UPVALUE;
-        set_op  = OP_SET_UPVALUE;
+        get_op  = arg > UINT8_MAX ? EXTENDED_OP(OP_GET_UPVALUE) : OP_GET_UPVALUE;
+        set_op  = arg > UINT8_MAX ? EXTENDED_OP(OP_SET_UPVALUE) : OP_SET_UPVALUE;
 
     } else {
         arg     = jml_identifier_const(compiler, &name);
