@@ -59,7 +59,6 @@ jml_core_format(int arg_count, jml_value_t *args)
         token                   = jml_strtok(NULL, "{}", &save);
     }
 
-
     fmt_err                     = fmt_args;
 
     if (fmt_obj->length < 2

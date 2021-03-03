@@ -653,7 +653,7 @@ jml_variable_parse(jml_compiler_t *compiler, const char *message)
 
 
 static void
-jml_variable_definition(jml_compiler_t *compiler, uint16_t global)
+jml_variable_definition(jml_compiler_t *compiler, uint16_t variable)
 {
     if (compiler->scope_depth > 0) {
         jml_local_mark(compiler);
@@ -661,7 +661,7 @@ jml_variable_definition(jml_compiler_t *compiler, uint16_t global)
     }
 
     EMIT_EXTENDED_OP1(
-        compiler, OP_DEF_GLOBAL, EXTENDED_OP(OP_DEF_GLOBAL), global
+        compiler, OP_DEF_GLOBAL, EXTENDED_OP(OP_DEF_GLOBAL), variable
     );
 }
 
@@ -2100,6 +2100,107 @@ jml_skip_statement(jml_compiler_t *compiler)
 
 
 static void
+jml_for_statement(jml_compiler_t *compiler)
+{
+    jml_scope_begin(compiler);
+
+    jml_parser_consume(compiler, TOKEN_LET, "Expect 'let' after 'for'.");
+
+    jml_variable_parse(compiler, "Expect identifier after 'for'.");
+    jml_variable_definition(compiler, 0);
+    jml_bytecode_emit_byte(compiler, OP_NONE);
+
+    jml_parser_consume(compiler, TOKEN_IN, "Expect 'in' after 'for let'.");
+
+    jml_token_t tok1 = jml_token_emit_synthetic(compiler->parser, "$$$_1");
+    int iter = jml_local_add_synthetic(compiler, &tok1);
+    jml_expression(compiler);
+
+    jml_token_t tok2 = jml_token_emit_synthetic(compiler->parser, "$$$_2");
+    int index = jml_local_add_synthetic(compiler, &tok2);
+    jml_bytecode_emit_const(compiler, NUM_VAL(0));
+
+    jml_token_t tok3 = jml_token_emit_synthetic(compiler->parser, "$$$_3");
+    int size = jml_local_add_synthetic(compiler, &tok3);
+
+    EMIT_EXTENDED_OP1(
+        compiler, OP_GET_GLOBAL, EXTENDED_OP(OP_GET_GLOBAL),
+        jml_bytecode_make_const(compiler, jml_string_intern("size"))
+    );
+    EMIT_EXTENDED_OP1(
+        compiler, OP_GET_LOCAL, EXTENDED_OP(OP_GET_LOCAL), iter
+    );
+    jml_bytecode_emit_bytes(compiler, OP_CALL, 1);
+
+    int start = jml_bytecode_current(compiler)->count;
+
+    /*condition*/
+    EMIT_EXTENDED_OP1(
+        compiler, OP_GET_LOCAL, EXTENDED_OP(OP_GET_LOCAL), index
+    );
+    EMIT_EXTENDED_OP1(
+        compiler, OP_GET_LOCAL, EXTENDED_OP(OP_GET_LOCAL), size
+    );
+    jml_bytecode_emit_byte(compiler, OP_LESS);
+
+    int exit = jml_bytecode_emit_jump(compiler, OP_JUMP_IF_FALSE);
+    jml_bytecode_emit_byte(compiler, OP_POP);
+
+    /*increment*/
+    int body = jml_bytecode_emit_jump(compiler, OP_JUMP);
+    int increment = jml_bytecode_current(compiler)->count;
+
+    EMIT_EXTENDED_OP1(
+        compiler, OP_GET_LOCAL, EXTENDED_OP(OP_GET_LOCAL), index
+    );
+
+    jml_bytecode_emit_const(compiler, NUM_VAL(1));
+    jml_bytecode_emit_byte(compiler, OP_ADD);
+
+    EMIT_EXTENDED_OP1(
+        compiler, OP_SET_LOCAL, EXTENDED_OP(OP_SET_LOCAL), index
+    );
+    jml_bytecode_emit_byte(compiler, OP_POP);
+
+    jml_parser_consume(compiler, TOKEN_LBRACE, "Expect '{' before 'for' body.");
+
+    jml_bytecode_emit_loop(compiler, start);
+    start = increment;
+    jml_bytecode_patch_jump(compiler, body);
+
+    /*body*/
+    jml_loop_t loop;
+    jml_loop_begin(
+        compiler, &loop, start, jml_bytecode_current(compiler)->count, exit
+    );
+
+    EMIT_EXTENDED_OP1(
+        compiler, OP_GET_LOCAL, EXTENDED_OP(OP_GET_LOCAL), iter
+    );
+    EMIT_EXTENDED_OP1(
+        compiler, OP_GET_LOCAL, EXTENDED_OP(OP_GET_LOCAL), index
+    );
+
+    jml_bytecode_emit_byte(compiler, OP_GET_INDEX);
+    EMIT_EXTENDED_OP1(
+        compiler, OP_SET_LOCAL, EXTENDED_OP(OP_SET_LOCAL), 1
+    );
+    jml_bytecode_emit_byte(compiler, OP_POP);
+
+    jml_block(compiler);
+    jml_parser_newline(compiler, "Expect newline after 'for' block.");
+
+    jml_bytecode_emit_loop(compiler, start);
+
+    jml_bytecode_patch_jump(compiler, exit);
+    jml_bytecode_emit_byte(compiler, OP_POP);
+
+    jml_loop_end(compiler);
+    jml_scope_end(compiler);
+}
+
+
+static void
 jml_if_statement(jml_compiler_t *compiler)
 {
     jml_expression(compiler);
@@ -2153,6 +2254,9 @@ jml_statement(jml_compiler_t *compiler)
 
     else if (jml_parser_match(compiler, TOKEN_SKIP))
         jml_skip_statement(compiler);
+
+    else if (jml_parser_match(compiler, TOKEN_FOR))
+        jml_for_statement(compiler);
 
     else if (jml_parser_match(compiler, TOKEN_IF))
         jml_if_statement(compiler);
