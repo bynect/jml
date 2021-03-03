@@ -1621,24 +1621,60 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_SET_UPVALUE) {
                 uint8_t slot = READ_BYTE();
+
+#ifdef JML_TRACE_SLOT
+                printf("          (slot %d)     [ ", slot);
+                if (frame->closure->upvalues[slot]->location != NULL)
+                    jml_value_print(*frame->closure->upvalues[slot]->location);
+                else
+                    printf("(null)");
+
+                printf(" ]     ->     [ ");
+                jml_value_print(jml_vm_peek(0));
+                printf(" ]\n");
+#endif
                 *frame->closure->upvalues[slot]->location = jml_vm_peek(0);
                 END_OP();
             }
 
             EXEC_OP(EXTENDED_OP(OP_SET_UPVALUE)) {
                 uint16_t slot = READ_SHORT();
+
+#ifdef JML_TRACE_SLOT
+                printf("          (slot %d)     [ ", slot);
+                if (frame->closure->upvalues[slot]->location != NULL)
+                    jml_value_print(*frame->closure->upvalues[slot]->location);
+                else
+                    printf("(null)");
+
+                printf(" ]     ->     [ ");
+                jml_value_print(jml_vm_peek(0));
+                printf(" ]\n");
+#endif
                 *frame->closure->upvalues[slot]->location = jml_vm_peek(0);
                 END_OP();
             }
 
             EXEC_OP(OP_GET_UPVALUE) {
                 uint8_t slot = READ_BYTE();
+
+#ifdef JML_TRACE_SLOT
+                printf("          (slot %d)     [ ", slot);
+                jml_value_print(*frame->closure->upvalues[slot]->location);
+                printf(" ]\n");
+#endif
                 jml_vm_push(*frame->closure->upvalues[slot]->location);
                 END_OP();
             }
 
             EXEC_OP(EXTENDED_OP(OP_GET_UPVALUE)) {
                 uint16_t slot = READ_SHORT();
+
+#ifdef JML_TRACE_SLOT
+                printf("          (slot %d)     [ ", slot);
+                jml_value_print(*frame->closure->upvalues[slot]->location);
+                printf(" ]\n");
+#endif
                 jml_vm_push(*frame->closure->upvalues[slot]->location);
                 END_OP();
             }
