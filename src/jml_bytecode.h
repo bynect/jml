@@ -84,10 +84,8 @@ typedef enum {
     EXTENDED_OP(OP_ARRAY),
     OP_MAP,
     EXTENDED_OP(OP_MAP),
-    OP_IMPORT_GLOBAL,
-    EXTENDED_OP(OP_IMPORT_GLOBAL),
-    OP_IMPORT_LOCAL,
-    EXTENDED_OP(OP_IMPORT_LOCAL),
+    OP_IMPORT,
+    EXTENDED_OP(OP_IMPORT),
     OP_IMPORT_WILDCARD,
     EXTENDED_OP(OP_IMPORT_WILDCARD),
     OP_END
@@ -118,6 +116,9 @@ void jml_bytecode_disassemble(jml_bytecode_t *bytecode,
     const char *name);
 
 uint32_t jml_bytecode_instruction_disassemble(
+    jml_bytecode_t *bytecode, uint32_t offset);
+
+uint32_t jml_bytecode_instruction_offset(
     jml_bytecode_t *bytecode, uint32_t offset);
 
 

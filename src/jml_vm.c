@@ -433,7 +433,7 @@ jml_vm_call_value(jml_value_t callee, int arg_count)
 
             case OBJ_INSTANCE: {
                 jml_obj_instance_t *instance    = AS_INSTANCE(callee);
-                jml_value_t *caller;
+                jml_value_t        *caller;
 
                 if (jml_hashmap_get(&instance->klass->statics, vm->call_string, &caller)) {
                     if (IS_CFUNCTION(*caller)) {
@@ -564,8 +564,10 @@ jml_vm_invoke(jml_obj_string_t *name, int arg_count)
         jml_obj_module_t *module    = AS_MODULE(receiver);
         jml_value_t      *value;
 
-        if (jml_hashmap_get(&module->globals, name, &value))
+        if (jml_hashmap_get(&module->globals, name, &value)) {
+            vm->stack_top[-arg_count - 1] = *value;
             return jml_vm_call_value(*value, arg_count);
+        }
 
 #ifndef JML_LAZY_IMPORT
         else {
@@ -1088,10 +1090,8 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(EXTENDED_OP(OP_ARRAY)),
         TABLE_OP(OP_MAP),
         TABLE_OP(EXTENDED_OP(OP_MAP)),
-        TABLE_OP(OP_IMPORT_GLOBAL),
-        TABLE_OP(EXTENDED_OP(OP_IMPORT_GLOBAL)),
-        TABLE_OP(OP_IMPORT_LOCAL),
-        TABLE_OP(EXTENDED_OP(OP_IMPORT_LOCAL)),
+        TABLE_OP(OP_IMPORT),
+        TABLE_OP(EXTENDED_OP(OP_IMPORT)),
         TABLE_OP(OP_IMPORT_WILDCARD),
         TABLE_OP(EXTENDED_OP(OP_IMPORT_WILDCARD)),
         TABLE_OP(OP_END)
@@ -1400,7 +1400,7 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_CALL) {
-                uint8_t arg_count   = READ_BYTE();
+                int arg_count       = READ_BYTE();
                 SAVE_FRAME();
                 if (!jml_vm_call_value(jml_vm_peek(arg_count), arg_count))
                     return INTERPRET_RUNTIME_ERROR;
@@ -2210,7 +2210,7 @@ jml_vm_run(jml_value_t *last)
                 END_OP();
             }
 
-            EXEC_OP(OP_IMPORT_GLOBAL) {
+            EXEC_OP(OP_IMPORT) {
                 jml_obj_string_t *fullname   = READ_STRING();
                 jml_obj_string_t *name       = READ_STRING();
 
@@ -2219,13 +2219,11 @@ jml_vm_run(jml_value_t *last)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                jml_vm_global_set(name, jml_vm_peek(0));
-
-                jml_vm_pop();
+                LOAD_FRAME();
                 END_OP();
             }
 
-            EXEC_OP(EXTENDED_OP(OP_IMPORT_GLOBAL)) {
+            EXEC_OP(EXTENDED_OP(OP_IMPORT)) {
                 jml_obj_string_t *fullname   = READ_STRING_EXTENDED();
                 jml_obj_string_t *name       = READ_STRING_EXTENDED();
 
@@ -2234,37 +2232,7 @@ jml_vm_run(jml_value_t *last)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                jml_vm_global_set(name, jml_vm_peek(0));
-
-                jml_vm_pop();
-                END_OP();
-            }
-
-            EXEC_OP(OP_IMPORT_LOCAL) {
-                jml_obj_string_t *fullname   = READ_STRING();
-                jml_obj_string_t *name       = READ_STRING();
-
-                SAVE_FRAME();
-                if (!jml_vm_module_import(fullname, name)) {
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-
-                uint8_t slot = READ_BYTE();
-                frame->slots[slot] = jml_vm_pop();
-                END_OP();
-            }
-
-            EXEC_OP(EXTENDED_OP(OP_IMPORT_LOCAL)) {
-                jml_obj_string_t *fullname   = READ_STRING_EXTENDED();
-                jml_obj_string_t *name       = READ_STRING_EXTENDED();
-
-                SAVE_FRAME();
-                if (!jml_vm_module_import(fullname, name)) {
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-
-                uint8_t slot = READ_SHORT();
-                frame->slots[slot] = jml_vm_pop();
+                LOAD_FRAME();
                 END_OP();
             }
 
@@ -2284,6 +2252,7 @@ jml_vm_run(jml_value_t *last)
                 );
 
                 jml_vm_pop();
+                LOAD_FRAME();
                 END_OP();
             }
 
@@ -2303,6 +2272,7 @@ jml_vm_run(jml_value_t *last)
                 );
 
                 jml_vm_pop();
+                LOAD_FRAME();
                 END_OP();
             }
 

@@ -219,19 +219,15 @@ jml_bytecode_make_const(jml_compiler_t *compiler, jml_value_t value)
         jml_bytecode_current(compiler), value
     );
 
-    if (constant > UINT8_MAX) {
-        if (constant > UINT16_MAX) {
-            jml_parser_error(
-                compiler,
-                "Too many constants in one chunk."
-            );
-            return 0;
-        }
-
-        return (uint16_t)constant;
+    if (constant > UINT16_MAX) {
+        jml_parser_error(
+            compiler,
+            "Too many constants in one chunk."
+        );
+        return 0;
     }
 
-    return (uint8_t)constant;
+    return constant;
 }
 
 
@@ -604,11 +600,13 @@ jml_loop_end(jml_compiler_t *compiler)
                 jml_bytecode_current(compiler)->code[i] = OP_JUMP;
                 jml_bytecode_patch_jump(compiler, i + 1);
                 i += 3;
-            } else
-                ++i;
-        }
 
-        compiler->loop   = loop->enclosing;
+            } else {
+                i += jml_bytecode_instruction_offset(
+                    jml_bytecode_current(compiler), i);
+            }
+        }
+        compiler->loop = loop->enclosing;
     }
 }
 
@@ -717,12 +715,12 @@ jml_parser_synchronize(jml_compiler_t *compiler)
 }
 
 
-static uint8_t
+static uint16_t
 jml_arguments_list(jml_compiler_t *compiler)
 {
     jml_parser_match_line(compiler);
 
-    uint8_t arg_count = 0;
+    uint16_t arg_count = 0;
     if (!jml_parser_check(compiler->parser, TOKEN_RPAREN)) {
         do {
             jml_parser_match_line(compiler);
@@ -1333,7 +1331,11 @@ jml_variable(jml_compiler_t *compiler, bool assignable)
 static void
 jml_wildcard(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 {
-    jml_parser_error(compiler, "Can't read value of wildcard.");
+    if (jml_parser_match(compiler, TOKEN_ARROW))
+        jml_parser_error(compiler, "Can't swap wildcard.");
+
+    else
+        jml_parser_error(compiler, "Can't read value of wildcard.");
 }
 
 
@@ -1975,7 +1977,11 @@ jml_import_statement(jml_compiler_t *compiler)
 
     } else if (compiler->type == FUNCTION_MAIN) {
         EMIT_EXTENDED_OP2(
-            compiler, OP_IMPORT_GLOBAL, EXTENDED_OP(OP_IMPORT_GLOBAL), full_arg, name_arg
+            compiler, OP_IMPORT, EXTENDED_OP(OP_IMPORT), full_arg, name_arg
+        );
+
+        EMIT_EXTENDED_OP1(
+            compiler, OP_DEF_GLOBAL, EXTENDED_OP(OP_DEF_GLOBAL), name_arg
         );
 
         if (jml_parser_match(compiler, TOKEN_ARROW)) {
@@ -1988,6 +1994,10 @@ jml_import_statement(jml_compiler_t *compiler)
             } else {
                 jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
                 uint16_t new_name = jml_identifier_const(compiler, &compiler->parser->previous);
+
+                if (name_length == compiler->parser->previous.length
+                    && memcmp(name, compiler->parser->previous.start, name_length) == 0)
+                    jml_parser_error(compiler, "Can't swap variable to itself.");
 
                 EMIT_EXTENDED_OP2(
                     compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL), name_arg, new_name
@@ -2002,21 +2012,19 @@ jml_import_statement(jml_compiler_t *compiler)
         if (local == -1)
             local = jml_local_add_synthetic(compiler, &token_name);
 
-        EMIT_EXTENDED_OP3(
-            compiler, OP_IMPORT_LOCAL, EXTENDED_OP(OP_IMPORT_LOCAL), full_arg, name_arg, local
+        EMIT_EXTENDED_OP2(
+            compiler, OP_IMPORT, EXTENDED_OP(OP_IMPORT), full_arg, name_arg
         );
 
         if (jml_parser_match(compiler, TOKEN_ARROW)) {
-            if (jml_parser_match(compiler, TOKEN_USCORE)) {
-                jml_token_t uscore = jml_token_emit_synthetic(compiler->parser, "_");
-                memcpy(&compiler->locals[local].name, &uscore, sizeof(jml_token_t));
+            jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
 
-            } else {
-                jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
+            if (name_length == compiler->parser->previous.length
+                && memcmp(name, compiler->parser->previous.start, name_length) == 0)
+                jml_parser_error(compiler, "Can't swap variable to itself.");
 
-                memcpy(&compiler->locals[local].name,
-                    &compiler->parser->previous, sizeof(jml_token_t));
-            }
+            memcpy(&compiler->locals[local].name,
+                &compiler->parser->previous, sizeof(jml_token_t));
         }
     }
 
