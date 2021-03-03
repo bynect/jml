@@ -1908,6 +1908,7 @@ jml_import_statement(jml_compiler_t *compiler)
 
     char    name[JML_PATH_MAX];
     size_t  name_length = 0;
+    jml_token_t name_token;
 
     jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after 'import'.");
 
@@ -1922,6 +1923,8 @@ jml_import_statement(jml_compiler_t *compiler)
 
     memcpy(name, compiler->parser->previous.start, compiler->parser->previous.length);
     name_length         = compiler->parser->previous.length;
+
+    name_token = compiler->parser->previous;
 
     if (jml_parser_match(compiler, TOKEN_DOT)) {
         do {
@@ -1946,6 +1949,8 @@ jml_import_statement(jml_compiler_t *compiler)
 
             memcpy(name, compiler->parser->previous.start, compiler->parser->previous.length);
             name_length = compiler->parser->previous.length;
+
+            name_token = compiler->parser->previous;
         } while (jml_parser_match(compiler, TOKEN_DOT));
     }
 
@@ -2006,11 +2011,10 @@ jml_import_statement(jml_compiler_t *compiler)
         }
 
     } else {
-        jml_token_t token_name = jml_token_emit_synthetic(compiler->parser, name);
-        int local = jml_local_resolve(compiler, &token_name);
+        int local = jml_local_resolve(compiler, &name_token);
 
         if (local == -1)
-            local = jml_local_add_synthetic(compiler, &token_name);
+            local = jml_local_add_synthetic(compiler, &name_token);
 
         EMIT_EXTENDED_OP2(
             compiler, OP_IMPORT, EXTENDED_OP(OP_IMPORT), full_arg, name_arg
