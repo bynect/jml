@@ -1067,6 +1067,8 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(EXTENDED_OP(OP_GET_GLOBAL)),
         TABLE_OP(OP_DEF_GLOBAL),
         TABLE_OP(EXTENDED_OP(OP_DEF_GLOBAL)),
+        TABLE_OP(OP_DEL_GLOBAL),
+        TABLE_OP(EXTENDED_OP(OP_DEL_GLOBAL)),
         TABLE_OP(OP_SET_MEMBER),
         TABLE_OP(EXTENDED_OP(OP_SET_MEMBER)),
         TABLE_OP(OP_GET_MEMBER),
@@ -1677,6 +1679,16 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_string_t *name  = READ_STRING_EXTENDED();
                 jml_vm_global_set(name, jml_vm_peek(0));
                 jml_vm_pop();
+                END_OP();
+            }
+
+            EXEC_OP(OP_DEL_GLOBAL) {
+                jml_vm_global_del(READ_STRING());
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_DEL_GLOBAL)) {
+                jml_vm_global_del(READ_STRING_EXTENDED());
                 END_OP();
             }
 

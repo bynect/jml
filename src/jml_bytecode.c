@@ -438,6 +438,12 @@ jml_bytecode_instruction_disassemble(
         case EXTENDED_OP(OP_DEF_GLOBAL):
             return jml_bytecode_instruction_const_extended("OP_DEF_GLOBAL_EXTENDED", bytecode, offset);
 
+        case OP_DEL_GLOBAL:
+            return jml_bytecode_instruction_const("OP_DEL_GLOBAL", bytecode, offset);
+
+        case EXTENDED_OP(OP_DEL_GLOBAL):
+            return jml_bytecode_instruction_const_extended("OP_DEL_GLOBAL_EXTENDED", bytecode, offset);
+
         case OP_SET_MEMBER:
             return jml_bytecode_instruction_const("OP_SET_MEMBER", bytecode, offset);
 

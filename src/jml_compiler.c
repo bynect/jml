@@ -1279,21 +1279,34 @@ jml_variable_named(jml_compiler_t *compiler,
     } else if (jml_parser_match(compiler, TOKEN_ARROW)) {
         if (!index) {
             jml_parser_match_line(compiler);
-            jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
+            if (jml_parser_match(compiler, TOKEN_USCORE)) {
+                if (get_op == OP_GET_GLOBAL || get_op == EXTENDED_OP(OP_GET_GLOBAL)) {
+                    EMIT_EXTENDED_OP1(
+                        compiler, OP_DEL_GLOBAL, EXTENDED_OP(OP_DEL_GLOBAL), arg
+                    );
+                    jml_bytecode_emit_byte(compiler, OP_NONE);
 
-            jml_bytecode_emit_byte(compiler, OP_NONE);
+                } else {
+                    jml_token_t uscore = jml_token_emit_synthetic(compiler->parser, "_");
+                    memcpy(&compiler->locals[arg].name, &uscore, sizeof(jml_token_t));
+                }
+            } else {
+                jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
 
-            if (jml_identifier_equal(&name, &compiler->parser->previous))
-                jml_parser_error(compiler, "Can't swap variable to itself.");
+                jml_bytecode_emit_byte(compiler, OP_NONE);
 
-            if (get_op == OP_GET_GLOBAL) {
-                uint16_t new_arg = jml_identifier_const(compiler, &compiler->parser->previous);
-                EMIT_EXTENDED_OP2(
-                    compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL), arg, new_arg
-                );
+                if (jml_identifier_equal(&name, &compiler->parser->previous))
+                    jml_parser_error(compiler, "Can't swap variable to itself.");
 
-            } else
-                memcpy(&compiler->locals[arg].name, &compiler->parser->previous, sizeof(jml_token_t));
+                if (get_op == OP_GET_GLOBAL || get_op == EXTENDED_OP(OP_GET_GLOBAL)) {
+                    uint16_t new_arg = jml_identifier_const(compiler, &compiler->parser->previous);
+                    EMIT_EXTENDED_OP2(
+                        compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL), arg, new_arg
+                    );
+
+                } else
+                    memcpy(&compiler->locals[arg].name, &compiler->parser->previous, sizeof(jml_token_t));
+            }
         } else
             jml_parser_error(compiler, "Can't swap indexed value.");
 
@@ -1318,6 +1331,13 @@ jml_variable(jml_compiler_t *compiler, bool assignable)
 
 
 static void
+jml_wildcard(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
+{
+    jml_parser_error(compiler, "Can't read value of wildcard.");
+}
+
+
+static void
 jml_super(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 {
     jml_parser_match_line(compiler);
@@ -1332,19 +1352,24 @@ jml_super(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
     jml_parser_consume(compiler, TOKEN_NAME, "Expect superclass method name.");
 
     uint16_t name = jml_identifier_const(compiler, &compiler->parser->previous);
-    jml_variable_named(compiler,
-        jml_token_emit_synthetic(compiler->parser, "self"), false);
+    jml_variable_named(
+        compiler, jml_token_emit_synthetic(compiler->parser, "self"), false
+    );
 
     if (jml_parser_match(compiler, TOKEN_LPAREN)) {
         uint16_t arg_count = jml_arguments_list(compiler);
-        jml_variable_named(compiler, jml_token_emit_synthetic(compiler->parser, "super"), false);
+        jml_variable_named(
+            compiler, jml_token_emit_synthetic(compiler->parser, "super"), false
+        );
 
         EMIT_EXTENDED_OP2(
             compiler, OP_SUPER_INVOKE, EXTENDED_OP(OP_SUPER_INVOKE), name, arg_count
         );
 
     } else {
-        jml_variable_named(compiler, jml_token_emit_synthetic(compiler->parser, "super"), false);
+        jml_variable_named(
+            compiler, jml_token_emit_synthetic(compiler->parser, "super"), false
+        );
         EMIT_EXTENDED_OP1(
             compiler, OP_SUPER, EXTENDED_OP(OP_SUPER), name
         );
@@ -1437,7 +1462,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_COMMA*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_DOT*/       {NULL,          &jml_dot,       PREC_CALL},
 
-    /*TOKEN_USCORE*/    {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_USCORE*/    {&jml_wildcard, NULL,           PREC_NONE},
     /*TOKEN_CARET*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AMP*/       {NULL,          NULL,           PREC_NONE},
     /*TOKEN_TILDE*/     {NULL,          NULL,           PREC_NONE},
@@ -1728,24 +1753,33 @@ jml_class_declaration(jml_compiler_t *compiler)
             jml_method(compiler);
 
         } else if (jml_parser_match(compiler, TOKEN_LET)) {
-            uint16_t variable           = jml_variable_parse(
-                compiler, "Expect variable name.");
+            if (jml_parser_match(compiler, TOKEN_USCORE)) {
+                if (jml_parser_match(compiler, TOKEN_EQUAL)) {
+                    jml_expression(compiler);
+                    jml_bytecode_emit_byte(compiler, OP_POP);
+                }
+                jml_parser_newline(compiler, "Expect newline after 'let' declaration.");
 
-            if (jml_parser_match(compiler, TOKEN_EQUAL))
-                jml_expression(compiler);
-            else
-                jml_bytecode_emit_byte(compiler, OP_NONE);
+            } else {
+                uint16_t variable       = jml_variable_parse(
+                    compiler, "Expect variable name.");
 
-            jml_parser_newline(compiler, "Expect newline after 'let' declaration.");
-            EMIT_EXTENDED_OP1(
-                compiler, OP_CLASS_FIELD, EXTENDED_OP(OP_CLASS_FIELD), variable
-            );
+                if (jml_parser_match(compiler, TOKEN_EQUAL))
+                    jml_expression(compiler);
+                else
+                    jml_bytecode_emit_byte(compiler, OP_NONE);
+
+                jml_parser_newline(compiler, "Expect newline after 'let' declaration.");
+                EMIT_EXTENDED_OP1(
+                    compiler, OP_CLASS_FIELD, EXTENDED_OP(OP_CLASS_FIELD), variable
+                );
+            }
 
         } else if (jml_parser_match(compiler, TOKEN_CLASS)) {
             uint16_t name               = jml_identifier_const(
                 compiler, &compiler->parser->current);
-            jml_class_declaration(compiler);
 
+            jml_class_declaration(compiler);
             EMIT_EXTENDED_OP1(
                 compiler, OP_CLASS_FIELD, EXTENDED_OP(OP_CLASS_FIELD), name
             );
@@ -1783,15 +1817,24 @@ jml_function_declaration(jml_compiler_t *compiler)
 static void
 jml_let_declaration(jml_compiler_t *compiler)
 {
-    uint16_t global = jml_variable_parse(compiler, "Expect variable name.");
+    if (jml_parser_match(compiler, TOKEN_USCORE)) {
+        if (jml_parser_match(compiler, TOKEN_EQUAL)) {
+            jml_expression(compiler);
+            jml_bytecode_emit_byte(compiler, OP_POP);
+        }
+        jml_parser_newline(compiler, "Expect newline after 'let' declaration.");
 
-    if (jml_parser_match(compiler, TOKEN_EQUAL))
-        jml_expression(compiler);
-    else
-        jml_bytecode_emit_byte(compiler, OP_NONE);
+    } else {
+        uint16_t global = jml_variable_parse(compiler, "Expect variable name.");
 
-    jml_parser_newline(compiler, "Expect newline after 'let' declaration.");
-    jml_variable_definition(compiler, global);
+        if (jml_parser_match(compiler, TOKEN_EQUAL))
+            jml_expression(compiler);
+        else
+            jml_bytecode_emit_byte(compiler, OP_NONE);
+
+        jml_parser_newline(compiler, "Expect newline after 'let' declaration.");
+        jml_variable_definition(compiler, global);
+    }
 }
 
 
@@ -1936,12 +1979,20 @@ jml_import_statement(jml_compiler_t *compiler)
         );
 
         if (jml_parser_match(compiler, TOKEN_ARROW)) {
-            jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
-            uint16_t new_name = jml_identifier_const(compiler, &compiler->parser->previous);
+            if (jml_parser_match(compiler, TOKEN_USCORE)) {
+                EMIT_EXTENDED_OP1(
+                    compiler, OP_DEL_GLOBAL, EXTENDED_OP(OP_DEL_GLOBAL), name_arg
+                );
+                jml_bytecode_emit_byte(compiler, OP_NONE);
 
-            EMIT_EXTENDED_OP2(
-                compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL), name_arg, new_name
-            );
+            } else {
+                jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
+                uint16_t new_name = jml_identifier_const(compiler, &compiler->parser->previous);
+
+                EMIT_EXTENDED_OP2(
+                    compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL), name_arg, new_name
+                );
+            }
         }
 
     } else {
@@ -1956,10 +2007,16 @@ jml_import_statement(jml_compiler_t *compiler)
         );
 
         if (jml_parser_match(compiler, TOKEN_ARROW)) {
-            jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
+            if (jml_parser_match(compiler, TOKEN_USCORE)) {
+                jml_token_t uscore = jml_token_emit_synthetic(compiler->parser, "_");
+                memcpy(&compiler->locals[local].name, &uscore, sizeof(jml_token_t));
 
-            memcpy(&compiler->locals[local].name,
-                &compiler->parser->previous, sizeof(jml_token_t));
+            } else {
+                jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
+
+                memcpy(&compiler->locals[local].name,
+                    &compiler->parser->previous, sizeof(jml_token_t));
+            }
         }
     }
 
