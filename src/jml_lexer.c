@@ -294,7 +294,7 @@ jml_number_literal(jml_lexer_t *lexer)
                 if ((jml_lexer_peek(lexer) == '.'))
                     return jml_token_emit_error("Invalid dot after hexadecimal literal.", lexer);
 
-                break;
+                return jml_token_emit(TOKEN_NUMBER, lexer);
             }
 
             case 'o':
@@ -309,7 +309,7 @@ jml_number_literal(jml_lexer_t *lexer)
                 if ((jml_lexer_peek(lexer) == '.'))
                     return jml_token_emit_error("Invalid dot after octal literal.", lexer);
 
-                break;
+                return jml_token_emit(TOKEN_NUMBER, lexer);
             }
 
             case 'b':
@@ -324,24 +324,26 @@ jml_number_literal(jml_lexer_t *lexer)
                 if ((jml_lexer_peek(lexer) == '.'))
                     return jml_token_emit_error("Invalid dot after binary literal.", lexer);
 
-                break;
+                return jml_token_emit(TOKEN_NUMBER, lexer);
             }
 
-            default:
+            case '0':
                 return jml_token_emit_error("Invalid leading zeroes.", lexer);
-        }
 
-    } else {
+            default:
+                break;
+        }
+    }
+
+    while (jml_is_digit(jml_lexer_peek(lexer)))
+        jml_lexer_advance(lexer);
+
+    if ((jml_lexer_peek(lexer) == '.')
+        && jml_is_digit(jml_lexer_peek_next(lexer))) {
+
+        jml_lexer_advance(lexer);
         while (jml_is_digit(jml_lexer_peek(lexer)))
             jml_lexer_advance(lexer);
-
-        if ((jml_lexer_peek(lexer) == '.')
-            && jml_is_digit(jml_lexer_peek_next(lexer))) {
-
-            jml_lexer_advance(lexer);
-            while (jml_is_digit(jml_lexer_peek(lexer)))
-                jml_lexer_advance(lexer);
-        }
     }
 
     return jml_token_emit(TOKEN_NUMBER, lexer);
