@@ -275,21 +275,20 @@ jml_obj_function_stringify(jml_obj_function_t *function)
     size_t size = function->name->length * GC_HEAP_GROW_FACTOR;
     char *fn = jml_realloc(NULL, size);
 
-    sprintf(fn, "<fn ");
+    size_t pos = sprintf(fn, "<fn ");
 
     if (function->module != NULL) {
-        REALLOC(char, fn, size, size + function->module->name->length);
-        sprintf(fn, "%s.", function->module->name->chars);
+        REALLOC(char, fn, size, pos + function->module->name->length);
+        pos += sprintf(fn, "%s.", function->module->name->chars);
     }
 
     if (function->klass_name != NULL) {
-        REALLOC(char, fn, size, size + function->klass_name->length);
-        sprintf(fn, "%s.", function->klass_name->chars);
+        REALLOC(char, fn, size, pos + function->klass_name->length);
+        pos += sprintf(fn, "%s.", function->klass_name->chars);
     }
 
-    REALLOC(char, fn, size, size + function->name->length + 3);
-    sprintf(fn, "%s/%d>", function->name->chars,
-        function->arity);
+    REALLOC(char, fn, size, pos + function->name->length + 3);
+    pos += sprintf(fn, "%s/%d>", function->name->chars, function->arity);
 
     return fn;
 }
@@ -305,36 +304,40 @@ jml_obj_cfunction_stringify(jml_obj_cfunction_t *function)
     size_t size = function->name->length * GC_HEAP_GROW_FACTOR;
     char *cfn = jml_realloc(NULL, size);
 
-    sprintf(cfn, "<builtin fn ");
+    size_t pos = sprintf(cfn, "<builtin fn ");
 
     if (function->module != NULL) {
-        REALLOC(char, cfn, size, size + function->module->name->length);
-        sprintf(cfn, "%s.", function->module->name->chars);
+        REALLOC(char, cfn, size, pos + function->module->name->length);
+        pos += sprintf(cfn, "%s.", function->module->name->chars);
     }
 
     if (function->klass_name != NULL) {
-        REALLOC(char, cfn, size, size + function->klass_name->length);
-        sprintf(cfn, "%s.", function->klass_name->chars);
+        REALLOC(char, cfn, size, pos + function->klass_name->length);
+        pos += sprintf(cfn, "%s.", function->klass_name->chars);
     }
 
-    REALLOC(char, cfn, size, size + function->name->length + 3);
-    sprintf(cfn, "%s>", function->name->chars);
+    REALLOC(char, cfn, size, pos + function->name->length + 3);
+    pos += sprintf(cfn, "%s>", function->name->chars);
 
     return cfn;
 }
 
 
-#define CLASS_NAME(buffer, klass)                       \
-    if (klass->module != NULL) {                        \
-        REALLOC(char, buffer, size,                     \
-            size + klass->module->name->length);        \
-        sprintf(buffer, "%s.",                          \
-            klass->module->name->chars);                \
-    }                                                   \
+#define CLASS_NAME(buffer, klass, size, pos)            \
+    do {                                                \
+        if (klass->module != NULL) {                    \
+            REALLOC(char, buffer, size,                 \
+                pos + klass->module->name->length);     \
                                                         \
-    REALLOC(char, buffer, size,                         \
-        size + klass->name->length + 3);                \
-    sprintf(buffer, "%s", klass->name->chars)
+            pos += sprintf(buffer + pos, "%s.",         \
+                klass->module->name->chars);            \
+        }                                               \
+        REALLOC(char, buffer, size,                     \
+            size + klass->name->length + 3);            \
+                                                        \
+        pos += sprintf(buffer + pos, "%s",              \
+            klass->name->chars);                        \
+    } while (false)
 
 
 static char *
@@ -343,9 +346,8 @@ jml_obj_class_stringify(jml_obj_class_t *klass)
     size_t size = klass->name->length * GC_HEAP_GROW_FACTOR;
     char *buffer = jml_realloc(NULL, size);
 
-    sprintf(buffer, "<class ");
-
-    CLASS_NAME(buffer, klass);
+    size_t pos = sprintf(buffer, "<class ");
+    CLASS_NAME(buffer, klass, size, pos);
 
     return buffer;
 }
@@ -375,9 +377,8 @@ jml_obj_instance_stringify(jml_obj_instance_t *instance)
     size_t size = instance->klass->name->length * GC_HEAP_GROW_FACTOR;
     char *buffer = jml_realloc(NULL, size);
 
-    sprintf(buffer, "<instance of ");
-
-    CLASS_NAME(buffer, instance->klass);
+    size_t pos = sprintf(buffer, "<instance of ");
+    CLASS_NAME(buffer, instance->klass, size, pos);
 
     return buffer;
 }
@@ -404,13 +405,13 @@ jml_obj_stringify(jml_value_t value)
             int item_count          = array.count - 1;
             for (int i = 0; i < item_count; ++i) {
                 char *temp = jml_value_stringify(array.values[i]);
-                REALLOC(char, buffer, size, size + strlen(temp));
+                REALLOC(char, buffer, size, (ptr - buffer) + strlen(temp));
                 ptr += sprintf(ptr, "%s, ", temp);
                 jml_free(temp);
             }
 
             char *temp = jml_value_stringify(array.values[item_count]);
-            REALLOC(char, buffer, size, size + strlen(temp));
+            REALLOC(char, buffer, size, (ptr - buffer) + strlen(temp));
             ptr += sprintf(ptr, "%s", temp);
             jml_free(temp);
 
@@ -436,13 +437,17 @@ jml_obj_stringify(jml_value_t value)
 
             for (int i = 0; i < item_count; ++i) {
                 char *temp = jml_value_stringify(entries[i].value);
-                REALLOC(char, buffer, size, size + strlen(temp) + entries[i].key->length + 1);
+                REALLOC(char, buffer, size,
+                    (ptr - buffer) + strlen(temp) + entries[i].key->length + 1);
+
                 ptr += sprintf(ptr, "\"%s\": %s, ", entries[i].key->chars, temp);
                 jml_free(temp);
             }
 
             char *temp = jml_value_stringify(entries[item_count].value);
-            REALLOC(char, buffer, size, size + strlen(temp) + entries[item_count].key->length + 2);
+            REALLOC(char, buffer, size,
+                (ptr - buffer) + strlen(temp) + entries[item_count].key->length + 2);
+
             ptr += sprintf(ptr, "\"%s\": %s", entries[item_count].key->chars, temp);
             jml_free(temp);
             jml_free(entries);
