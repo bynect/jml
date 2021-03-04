@@ -437,7 +437,7 @@ jml_scope_end(jml_compiler_t *compiler)
         else
             jml_bytecode_emit_byte(compiler, OP_POP);
 
-        compiler->local_count--;
+        --compiler->local_count;
     }
 }
 
@@ -1957,15 +1957,13 @@ jml_import_statement(jml_compiler_t *compiler)
     fullname[length]  = '\0';
     name[name_length] = '\0';
 
-    uint16_t full_arg = jml_bytecode_make_const(
-        compiler,
-        OBJ_VAL(jml_obj_string_take(fullname, length))
-    );
+    jml_vm_push(OBJ_VAL(jml_obj_string_take(fullname, length)));
+    jml_vm_push(OBJ_VAL(jml_obj_string_copy(name, name_length)));
 
-    uint16_t name_arg = jml_bytecode_make_const(
-        compiler,
-        OBJ_VAL(jml_obj_string_copy(name, name_length))
-    );
+    uint16_t full_arg = jml_bytecode_make_const(compiler, jml_vm_peek(1));
+    uint16_t name_arg = jml_bytecode_make_const(compiler, jml_vm_peek(0));
+
+    jml_vm_pop_two();
 
     if (wildcard) {
         if (compiler->type == FUNCTION_MAIN) {
@@ -2123,14 +2121,23 @@ jml_for_statement(jml_compiler_t *compiler)
     jml_token_t tok3 = jml_token_emit_synthetic(compiler->parser, "$$$_3");
     int size = jml_local_add_synthetic(compiler, &tok3);
 
-    EMIT_EXTENDED_OP1(
-        compiler, OP_GET_GLOBAL, EXTENDED_OP(OP_GET_GLOBAL),
-        jml_bytecode_make_const(compiler, jml_string_intern("size"))
+    jml_vm_push(jml_string_intern("core"));
+    jml_vm_push(jml_string_intern("size"));
+
+    EMIT_EXTENDED_OP2(
+        compiler, OP_IMPORT, EXTENDED_OP(OP_IMPORT),
+        jml_bytecode_make_const(compiler, jml_vm_peek(1)),
+        jml_bytecode_make_const(compiler, jml_vm_peek(1))
     );
     EMIT_EXTENDED_OP1(
         compiler, OP_GET_LOCAL, EXTENDED_OP(OP_GET_LOCAL), iter
     );
-    jml_bytecode_emit_bytes(compiler, OP_CALL, 1);
+    EMIT_EXTENDED_OP2(
+        compiler, OP_INVOKE, EXTENDED_OP(OP_INVOKE),
+        jml_bytecode_make_const(compiler, jml_vm_peek(0)), 1
+    );
+
+    jml_vm_pop_two();
 
     int start = jml_bytecode_current(compiler)->count;
 
@@ -2241,9 +2248,9 @@ jml_match_statement(jml_compiler_t *compiler)
     int wildcard        = 0;
     bool done           = false;
 
-    int case_jump;
     int cases[LOCAL_MAX];
     int case_count      = 0;
+    int case_jump       = -1;
 
     jml_token_t tok1    = jml_token_emit_synthetic(compiler->parser, "$$$_1");
     int condition       = jml_local_add_synthetic(compiler, &tok1);
@@ -2311,12 +2318,14 @@ jml_match_statement(jml_compiler_t *compiler)
         jml_bytecode_patch_jump(compiler, case_jump);
         jml_bytecode_emit_byte(compiler, OP_POP);
 
-    } while (jml_parser_check(compiler->parser, TOKEN_STRING)
+    } while ((!jml_parser_check(compiler->parser, TOKEN_RBRACE)
+        && !jml_parser_check(compiler->parser, TOKEN_EOF))
+        && (jml_parser_check(compiler->parser, TOKEN_STRING)
         || jml_parser_check(compiler->parser, TOKEN_NUMBER)
         || jml_parser_check(compiler->parser, TOKEN_NONE)
         || jml_parser_check(compiler->parser, TOKEN_FALSE)
         || jml_parser_check(compiler->parser, TOKEN_TRUE)
-        || jml_parser_check(compiler->parser, TOKEN_USCORE));
+        || jml_parser_check(compiler->parser, TOKEN_USCORE)));
 
     for (int i = 0; i < case_count; ++i)
         jml_bytecode_patch_jump(compiler, cases[i]);
