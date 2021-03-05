@@ -19,8 +19,6 @@
 #endif
 
 
-static jml_obj_class_t *dir_class       = NULL;
-
 static jml_obj_class_t *file_class      = NULL;
 
 
@@ -944,6 +942,7 @@ module_init(jml_obj_module_t *module)
     jml_module_add_value(module, "TMP_MAX", NUM_VAL(TMP_MAX));
 
     jml_module_add_class(module, "File", file_table, false);
+    jml_module_add_class(module, "Dir", dir_table, false);
 
     jml_value_t *file_value;
     if (jml_hashmap_get(&module->globals,
@@ -951,15 +950,5 @@ module_init(jml_obj_module_t *module)
 
         file_class = AS_CLASS(*file_value);
         /*jml_gc_exempt(*file_value);*/
-    }
-
-    jml_module_add_class(module, "Dir", dir_table, false);
-
-    jml_value_t *dir_value;
-    if (jml_hashmap_get(&module->globals,
-        jml_obj_string_copy("Dir", 3), &dir_value)) {
-
-        dir_class = AS_CLASS(*dir_value);
-        /*jml_gc_exempt(*dir_value);*/
     }
 }
