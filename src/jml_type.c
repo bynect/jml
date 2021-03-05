@@ -271,6 +271,7 @@ jml_obj_function_new(void)
         jml_obj_function_t, OBJ_FUNCTION);
 
     function->arity              = 0;
+    function->variadic           = false;
     function->upvalue_count      = 0;
     function->name               = NULL;
     function->klass_name         = NULL;

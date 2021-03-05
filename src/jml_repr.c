@@ -63,7 +63,12 @@ jml_obj_function_print(jml_obj_function_t *function,
     if (function->klass_name != NULL)
         printf("%s.", function->klass_name->chars);
 
-    printf("%s/%d>", function->name->chars, function->arity);
+    printf("%s", function->name->chars);
+
+    if (!function->variadic)
+        printf("/%d", function->arity);
+
+    printf(">");
 }
 
 
@@ -279,16 +284,21 @@ jml_obj_function_stringify(jml_obj_function_t *function)
 
     if (function->module != NULL) {
         REALLOC(char, fn, size, pos + function->module->name->length);
-        pos += sprintf(fn, "%s.", function->module->name->chars);
+        pos += sprintf(fn + pos, "%s.", function->module->name->chars);
     }
 
     if (function->klass_name != NULL) {
         REALLOC(char, fn, size, pos + function->klass_name->length);
-        pos += sprintf(fn, "%s.", function->klass_name->chars);
+        pos += sprintf(fn + pos, "%s.", function->klass_name->chars);
     }
 
-    REALLOC(char, fn, size, pos + function->name->length + 3);
-    pos += sprintf(fn, "%s/%d>", function->name->chars, function->arity);
+    REALLOC(char, fn, size, pos + function->name->length + 10);
+    pos += sprintf(fn + pos, "%s", function->name->chars);
+
+    if (!function->variadic)
+        pos += sprintf(fn + pos, "/%d", function->arity);
+
+    pos += sprintf(fn + pos, ">");
 
     return fn;
 }
@@ -308,16 +318,16 @@ jml_obj_cfunction_stringify(jml_obj_cfunction_t *function)
 
     if (function->module != NULL) {
         REALLOC(char, cfn, size, pos + function->module->name->length);
-        pos += sprintf(cfn, "%s.", function->module->name->chars);
+        pos += sprintf(cfn + pos, "%s.", function->module->name->chars);
     }
 
     if (function->klass_name != NULL) {
         REALLOC(char, cfn, size, pos + function->klass_name->length);
-        pos += sprintf(cfn, "%s.", function->klass_name->chars);
+        pos += sprintf(cfn + pos, "%s.", function->klass_name->chars);
     }
 
     REALLOC(char, cfn, size, pos + function->name->length + 3);
-    pos += sprintf(cfn, "%s>", function->name->chars);
+    pos += sprintf(cfn + pos, "%s>", function->name->chars);
 
     return cfn;
 }

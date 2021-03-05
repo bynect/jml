@@ -291,13 +291,13 @@ err:
 static jml_value_t
 jml_core_char(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc    = jml_error_args(
+    jml_obj_exception_t *exc        = jml_error_args(
         arg_count, 1);
 
     if (exc != NULL)
         return OBJ_VAL(exc);
 
-    jml_value_t value   = args[0];
+    jml_value_t value               = args[0];
 
     if (IS_NUM(value)) {
         char c[5] = { 0 };
@@ -310,7 +310,7 @@ jml_core_char(int arg_count, jml_value_t *args)
     }
 
     if (IS_STRING(value)) {
-        jml_obj_string_t *string = AS_STRING(value);
+        jml_obj_string_t *string    = AS_STRING(value);
 
         if (jml_string_len(string->chars, string->length) != 1) {
             return OBJ_VAL(
@@ -318,7 +318,7 @@ jml_core_char(int arg_count, jml_value_t *args)
             );
         }
 
-        uint32_t code = 0;
+        uint32_t code               = 0;
         if (jml_string_decode(string->chars, &code))
             return NUM_VAL(code);
 
@@ -336,7 +336,7 @@ jml_core_char(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_instance(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc = jml_error_args(
+    jml_obj_exception_t *exc            = jml_error_args(
         arg_count, 2);
 
     if (exc != NULL)
@@ -442,7 +442,7 @@ jml_core_attr(int arg_count, jml_value_t *args)
     if (exc != NULL)
         return OBJ_VAL(exc);
 
-    jml_value_t value = args[0];
+    jml_value_t value               = args[0];
 
     if (!IS_OBJ(value))
         goto err;

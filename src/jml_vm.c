@@ -343,20 +343,35 @@ jml_vm_global_pop(jml_obj_string_t *name,
 static bool
 jml_vm_call(jml_obj_closure_t *closure, int arg_count)
 {
-    if (arg_count < closure->function->arity) {
-        jml_vm_error(
-            "TooFewArgs: Expected '%d' arguments but got '%d'.",
-            closure->function->arity, arg_count
-        );
-        return false;
-    }
+    if (closure->function->variadic) {
+        int             item_count  = arg_count - closure->function->arity + 1;
+        jml_value_t     *values     = vm->stack_top -= item_count;
+        jml_obj_array_t *array      = jml_obj_array_new();
+        jml_gc_exempt(OBJ_VAL(array));
 
-    if (arg_count > closure->function->arity) {
-        jml_vm_error(
-            "TooManyArgs: Expected '%d' arguments but got '%d'.",
-            closure->function->arity, arg_count
-        );
-        return false;
+        for (int i = 0; i < item_count; ++i) {
+            jml_obj_array_append(array, values[i]);
+        }
+
+        jml_gc_unexempt(OBJ_VAL(array));
+        jml_vm_push(OBJ_VAL(array));
+
+    } else {
+        if (arg_count < closure->function->arity) {
+            jml_vm_error(
+                "TooFewArgs: Expected '%d' arguments but got '%d'.",
+                closure->function->arity, arg_count
+            );
+            return false;
+        }
+
+        if (arg_count > closure->function->arity) {
+            jml_vm_error(
+                "TooManyArgs: Expected '%d' arguments but got '%d'.",
+                closure->function->arity, arg_count
+            );
+            return false;
+        }
     }
 
     if (vm->frame_count == FRAMES_MAX) {
@@ -367,7 +382,9 @@ jml_vm_call(jml_obj_closure_t *closure, int arg_count)
     jml_call_frame_t *frame = &vm->frames[vm->frame_count++];
     frame->closure = closure;
     frame->pc = closure->function->bytecode.code;
-    frame->slots = vm->stack_top - arg_count - 1;
+    frame->slots = closure->function->variadic
+        ? vm->stack_top - closure->function->arity - 1
+        : vm->stack_top - arg_count - 1;
 
     return true;
 }

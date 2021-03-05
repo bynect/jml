@@ -130,6 +130,7 @@ struct jml_obj_method {
 struct jml_obj_function {
     jml_obj_t                       obj;
     int                             arity;
+    bool                            variadic;
     int                             upvalue_count;
     jml_bytecode_t                  bytecode;
     jml_obj_string_t               *name;

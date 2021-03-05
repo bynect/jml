@@ -1404,6 +1404,7 @@ jml_lambda(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
         FUNCTION_LAMBDA, compiler->module, compiler->output);
 
     jml_scope_begin(&sub_compiler);
+    int variadic                 = 0;
 
     if (!jml_parser_check(sub_compiler.parser, TOKEN_VBAR)) {
         do {
@@ -1415,6 +1416,23 @@ jml_lambda(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
                 );
             }
 
+            if (jml_parser_match(&sub_compiler, TOKEN_CARET)) {
+                if (++variadic > 1) {
+                    jml_parser_error(
+                        (&sub_compiler),
+                        "Can have only one variadic parameter for function."
+                    );
+                }
+            } else if (variadic >= 1) {
+                jml_parser_error_current(
+                    (&sub_compiler),
+                    "Variadic parameter should be the last."
+                );
+            }
+
+            if (jml_parser_match(compiler, TOKEN_USCORE))
+                continue;
+
             uint16_t param_const = jml_variable_parse(&sub_compiler, "Expect parameter name.");
             jml_variable_definition(&sub_compiler, param_const);
         } while (jml_parser_match(&sub_compiler, TOKEN_COMMA));
@@ -1425,7 +1443,9 @@ jml_lambda(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
     jml_block(&sub_compiler);
 
     jml_obj_function_t *function = jml_compiler_end(&sub_compiler);
-    uint16_t constant = jml_bytecode_make_const(compiler, OBJ_VAL(function));
+    function->variadic           = variadic == 1;
+
+    uint16_t constant            = jml_bytecode_make_const(compiler, OBJ_VAL(function));
     EMIT_EXTENDED_OP1(
         compiler, OP_CLOSURE, EXTENDED_OP(OP_CLOSURE), constant
     );
@@ -1620,6 +1640,7 @@ jml_function(jml_compiler_t *compiler, jml_function_type type)
     jml_scope_begin(&sub_compiler);
 
     jml_parser_consume(&sub_compiler, TOKEN_LPAREN, "Expect '(' after function name.");
+    int variadic                 = 0;
 
     if (!jml_parser_check(sub_compiler.parser, TOKEN_RPAREN)) {
         do {
@@ -1630,6 +1651,23 @@ jml_function(jml_compiler_t *compiler, jml_function_type type)
                     "Can't have more than 255 parameters."
                 );
             }
+
+            if (jml_parser_match(&sub_compiler, TOKEN_CARET)) {
+                if (++variadic > 1) {
+                    jml_parser_error(
+                        (&sub_compiler),
+                        "Can have only one variadic parameter for function."
+                    );
+                }
+            } else if (variadic >= 1) {
+                jml_parser_error_current(
+                    (&sub_compiler),
+                    "Variadic parameter should be the last."
+                );
+            }
+
+            if (jml_parser_match(compiler, TOKEN_USCORE))
+                continue;
 
             uint16_t param_const = jml_variable_parse(&sub_compiler, "Expect parameter name.");
             jml_variable_definition(&sub_compiler, param_const);
@@ -1643,6 +1681,8 @@ jml_function(jml_compiler_t *compiler, jml_function_type type)
     jml_parser_newline(&sub_compiler, "Expect newline after 'fn' declaration.");
 
     jml_obj_function_t *function = jml_compiler_end(&sub_compiler);
+    function->variadic           = variadic == 1;
+
     uint16_t constant = jml_bytecode_make_const(compiler, OBJ_VAL(function));
     EMIT_EXTENDED_OP1(
         compiler, OP_CLOSURE, EXTENDED_OP(OP_CLOSURE), constant
