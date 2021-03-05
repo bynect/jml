@@ -19,6 +19,7 @@
 #define IS_METHOD(value)            jml_obj_has_type(value, OBJ_METHOD)
 #define IS_FUNCTION(value)          jml_obj_has_type(value, OBJ_FUNCTION)
 #define IS_CLOSURE(value)           jml_obj_has_type(value, OBJ_CLOSURE)
+#define IS_COROUTINE(value)         jml_obj_has_type(value, OBJ_COROUTINE)
 #define IS_CFUNCTION(value)         jml_obj_has_type(value, OBJ_CFUNCTION)
 #define IS_EXCEPTION(value)         jml_obj_has_type(value, OBJ_EXCEPTION)
 
@@ -33,6 +34,7 @@
 #define AS_METHOD(value)            ((jml_obj_method_t*)AS_OBJ(value))
 #define AS_FUNCTION(value)          ((jml_obj_function_t*)AS_OBJ(value))
 #define AS_CLOSURE(value)           ((jml_obj_closure_t*)AS_OBJ(value))
+#define AS_COROUTINE(value)         ((jml_obj_coroutine_t*)AS_OBJ(value))
 #define AS_CFUNCTION(value)         (((jml_obj_cfunction_t*)AS_OBJ(value)))
 #define AS_EXCEPTION(value)         ((jml_obj_exception_t*)AS_OBJ(value))
 
@@ -48,6 +50,7 @@ typedef enum {
     OBJ_FUNCTION,
     OBJ_CLOSURE,
     OBJ_UPVALUE,
+    OBJ_COROUTINE,
     OBJ_CFUNCTION,
     OBJ_EXCEPTION
 } jml_obj_type;
@@ -56,7 +59,6 @@ typedef enum {
 struct jml_obj {
     jml_obj_type                    type;
     bool                            marked;
-    bool                            exempt;
     struct jml_obj                 *next;
 };
 
@@ -155,6 +157,18 @@ struct jml_obj_upvalue {
 };
 
 
+struct jml_obj_coroutine {
+    jml_obj_t                       obj;
+    jml_call_frame_t                frames[FRAMES_MAX];
+    uint8_t                         frame_count;
+    jml_obj_upvalue_t              *open_upvalues;
+
+    jml_value_t                     stack[STACK_MAX];
+    jml_value_t                    *stack_top;
+    struct jml_obj_coroutine       *caller;
+};
+
+
 typedef jml_value_t (*jml_cfunction)(int arg_count, jml_value_t *args);
 
 typedef void (*jml_mfunction)(jml_obj_module_t *module);
@@ -205,6 +219,8 @@ jml_obj_function_t *jml_obj_function_new(void);
 jml_obj_closure_t *jml_obj_closure_new(jml_obj_function_t *function);
 
 jml_obj_upvalue_t *jml_obj_upvalue_new(jml_value_t *slot);
+
+jml_obj_coroutine_t *jml_obj_coroutine_new(jml_obj_closure_t *closure);
 
 jml_obj_cfunction_t *jml_obj_cfunction_new(jml_obj_string_t *name,
     jml_cfunction function, jml_obj_module_t *module);

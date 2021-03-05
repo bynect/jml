@@ -125,6 +125,7 @@ typedef struct jml_obj_method       jml_obj_method_t;
 typedef struct jml_obj_function     jml_obj_function_t;
 typedef struct jml_obj_upvalue      jml_obj_upvalue_t;
 typedef struct jml_obj_closure      jml_obj_closure_t;
+typedef struct jml_obj_coroutine    jml_obj_coroutine_t;
 typedef struct jml_obj_cfunction    jml_obj_cfunction_t;
 typedef struct jml_obj_exception    jml_obj_exception_t;
 
@@ -186,9 +187,11 @@ void *jml_alloc(size_t size);
 void jml_free(void *ptr);
 
 
-void jml_gc_exempt(jml_value_t value);
+void jml_gc_exempt_push(jml_value_t value);
 
-void jml_gc_unexempt(jml_value_t value);
+jml_value_t jml_gc_exempt_pop(void);
+
+jml_value_t jml_gc_exempt_peek(int distance);
 
 
 jml_value_t jml_string_intern(const char *string);

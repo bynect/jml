@@ -166,21 +166,23 @@ jml_obj_print(jml_value_t value)
             jml_obj_instance_t *instance    = AS_INSTANCE(value);
 
             if (vm->print_string != NULL) {
-                jml_value_t *print;
+                jml_value_t *method;
                 if (jml_hashmap_get(&instance->klass->statics,
-                    vm->print_string, &print)) {
+                    vm->print_string, &method)) {
 
-                    if (IS_CFUNCTION(*print)) {
-                        jml_vm_push(OBJ_VAL(*print));
-                        jml_vm_push(OBJ_VAL(instance));
+                    jml_obj_coroutine_t *coroutine  = jml_obj_coroutine_new(NULL);
 
-                        jml_vm_call_value(*print, 1);
-                        jml_vm_pop();
-                        break;
+                    if (IS_CFUNCTION(*method)) {
+                        *coroutine->stack_top++     = OBJ_VAL(instance);
+
+                        jml_vm_call_value(coroutine, *method, 1);
+                        jml_vm_call_coroutine(coroutine, NULL);
 
                     } else {
-                        /*jml_vm_call_cstack(*print, 0, NULL);*/
+                        jml_vm_call_value(coroutine, *method, 0);
+                        jml_vm_call_coroutine(coroutine, NULL);
                     }
+                    return;
                 }
             }
 
@@ -210,6 +212,13 @@ jml_obj_print(jml_value_t value)
 
         case OBJ_UPVALUE:
             printf("<upvalue>");
+            break;
+
+        case OBJ_COROUTINE:
+            jml_obj_function_print(
+                AS_CLOSURE(AS_COROUTINE(value)->stack[0])->function,
+                "coroutine"
+            );
             break;
 
         case OBJ_CFUNCTION:
@@ -367,20 +376,32 @@ static char *
 jml_obj_instance_stringify(jml_obj_instance_t *instance)
 {
     if (vm->str_string != NULL) {
-        jml_value_t *str;
+        jml_value_t *method;
         if (jml_hashmap_get(&instance->klass->statics,
-            vm->str_string, &str)) {
+            vm->str_string, &method)) {
 
-            if (IS_CFUNCTION(*str)) {
-                jml_vm_push(OBJ_VAL(*str));
-                jml_vm_push(OBJ_VAL(instance));
+            jml_value_t last                = NONE_VAL;
+            jml_obj_coroutine_t *coroutine  = jml_obj_coroutine_new(NULL);
 
-                jml_vm_call_value(*str, 1);
-                return jml_value_stringify(jml_vm_pop());
+            if (IS_CFUNCTION(*method)) {
+                *coroutine->stack_top++     = OBJ_VAL(instance);
+
+                jml_vm_call_value(coroutine, *method, 1);
+                if (jml_vm_call_coroutine(coroutine, &last) == INTERPRET_OK)
+                    return jml_value_stringify(last);
 
             } else {
-                /*jml_vm_call_cstack(*str, 0, NULL);*/
+                *coroutine->stack_top++     = *method;
+
+                jml_vm_call_value(coroutine, *method, 0);
+                if (jml_vm_call_coroutine(coroutine, &last) == INTERPRET_OK)
+                    return jml_value_stringify(last);
             }
+
+            jml_vm_error(
+                "DiffTypes: Can't get size from instance of '%s'.",
+                instance->klass->name->chars
+            );
         }
     }
 
@@ -500,6 +521,9 @@ jml_obj_stringify(jml_value_t value)
         case OBJ_UPVALUE:
             return jml_strdup("<upvalue>");
 
+        case OBJ_COROUTINE:
+            return jml_strdup("<coroutine>");
+
         case OBJ_CFUNCTION:
             return jml_obj_cfunction_stringify(
                 AS_CFUNCTION(value));
@@ -596,6 +620,9 @@ jml_obj_stringify_type(jml_value_t value)
 
         case OBJ_UPVALUE:
             return "<type upvalue>";
+
+        case OBJ_COROUTINE:
+            return "<type coroutine>";
 
         case OBJ_CFUNCTION:
             return "<type builtin fn>";

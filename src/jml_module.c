@@ -191,50 +191,48 @@ jml_module_open(jml_obj_string_t *qualified,
     } else if (jml_strsfx(path_raw, path_len, ".jml", strlen(".jml"))) {
 
         module = jml_obj_module_new(name, NULL);
-        jml_gc_exempt(OBJ_VAL(module));
+        jml_gc_exempt_push(OBJ_VAL(module));
 
         char *source = jml_file_read(path_raw);
         jml_obj_function_t *main = jml_compiler_compile(source, module, true);
         jml_free(source);
 
         if (main == NULL) {
-            jml_gc_unexempt(OBJ_VAL(module));
+            jml_gc_exempt_pop();
             jml_vm_error("ImportErr: Import of '%s' failed.", name->chars);
             goto err;
         }
 
-        jml_vm_push(OBJ_VAL(main));
+        jml_gc_exempt_push(OBJ_VAL(main));
         jml_obj_closure_t *closure = jml_obj_closure_new(main);
-        jml_vm_pop();
 
         jml_obj_module_t *super = vm->current;
         vm->current = module;
 
-        jml_value_t stack[STACK_MAX];
-        memcpy(stack, vm->cstack, STACK_MAX);
+        jml_obj_coroutine_t *coroutine = jml_obj_coroutine_new(closure);
 
-        if (!jml_vm_call_cstack(OBJ_VAL(closure), 0, NULL)) {
-            jml_gc_unexempt(OBJ_VAL(module));
+        if (jml_vm_call_coroutine(coroutine, NULL) != INTERPRET_OK){
+            jml_gc_exempt_pop();
+            jml_gc_exempt_pop();
             vm->current = super;
             jml_vm_error("ImportErr: Import of '%s' failed.", name->chars);
             goto err;
         }
 
-        memcpy(vm->cstack, stack, STACK_MAX);
+        jml_gc_exempt_pop();
+        jml_gc_exempt_pop();
         vm->current = super;
-        jml_gc_unexempt(OBJ_VAL(module));
 
     } else {
         jml_vm_error("ImportErr: Module not loadable.");
         goto err;
     }
 
-    jml_vm_push(OBJ_VAL(module));
+    jml_gc_exempt_push(OBJ_VAL(module));
     jml_obj_string_t *path_str = jml_obj_string_copy(path_raw, path_len);
-    jml_vm_push(OBJ_VAL(path_str));
+    *path = OBJ_VAL(path_str);
 
-    *path = jml_vm_peek(0);
-    jml_vm_pop_two();
+    jml_gc_exempt_pop();
     return module;
 
 err:
@@ -277,14 +275,13 @@ jml_module_get_raw(jml_obj_module_t *module,
         return NULL;
     }
 #endif
-
-    jml_vm_push(jml_string_intern(function_name));
+    jml_gc_exempt_push(jml_string_intern(function_name));
 
     jml_obj_cfunction_t *cfunction = jml_obj_cfunction_new(
-        AS_STRING(jml_vm_peek(0)), raw, module);
+        AS_STRING(jml_gc_exempt_peek(0)), raw, module
+    );
 
-    jml_vm_pop();
-
+    jml_gc_exempt_pop();
     return cfunction;
 }
 
@@ -298,19 +295,26 @@ jml_module_register(jml_obj_module_t *module,
         while (current->name != NULL
             && current->function != NULL) {
 
-            jml_vm_push(jml_string_intern(current->name));
+            jml_gc_exempt_push(jml_string_intern(current->name));
 
-            jml_vm_push(OBJ_VAL(
-                jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
-                    current->function, module)
-            ));
+            jml_value_t cfunction = OBJ_VAL(
+                jml_obj_cfunction_new(
+                    AS_STRING(jml_gc_exempt_peek(0)),
+                    current->function,
+                    module
+                )
+            );
+            jml_gc_exempt_push(cfunction);
 
-            jml_hashmap_set(&module->globals,
-                AS_STRING(jml_vm_peek(1)),
-                jml_vm_peek(0)
+            jml_hashmap_set(
+                &module->globals,
+                AS_STRING(jml_gc_exempt_peek(1)),
+                cfunction
             );
 
-            jml_vm_pop_two();
+            jml_gc_exempt_pop();
+            jml_gc_exempt_pop();
+
             ++current;
         }
     }
@@ -340,19 +344,26 @@ jml_module_initialize(jml_obj_module_t *module)
         while (current->name != NULL
             && current->function != NULL) {
 
-            jml_vm_push(jml_string_intern(current->name));
+            jml_gc_exempt_push(jml_string_intern(current->name));
 
-            jml_vm_push(OBJ_VAL(
-                jml_obj_cfunction_new(AS_STRING(jml_vm_peek(0)),
-                    current->function, module)
-            ));
+            jml_value_t cfunction = OBJ_VAL(
+                jml_obj_cfunction_new(
+                    AS_STRING(jml_gc_exempt_peek(0)),
+                    current->function,
+                    module
+                )
+            );
+            jml_gc_exempt_push(cfunction);
 
-            jml_hashmap_set(&module->globals,
-                AS_STRING(jml_vm_peek(1)),
-                jml_vm_peek(0)
+            jml_hashmap_set(
+                &module->globals,
+                AS_STRING(jml_gc_exempt_peek(1)),
+                cfunction
             );
 
-            jml_vm_pop_two();
+            jml_gc_exempt_pop();
+            jml_gc_exempt_pop();
+
             ++current;
         }
     }
@@ -386,13 +397,17 @@ jml_module_add_value(jml_obj_module_t *module,
     if (module == NULL || name == NULL)
         return false;
 
-    jml_vm_push(value);
-    jml_vm_push(jml_string_intern(name));
+    jml_gc_exempt_push(value);
+    jml_gc_exempt_push(jml_string_intern(name));
 
-    jml_hashmap_set(&module->globals,
-        AS_STRING(jml_vm_peek(0)), value);
+    jml_hashmap_set(
+        &module->globals,
+        AS_STRING(jml_gc_exempt_peek(0)),
+        value
+    );
 
-    jml_vm_pop_two();
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
     return true;
 }
 
@@ -404,13 +419,15 @@ jml_module_add_class(jml_obj_module_t *module, const char *name,
     if (module == NULL || name == NULL)
         return false;
 
-    jml_vm_push(jml_string_intern(name));
+    jml_value_t class_name = jml_string_intern(name);
+    jml_gc_exempt_push(class_name);
 
-    jml_vm_push(OBJ_VAL(
-        jml_obj_class_new(AS_STRING(jml_vm_peek(0)))
-    ));
+    jml_value_t class_value = OBJ_VAL(
+        jml_obj_class_new(AS_STRING(class_name))
+    );
+    jml_gc_exempt_push(class_value);
 
-    jml_obj_class_t *klass = AS_CLASS(jml_vm_peek(0));
+    jml_obj_class_t *klass = AS_CLASS(class_value);
 
     klass->inheritable      = inheritable;
     klass->module           = module;
@@ -420,31 +437,34 @@ jml_module_add_class(jml_obj_module_t *module, const char *name,
         while (current->name != NULL
             && current->function != NULL) {
 
-            jml_vm_push(jml_string_intern(current->name));
+            jml_value_t method_name = jml_string_intern(current->name);
+            jml_gc_exempt_push(method_name);
 
             jml_obj_cfunction_t *method = jml_obj_cfunction_new(
-                AS_STRING(jml_vm_peek(0)),
-                current->function,
-                module
+                AS_STRING(method_name), current->function, module
             );
 
-            jml_vm_push(OBJ_VAL(method));
+            jml_value_t method_value = OBJ_VAL(method);
+            jml_gc_exempt_push(method_value);
             method->klass_name = klass->name;
 
             jml_hashmap_set(
-                &klass->statics,
-                AS_STRING(jml_vm_peek(1)),
-                jml_vm_peek(0)
+                &klass->statics, AS_STRING(method_name), method_value
             );
 
-            jml_vm_pop_two();
+            jml_gc_exempt_pop();
+            jml_gc_exempt_pop();
+
             ++current;
         }
     }
 
-    jml_hashmap_set(&module->globals,
-        AS_STRING(jml_vm_peek(1)), jml_vm_peek(0));
+    jml_hashmap_set(
+        &module->globals, AS_STRING(class_name), class_value
+    );
 
-    jml_vm_pop_two();
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
+
     return true;
 }

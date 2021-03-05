@@ -264,11 +264,27 @@ jml_core_size(int arg_count, jml_value_t *args)
             return NUM_VAL(AS_MAP(value)->hashmap.count);
 
         case OBJ_INSTANCE: {
-            jml_obj_instance_t *instance    = AS_INSTANCE(value);
-            jml_value_t         last        = NONE_VAL;
+            jml_obj_instance_t *instance        = AS_INSTANCE(value);
+            jml_value_t *method;
+            if (jml_hashmap_get(&instance->klass->statics,
+                vm->size_string, &method)) {
 
-            if (jml_vm_invoke_cstack(instance, vm->size_string, 0, &last))
-                return last;
+                jml_value_t last                = NONE_VAL;
+                jml_obj_coroutine_t *coroutine  = jml_obj_coroutine_new(NULL);
+
+                if (IS_CFUNCTION(*method)) {
+                    *coroutine->stack_top++     = OBJ_VAL(instance);
+
+                    jml_vm_call_value(coroutine, *method, 1);
+                    if (jml_vm_call_coroutine(coroutine, &last) == INTERPRET_OK)
+                        return last;
+
+                } else {
+                    jml_vm_call_value(coroutine, *method, 0);
+                    if (jml_vm_call_coroutine(coroutine, &last) == INTERPRET_OK)
+                        return last;
+                }
+            }
 
             return OBJ_VAL(jml_obj_exception_format(
                 "DiffTypes",
@@ -570,19 +586,18 @@ static jml_module_function core_table[] = {
 void
 jml_core_register(jml_vm_t *vm)
 {
-    jml_obj_string_t *core_string   = jml_obj_string_copy(
-        "core", 4);
-    jml_vm_push(OBJ_VAL(core_string));
+    jml_obj_string_t *core_string   = jml_obj_string_copy("core", 4);
+    jml_gc_exempt_push(OBJ_VAL(core_string));
 
-    jml_obj_module_t *core_module   = jml_obj_module_new(
-        core_string, NULL);
-    jml_vm_push(OBJ_VAL(core_module));
+    jml_obj_module_t *core_module   = jml_obj_module_new(core_string, NULL);
+    jml_gc_exempt_push(OBJ_VAL(core_module));
 
     jml_module_register(core_module, core_table);
-    jml_hashmap_set(&vm->modules, core_string, jml_vm_peek(0));
-
-    jml_vm_pop_two();
+    jml_hashmap_set(&vm->modules, core_string, jml_gc_exempt_peek(0));
 
     jml_hashmap_add(&core_module->globals, &vm->builtins);
     jml_hashmap_add(&core_module->globals, &vm->globals);
+
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
 }

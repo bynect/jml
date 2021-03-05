@@ -20,7 +20,6 @@ jml_obj_allocate(size_t size, jml_obj_type type)
 
     object->type                = type;
     object->marked              = false;
-    object->exempt              = false;
 
     object->next                = vm->objects;
     vm->objects                 = object;
@@ -38,8 +37,7 @@ jml_obj_allocate(size_t size, jml_obj_type type)
 
 
 static jml_obj_string_t *
-jml_obj_string_allocate(char *chars,
-    size_t length, uint32_t hash)
+jml_obj_string_allocate(char *chars, size_t length, uint32_t hash)
 {
     jml_obj_string_t *string    = ALLOCATE_OBJ(
         jml_obj_string_t, OBJ_STRING
@@ -49,9 +47,9 @@ jml_obj_string_allocate(char *chars,
     string->chars               = chars;
     string->hash                = hash;
 
-    jml_vm_push(OBJ_VAL(string));
+    jml_gc_exempt_push(OBJ_VAL(string));
     jml_hashmap_set(&vm->strings, string, NONE_VAL);
-    jml_vm_pop();
+    jml_gc_exempt_pop();
 
     return string;
 }
@@ -126,30 +124,25 @@ jml_obj_array_new(void)
 
 
 void
-jml_obj_array_append(jml_obj_array_t *array,
-    jml_value_t value)
+jml_obj_array_append(jml_obj_array_t *array, jml_value_t value)
 {
-    jml_vm_push(value);
-
-    jml_value_array_write(&array->values,
-        jml_vm_peek(0));
-
-    jml_vm_pop();
+    jml_gc_exempt_push(value);
+    jml_value_array_write(&array->values, value);
+    jml_gc_exempt_pop();
 }
 
 
 void
-jml_obj_array_add(jml_obj_array_t *source,
-    jml_obj_array_t *dest)
+jml_obj_array_add(jml_obj_array_t *source, jml_obj_array_t *dest)
 {
-    jml_vm_push(OBJ_VAL(source));
-    jml_vm_push(OBJ_VAL(dest));
+    jml_gc_exempt_push(OBJ_VAL(source));
+    jml_gc_exempt_push(OBJ_VAL(dest));
 
-    for (int i = 0; i < source->values.count; ++i) {
+    for (int i = 0; i < source->values.count; ++i)
         jml_obj_array_append(dest, source->values.values[i]);
-    }
 
-    jml_vm_pop_two();
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
 }
 
 
@@ -283,6 +276,32 @@ jml_obj_function_new(void)
 }
 
 
+jml_obj_coroutine_t *jml_obj_coroutine_new(
+    jml_obj_closure_t *closure)
+{
+    jml_obj_coroutine_t *coro   = ALLOCATE_OBJ(
+        jml_obj_coroutine_t, OBJ_COROUTINE);
+
+    coro->stack_top             = coro->stack;
+    coro->frame_count           = 0;
+
+    coro->open_upvalues         = NULL;
+    coro->caller                = NULL;
+
+    if (closure != NULL) {
+        jml_call_frame_t *frame = &coro->frames[coro->frame_count++];
+        frame->slots            = coro->stack;
+        frame->closure          = closure;
+        frame->pc               = closure->function->bytecode.code;
+
+        coro->stack_top[0]      = OBJ_VAL(closure);
+        ++coro->stack_top;
+    }
+
+    return coro;
+}
+
+
 jml_obj_cfunction_t *
 jml_obj_cfunction_new(jml_obj_string_t *name,
     jml_cfunction function, jml_obj_module_t *module)
@@ -300,20 +319,20 @@ jml_obj_cfunction_new(jml_obj_string_t *name,
 
 
 jml_obj_exception_t *
-jml_obj_exception_new(const char *name,
-    const char *message)
+jml_obj_exception_new(const char *name, const char *message)
 {
-    jml_vm_push(jml_string_intern(name));
-    jml_vm_push(jml_string_intern(message));
+    jml_gc_exempt_push(jml_string_intern(name));
+    jml_gc_exempt_push(jml_string_intern(message));
 
     jml_obj_exception_t *exc    = ALLOCATE_OBJ(
         jml_obj_exception_t, OBJ_EXCEPTION);
 
-    exc->name                   = AS_STRING(jml_vm_peek(1));
-    exc->message                = AS_STRING(jml_vm_peek(0));
+    exc->name                   = AS_STRING(jml_gc_exempt_peek(1));
+    exc->message                = AS_STRING(jml_gc_exempt_peek(0));
     exc->module                 = NULL;
 
-    jml_vm_pop_two();
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
 
     return exc;
 }

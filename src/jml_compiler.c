@@ -1997,13 +1997,14 @@ jml_import_statement(jml_compiler_t *compiler)
     fullname[length]  = '\0';
     name[name_length] = '\0';
 
-    jml_vm_push(OBJ_VAL(jml_obj_string_take(fullname, length)));
-    jml_vm_push(OBJ_VAL(jml_obj_string_copy(name, name_length)));
+    jml_gc_exempt_push(OBJ_VAL(jml_obj_string_take(fullname, length)));
+    jml_gc_exempt_push(OBJ_VAL(jml_obj_string_copy(name, name_length)));
 
-    uint16_t full_arg = jml_bytecode_make_const(compiler, jml_vm_peek(1));
-    uint16_t name_arg = jml_bytecode_make_const(compiler, jml_vm_peek(0));
+    uint16_t full_arg = jml_bytecode_make_const(compiler, jml_gc_exempt_peek(1));
+    uint16_t name_arg = jml_bytecode_make_const(compiler, jml_gc_exempt_peek(0));
 
-    jml_vm_pop_two();
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
 
     if (wildcard) {
         if (compiler->type == FUNCTION_MAIN) {
@@ -2161,23 +2162,24 @@ jml_for_statement(jml_compiler_t *compiler)
     jml_token_t tok3 = jml_token_emit_synthetic(compiler->parser, "$$$_3");
     int size = jml_local_add_synthetic(compiler, &tok3);
 
-    jml_vm_push(jml_string_intern("core"));
-    jml_vm_push(jml_string_intern("size"));
+    jml_gc_exempt_push(jml_string_intern("core"));
+    jml_gc_exempt_push(jml_string_intern("size"));
 
     EMIT_EXTENDED_OP2(
         compiler, OP_IMPORT, EXTENDED_OP(OP_IMPORT),
-        jml_bytecode_make_const(compiler, jml_vm_peek(1)),
-        jml_bytecode_make_const(compiler, jml_vm_peek(1))
+        jml_bytecode_make_const(compiler, jml_gc_exempt_peek(1)),
+        jml_bytecode_make_const(compiler, jml_gc_exempt_peek(1))
     );
     EMIT_EXTENDED_OP1(
         compiler, OP_GET_LOCAL, EXTENDED_OP(OP_GET_LOCAL), iter
     );
     EMIT_EXTENDED_OP2(
         compiler, OP_INVOKE, EXTENDED_OP(OP_INVOKE),
-        jml_bytecode_make_const(compiler, jml_vm_peek(0)), 1
+        jml_bytecode_make_const(compiler, jml_gc_exempt_peek(0)), 1
     );
 
-    jml_vm_pop_two();
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
 
     int start = jml_bytecode_current(compiler)->count;
 

@@ -10,7 +10,8 @@
 #define FRAMES_MAX                  128
 #define STACK_MAX                   (FRAMES_MAX * LOCAL_MAX)
 #define MAP_LOAD_MAX                0.75
-#define EXEMPT_MAX                  32
+#define EXEMPT_MAX                  16
+
 
 #define JML_BACKTRACE
 #undef  JML_LAZY_IMPORT

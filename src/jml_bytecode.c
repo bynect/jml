@@ -54,9 +54,9 @@ int
 jml_bytecode_add_const(jml_bytecode_t *bytecode,
     jml_value_t value)
 {
-    jml_vm_push(value);
+    jml_gc_exempt_push(value);
     jml_value_array_write(&bytecode->constants, value);
-    jml_vm_pop();
+    jml_gc_exempt_pop();
 
     return bytecode->constants.count - 1;
 }
@@ -66,7 +66,7 @@ void
 jml_bytecode_disassemble(jml_bytecode_t *bytecode,
     const char *name)
 {
-    uint16_t pad = (23 - strlen(name)) / 2;
+    uint16_t pad = (25 - strlen(name)) / 2;
 
     printf(
         "======   %*s%s%*s   ======\n"

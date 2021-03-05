@@ -159,8 +159,6 @@ void jml_hashmap_mark(jml_hashmap_t *map);
 jml_hashmap_entry_t *jml_hashmap_iterator(jml_hashmap_t *map);
 
 
-bool jml_value_sentinel(jml_value_t value);
-
 bool jml_value_equal(jml_value_t a, jml_value_t b);
 
 static inline bool

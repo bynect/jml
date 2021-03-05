@@ -100,60 +100,34 @@ jml_free(void *ptr)
 
 
 void
-jml_gc_exempt(jml_value_t value)
+jml_gc_exempt_push(jml_value_t value)
 {
-    if (!IS_OBJ(value))
-        return;
-
-    jml_obj_t *object = AS_OBJ(value);
-    if (object == NULL)
-        return;
-
-    object->exempt = true;
+    *vm->exempt_top = value;
+    vm->exempt_top++;
 }
 
 
-void
-jml_gc_unexempt(jml_value_t value)
+jml_value_t
+jml_gc_exempt_pop(void)
 {
-    if (!IS_OBJ(value))
-        return;
+    vm->exempt_top--;
+    return *vm->exempt_top;
+}
 
-    jml_obj_t *object = AS_OBJ(value);
-    if (object == NULL)
-        return;
 
-    object->exempt = false;
+jml_value_t
+jml_gc_exempt_peek(int distance)
+{
+    return vm->exempt_top[-1 - distance];
 }
 
 
 static void
 jml_gc_mark_roots(void)
 {
-    for (jml_value_t *slot = vm->stack;
-        slot < vm->stack_top; ++slot) {
-
-        jml_gc_mark_value(*slot);
-    }
-
-    for (int i = 0; i < vm->frame_count; ++i)
-        jml_gc_mark_obj((jml_obj_t*)vm->frames[i].closure);
-
-    for (jml_obj_upvalue_t *upvalue = vm->open_upvalues;
-        upvalue != NULL; upvalue = upvalue->next) {
-
-        jml_gc_mark_obj((jml_obj_t*)upvalue);
-    }
-
     jml_hashmap_mark(&vm->globals);
     jml_hashmap_mark(&vm->modules);
     jml_hashmap_mark(&vm->builtins);
-
-    for (jml_compiler_t **compiler = vm->compilers;
-        compiler < vm->compiler_top; ++compiler) {
-
-        jml_compiler_mark(*compiler);
-    }
 
     jml_gc_mark_obj((jml_obj_t*)vm->main_string);
     jml_gc_mark_obj((jml_obj_t*)vm->module_string);
@@ -178,10 +152,21 @@ jml_gc_mark_roots(void)
     jml_gc_mark_obj((jml_obj_t*)vm->print_string);
     jml_gc_mark_obj((jml_obj_t*)vm->str_string);
 
+    jml_gc_mark_obj((jml_obj_t*)vm->running);
     jml_gc_mark_obj((jml_obj_t*)vm->current);
     jml_gc_mark_obj((jml_obj_t*)vm->external);
 
-    jml_gc_mark_obj(vm->sentinel);
+    for (jml_compiler_t **compiler = vm->compilers;
+        compiler < vm->compiler_top; ++compiler) {
+
+        jml_compiler_mark(*compiler);
+    }
+
+    for (jml_value_t *exempt = vm->exempt_stack;
+        exempt < vm->exempt_top; exempt++) {
+
+        jml_gc_mark_value(*exempt);
+    }
 }
 
 
@@ -282,15 +267,17 @@ jml_gc_free_object(jml_obj_t *object)
                 if (jml_hashmap_get(&instance->klass->statics,
                     vm->free_string, &destructor)) {
 
-                    if (IS_CFUNCTION(*destructor)) {
-                        jml_vm_push(OBJ_VAL(*destructor));
-                        jml_vm_push(OBJ_VAL(instance));
+                    jml_obj_coroutine_t *coroutine  = jml_obj_coroutine_new(NULL);
 
-                        jml_vm_call_value(*destructor, 1);
-                        jml_vm_pop();
+                    if (IS_CFUNCTION(*destructor)) {
+                        *coroutine->stack_top++     = OBJ_VAL(instance);
+
+                        jml_vm_call_value(coroutine, *destructor, 1);
+                        jml_vm_call_coroutine(coroutine, NULL);
 
                     } else {
-                        /*jml_vm_call_cstack(*destructor, 0, NULL);*/
+                        jml_vm_call_value(coroutine, *destructor, 0);
+                        jml_vm_call_coroutine(coroutine, NULL);
                     }
                 }
             }
@@ -325,6 +312,24 @@ jml_gc_free_object(jml_obj_t *object)
             break;
         }
 
+        case OBJ_COROUTINE: {
+            jml_obj_coroutine_t *coro = (jml_obj_coroutine_t*)object;
+
+            for (int i = 0; i < coro->frame_count; ++i) {
+
+                jml_gc_free_object((jml_obj_t*)coro->frames[i].closure);
+            }
+
+            for (jml_obj_upvalue_t *upvalue = coro->open_upvalues;
+                upvalue != NULL; upvalue = upvalue->next) {
+
+                jml_gc_free_object((jml_obj_t*)upvalue);
+            }
+
+            FREE(jml_obj_coroutine_t, object);
+            break;
+        }
+
         case OBJ_CFUNCTION: {
             FREE(jml_obj_cfunction_t, object);
             break;
@@ -341,7 +346,7 @@ jml_gc_free_object(jml_obj_t *object)
 void
 jml_gc_free_objs(void)
 {
-    jml_obj_t *object           = vm->objects->next;
+    jml_obj_t *object           = vm->objects;
 
     while (object != NULL) {
         jml_obj_t *next         = object->next;
@@ -353,8 +358,6 @@ jml_gc_free_objs(void)
     }
 
     jml_gc_free_object((jml_obj_t*)vm->free_string);
-
-    jml_free(vm->sentinel);
     jml_free(vm->gray_stack);
 }
 
@@ -368,10 +371,6 @@ jml_gc_sweep(void)
     while (object != NULL) {
         if (object->marked) {
             object->marked       = false;
-            previous             = object;
-            object               = object->next;
-
-        } else if (object->exempt) {
             previous             = object;
             object               = object->next;
 
@@ -461,6 +460,25 @@ jml_gc_blacken_obj(jml_obj_t *object)
 
         case OBJ_UPVALUE: {
             jml_gc_mark_value(((jml_obj_upvalue_t*)object)->closed);
+            break;
+        }
+
+        case OBJ_COROUTINE: {
+            jml_obj_coroutine_t *coro = (jml_obj_coroutine_t*)object;
+
+            for (jml_value_t *slot = coro->stack;
+                slot < coro->stack_top; ++slot)
+                jml_gc_mark_value(*slot);
+
+
+            for (int i = 0; i < coro->frame_count; ++i)
+                jml_gc_mark_obj((jml_obj_t*)coro->frames[i].closure);
+
+            for (jml_obj_upvalue_t *upvalue = coro->open_upvalues;
+                upvalue != NULL; upvalue = upvalue->next)
+                jml_gc_mark_obj((jml_obj_t*)upvalue);
+
+            jml_gc_mark_obj((jml_obj_t*)coro->caller);
             break;
         }
 

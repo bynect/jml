@@ -23,10 +23,6 @@ static jml_obj_class_t *dir_class       = NULL;
 
 static jml_obj_class_t *file_class      = NULL;
 
-static jml_obj_string_t *mode_string    = NULL;
-
-static jml_obj_string_t *name_string    = NULL;
-
 
 typedef struct {
     const char                     *name;
@@ -88,8 +84,7 @@ jml_std_fs_dir_init(int arg_count, jml_value_t *args)
 
     self->extra                 = internal;
 
-    jml_hashmap_set(&self->fields, name_string, args[0]);
-
+    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), args[0]);
     return NONE_VAL;
 
 err:
@@ -150,7 +145,7 @@ jml_std_fs_dir_open(int arg_count, jml_value_t *args)
     internal->handle            = handle;
     internal->open              = true;
 
-    jml_hashmap_set(&self->fields, name_string, args[1]);
+    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), args[1]);
     return NONE_VAL;
 
 err:
@@ -195,7 +190,7 @@ jml_std_fs_dir_close(int arg_count, jml_value_t *args)
     internal->handle            = NULL;
     internal->open              = false;
 
-    jml_hashmap_set(&self->fields, name_string, NONE_VAL);
+    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), NONE_VAL);
     return NONE_VAL;
 
 err:
@@ -230,7 +225,7 @@ jml_std_fs_dir_read(int arg_count, jml_value_t *args)
 
     jml_obj_array_t *entries = jml_obj_array_new();
     jml_value_t      value   = OBJ_VAL(entries);
-    jml_gc_exempt(value);
+    jml_gc_exempt_push(value);
 
     struct dirent *entry;
     while ((entry = readdir(internal->handle)) != NULL) {
@@ -241,7 +236,7 @@ jml_std_fs_dir_read(int arg_count, jml_value_t *args)
 
     rewinddir(internal->handle);
 
-    jml_gc_unexempt(value);
+    jml_gc_exempt_pop();
     return value;
 
 err:
@@ -420,8 +415,8 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
     self->extra                 = internal;
     fseek(internal->handle, 0, SEEK_SET);
 
-    jml_hashmap_set(&self->fields, mode_string, args[1]);
-    jml_hashmap_set(&self->fields, name_string, args[0]);
+    jml_hashmap_set(&self->fields, jml_obj_string_copy("mode", 4), args[1]);
+    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), args[0]);
 
     return NONE_VAL;
 
@@ -493,8 +488,9 @@ jml_std_fs_file_open(int arg_count, jml_value_t *args)
 
     fseek(internal->handle, 0, SEEK_SET);
 
-    jml_hashmap_set(&self->fields, mode_string, args[1]);
-    jml_hashmap_set(&self->fields, name_string, args[0]);
+    jml_hashmap_set(&self->fields, jml_obj_string_copy("mode", 4), args[1]);
+    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), args[0]);
+
     return NONE_VAL;
 
 err:
@@ -540,8 +536,9 @@ jml_std_fs_file_close(int arg_count, jml_value_t *args)
     internal->mode              = INVALID;
     internal->open              = false;
 
-    jml_hashmap_set(&self->fields, mode_string, NONE_VAL);
-    jml_hashmap_set(&self->fields, name_string, NONE_VAL);
+    jml_hashmap_set(&self->fields, jml_obj_string_copy("mode", 4), NONE_VAL);
+    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), NONE_VAL);
+
     return NONE_VAL;
 
 err:
@@ -862,8 +859,9 @@ jml_std_fs_tempfile(int arg_count, JML_UNUSED(jml_value_t *args))
 
     file->extra = internal;
 
-    jml_hashmap_set(&file->fields, mode_string, jml_string_intern("wb+"));
-    jml_hashmap_set(&file->fields, name_string, NONE_VAL);
+    jml_hashmap_set(&file->fields, jml_obj_string_copy("mode", 4), jml_string_intern("wb+"));
+    jml_hashmap_set(&file->fields, jml_obj_string_copy("name", 4), NONE_VAL);
+
     return OBJ_VAL(file);
 
 err:
@@ -952,7 +950,7 @@ module_init(jml_obj_module_t *module)
         jml_obj_string_copy("File", 4), &file_value)) {
 
         file_class = AS_CLASS(*file_value);
-        jml_gc_exempt(*file_value);
+        /*jml_gc_exempt(*file_value);*/
     }
 
     jml_module_add_class(module, "Dir", dir_table, false);
@@ -962,12 +960,6 @@ module_init(jml_obj_module_t *module)
         jml_obj_string_copy("Dir", 3), &dir_value)) {
 
         dir_class = AS_CLASS(*dir_value);
-        jml_gc_exempt(*dir_value);
+        /*jml_gc_exempt(*dir_value);*/
     }
-
-    mode_string = jml_obj_string_copy("mode", 4);
-    jml_gc_exempt(OBJ_VAL(mode_string));
-
-    name_string = jml_obj_string_copy("name", 4);
-    jml_gc_exempt(OBJ_VAL(name_string));
 }

@@ -284,16 +284,6 @@ jml_hashmap_iterator(jml_hashmap_t *map)
 
 
 bool
-jml_value_sentinel(jml_value_t value)
-{
-    if (!IS_OBJ(value))
-        return false;
-
-    return (AS_OBJ(value) == vm->sentinel);
-}
-
-
-bool
 jml_value_equal(jml_value_t a, jml_value_t b)
 {
 #ifdef JML_NAN_TAGGING

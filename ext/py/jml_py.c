@@ -70,19 +70,15 @@ jml_py_vm_eval(PyObject *self, PyObject *args)
 
     jml_value_t value = jml_vm_eval(((jml_py_vm*)self)->internal_vm, source);
 
-    if (!jml_value_sentinel(value)) {
-        if (IS_NUM(value))
-            return PyFloat_FromDouble(AS_NUM(value));
+    if (IS_NUM(value))
+        return PyFloat_FromDouble(AS_NUM(value));
 
-        if (IS_BOOL(value))
-            return AS_BOOL(value) ? Py_True : Py_False;
+    if (IS_BOOL(value))
+        return AS_BOOL(value) ? Py_True : Py_False;
 
-        if (IS_OBJ(value)) {
-            char *repr = jml_value_stringify(value);
-            return _PyUnicode_FromASCII(repr, strlen(repr));
-        }
-
-        return Py_None;
+    if (IS_OBJ(value)) {
+        char *repr = jml_value_stringify(value);
+        return _PyUnicode_FromASCII(repr, strlen(repr));
     }
 
     PyErr_SetString(PyExc_Exception, "Source evaluation failed.");
