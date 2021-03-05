@@ -1,0 +1,34 @@
+{
+    "name": "jml",
+    "displayName": "jml",
+    "description": "",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.54.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "jml",
+                "aliases": [
+                    "jml",
+                    "jml"
+                ],
+                "extensions": [
+                    ".jml"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "jml",
+                "scopeName": "source.jml",
+                "path": "./jml.tmLanguage.json"
+            }
+        ]
+    }
+}

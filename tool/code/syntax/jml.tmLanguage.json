@@ -1,0 +1,336 @@
+{
+    "name": "jml",
+    "scopeName": "source.jml",
+    "fileTypes": [
+        "jml"
+    ],
+    "patterns": [
+        {
+            "include": "#statements"
+        },
+        {
+            "include": "#operators"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#function-declaration"
+        },
+        {
+            "include": "#function-call"
+        },
+        {
+            "include": "#identifier"
+        }
+    ],
+    "repository": {
+        "statements": {
+            "patterns": [
+                {
+                    "match": "\\b(break|match|skip|with|else|for|let|if|fn|return|async|await|class|while|import)\\b",
+                    "name": "keyword.control.jml"
+                },
+                {
+                    "match": "\\;$",
+                    "name": "keyword.control.jml"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "match": "%|\\*|/|-|\\+|\\*\\*|::",
+                    "name": "keyword.operator.jml"
+                },
+                {
+                    "match": "%=|\\+=|-=|\\*=|\\*\\*=|(?<!\\()/=|::=",
+                    "name": "keyword.operator.assignment.compound.jml"
+                },
+                {
+                    "match": "=",
+                    "name": "keyword.operator.assignment.jml"
+                },
+                {
+                    "match": "!=|<=|>=|==|<|>",
+                    "name": "keyword.operator.comparison.jml"
+                },
+                {
+                    "match": "\\b(and|not|or)\\b",
+                    "name": "keyword.operator.logical.jml"
+                },
+                {
+                    "match": "\\|>|\\bin\\b",
+                    "name": "keyword.operator.jml"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "begin": "\"",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.string.begin.jml"
+                        }
+                    },
+                    "end": "\"",
+                    "endCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.string.end.jml"
+                        }
+                    },
+                    "name": "string.quoted.double.jml",
+                    "patterns": [
+                        {
+                            "include": "#strings_escape"
+                        },
+                        {
+                            "include": "#strings_format"
+                        }
+                    ]
+                },
+                {
+                    "begin": "'",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.string.begin.jml"
+                        }
+                    },
+                    "end": "'",
+                    "endCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.string.end.jml"
+                        }
+                    },
+                    "name": "string.quoted.single.jml",
+                    "patterns": [
+                        {
+                            "include": "#strings_escape"
+                        },
+                        {
+                            "include": "#strings_format"
+                        }
+                    ]
+                }
+            ]
+        },
+        "strings_escape": {
+            "patterns": [
+                {
+                    "match": "(?x)\\\\ (\n\\\\ |\n[nrte'\"?] |\nx[a-fA-F0-9]{,2} |\nu[a-fA-F0-9]{,4} |\nU[a-fA-F0-9]{,8} )",
+                    "name": "constant.character.escape.jml"
+                },
+                {
+                    "match": "\\\\.",
+                    "name": "invalid.illegal.unknown-escape.jml"
+                }
+            ]
+        },
+        "strings_format": {
+            "patterns": [
+                {
+                    "match": "(?x) {}",
+                    "name": "constant.other.placeholder.jml"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "match": "\\b((0(x|X)[0-9a-fA-F]*)|(0(b|B)[01]*)|(0(o|O)[0-7]*)|(([0-9]+\\.?[0-9]*)|(\\.[0-9]+))((e|E)(\\+|-)?[0-9]+)?)\\b",
+                    "name": "constant.numeric.jml"
+                }
+            ]
+        },
+        "comments": {
+            "patterns": [
+                {
+                    "captures": {
+                        "1": {
+                            "name": "meta.toc-list.banner.block.jml"
+                        }
+                    },
+                    "match": "^\\? =(\\s*.*?)\\s*= \\?$\\n?",
+                    "name": "comment.block.jml"
+                },
+                {
+                    "begin": "\\?",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.comment.begin.jml"
+                        }
+                    },
+                    "end": "\\?",
+                    "endCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.comment.end.jml"
+                        }
+                    },
+                    "name": "comment.block.jml"
+                },
+                {
+                    "match": "\\?.*\\n",
+                    "name": "invalid.illegal.stray-comment-end.jml"
+                },
+                {
+                    "captures": {
+                        "1": {
+                            "name": "meta.toc-list.banner.line.jml"
+                        }
+                    },
+                    "match": "^! =(\\s*.*?)\\s*=\\s*$\\n?",
+                    "name": "comment.line.banner.jml"
+                },
+                {
+                    "begin": "(^[ \\t]+)?(?=!)",
+                    "beginCaptures": {
+                        "1": {
+                            "name": "punctuation.whitespace.comment.leading.jml"
+                        }
+                    },
+                    "end": "(?!\\G)",
+                    "patterns": [
+                        {
+                            "begin": "!",
+                            "beginCaptures": {
+                                "0": {
+                                    "name": "punctuation.definition.comment.jml"
+                                }
+                            },
+                            "end": "\\n",
+                            "name": "comment.line.jml"
+                        }
+                    ]
+                },
+                {
+                    "name": "comment.line.number-sign.jml",
+                    "contentName": "meta.typehint.comment.jml",
+                    "begin": "(?x)\n (?:\n \\! \\s* (type:)\n \\s*+ (?! $ | \\!)\n )\n",
+                    "end": "(?:$|(?=\\!))",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "meta.typehint.comment.jml"
+                        },
+                        "1": {
+                            "name": "comment.typehint.directive.notation.jml"
+                        }
+                    }
+                },
+                {
+                    "name": "comment.line.number-sign.jml",
+                    "begin": "(\\!)",
+                    "beginCaptures": {
+                        "1": {
+                            "name": "punctuation.definition.comment.jml"
+                        }
+                    },
+                    "end": "($)"
+                }
+            ]
+        },
+        "function-call": {
+            "name": "meta.function-call.jml",
+            "match": "(?x)\n(?:\n (?=\\s)\n (?: (?:await)? | (?<!\\w)) (\\s+)\n)?\n\n(\n \\b\n (?!\n (break|match|skip|with|else|for|let|if|fn|return|async|class|while|import)\n \\s* \\(\n )\n (?:[A-Za-z_][A-Za-z0-9_]*+\\b)++\n)\n\\s*(\\()",
+            "captures": {
+                "1": {
+                    "name": "punctuation.whitespace.function-call.leading.jml"
+                },
+                "2": {
+                    "name": "support.function.any-method.c"
+                },
+                "4": {
+                    "name": "punctuation.definition.parameters.jml"
+                }
+            }
+        },
+        "function-declaration": {
+            "name": "meta.function.jml",
+            "begin": "(?x)\n \\s*\n (?:\\b(async) \\s+)? \\b(fn)\\s+\n (?=\n [a-zA-Z_]\\w* \\s* \\(\n )\n",
+            "end": "(\\{|(?=[!\\?'\"\\n]))",
+            "beginCaptures": {
+                "1": {
+                    "name": "storage.type.function.async.jml"
+                },
+                "2": {
+                    "name": "storage.type.function.jml"
+                }
+            },
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.section.function.begin.jml"
+                }
+            },
+            "patterns": [
+                {
+                    "name": "entity.name.function.jml",
+                    "match": "(?x)\n \\b ([a-zA-Z_]\\w*) \\b\n"
+                },
+                {
+                    "include": "#parameters"
+                }
+            ]
+        },
+        "parameters": {
+            "name": "meta.function.parameters.jml",
+            "begin": "(\\()",
+            "end": "(\\))",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.parameters.begin.jml"
+                }
+            },
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.definition.parameters.end.jml"
+                }
+            },
+            "patterns": [
+                {
+                    "match": "(?x)\n (?:\\^) ([a-zA-Z_]\\w*)\n \\s* (?: (,) | (?=[)!\\?\\n]))\n",
+                    "captures": {
+                        "1": {
+                            "name": "variable.parameter.function.language.jml"
+                        },
+                        "2": {
+                            "name": "punctuation.separator.parameters.jml"
+                        }
+                    }
+                },
+                {
+                    "include": "#comments"
+                }
+            ]
+        },
+        "identifier": {
+            "patterns": [
+                {
+                    "match": "\\bself\\b",
+                    "name": "variable.language.self.jml"
+                },
+                {
+                    "match": "\\bsuper\\b",
+                    "name": "variable.language.super.jml"
+                },
+                {
+                    "match": "\\b_\\b",
+                    "name": "variable.language.widlcard.jml"
+                },
+                {
+                    "match": "\\b(none|true|false)\\b",
+                    "name": "constant.language.jml"
+                },
+                {
+                    "match": "(?x)\n \\b ([a-zA-Z_]\\w*) \\b\n",
+                    "name": "variable.other.jml"
+                }
+            ]
+        }
+    }
+}
