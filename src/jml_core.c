@@ -435,7 +435,7 @@ jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
         return OBJ_VAL(exc);
 
     jml_obj_map_t *map              = jml_obj_map_new();
-    jml_vm_push(OBJ_VAL(map));
+    jml_gc_exempt_push(OBJ_VAL(map));
 
     if (vm->current == NULL || vm->current == (void*)1)
         jml_hashmap_add(&vm->globals, &map->hashmap);
@@ -445,7 +445,7 @@ jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
         jml_hashmap_add(&vm->builtins, &map->hashmap);
     }
 
-    return jml_vm_pop();
+    return jml_gc_exempt_pop();
 }
 
 
@@ -466,24 +466,24 @@ jml_core_attr(int arg_count, jml_value_t *args)
     switch (OBJ_TYPE(value)) {
         case OBJ_MODULE: {
             jml_obj_map_t *map      = jml_obj_map_new();
-            jml_vm_push(OBJ_VAL(map));
+            jml_gc_exempt_push(OBJ_VAL(map));
             jml_hashmap_add(&AS_MODULE(value)->globals, &map->hashmap);
-            return jml_vm_pop();
+            return jml_gc_exempt_pop();
         }
 
         case OBJ_CLASS: {
             jml_obj_map_t *map      = jml_obj_map_new();
-            jml_vm_push(OBJ_VAL(map));
+            jml_gc_exempt_push(OBJ_VAL(map));
             jml_hashmap_add(&AS_CLASS(value)->statics, &map->hashmap);
-            return jml_vm_pop();
+            return jml_gc_exempt_pop();
         }
 
         case OBJ_INSTANCE: {
             jml_obj_map_t *map      = jml_obj_map_new();
-            jml_vm_push(OBJ_VAL(map));
+            jml_gc_exempt_push(OBJ_VAL(map));
             jml_hashmap_add(&AS_INSTANCE(value)->fields, &map->hashmap);
             jml_hashmap_add(&AS_INSTANCE(value)->klass->statics, &map->hashmap);
-            return jml_vm_pop();
+            return jml_gc_exempt_pop();
         }
 
         default:

@@ -2147,6 +2147,7 @@ jml_for_statement(jml_compiler_t *compiler)
 
     jml_variable_parse(compiler, "Expect identifier after 'for'.");
     jml_variable_definition(compiler, 0);
+    int local = jml_local_resolve(compiler, &compiler->parser->previous);
     jml_bytecode_emit_byte(compiler, OP_NONE);
 
     jml_parser_consume(compiler, TOKEN_IN, "Expect 'in' after 'for let'.");
@@ -2232,7 +2233,7 @@ jml_for_statement(jml_compiler_t *compiler)
 
     jml_bytecode_emit_byte(compiler, OP_GET_INDEX);
     EMIT_EXTENDED_OP1(
-        compiler, OP_SET_LOCAL, EXTENDED_OP(OP_SET_LOCAL), 1
+        compiler, OP_SET_LOCAL, EXTENDED_OP(OP_SET_LOCAL), local
     );
     jml_bytecode_emit_byte(compiler, OP_POP);
 
