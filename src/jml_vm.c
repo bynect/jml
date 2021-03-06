@@ -296,7 +296,7 @@ static inline bool
 jml_vm_global_get(jml_obj_string_t *name,
     jml_value_t **value)
 {
-    if (vm->current == NULL || vm->current == (void*)1)
+    if (vm->current == NULL)
         return jml_hashmap_get(&vm->globals, name, value);
 
     if (jml_hashmap_get(&vm->builtins, name, value))
@@ -310,7 +310,7 @@ static inline bool
 jml_vm_global_set(jml_obj_string_t *name,
     jml_value_t value)
 {
-    if (vm->current == NULL || vm->current == (void*)1)
+    if (vm->current == NULL)
         return jml_hashmap_set(&vm->globals, name, value);
 
     return jml_hashmap_set(&vm->current->globals, name, value);
@@ -320,7 +320,7 @@ jml_vm_global_set(jml_obj_string_t *name,
 static inline bool
 jml_vm_global_del(jml_obj_string_t *name)
 {
-    if (vm->current == NULL || vm->current == (void*)1)
+    if (vm->current == NULL)
         return jml_hashmap_del(&vm->globals, name);
 
     return jml_hashmap_del(&vm->current->globals, name);
@@ -331,7 +331,7 @@ static inline bool
 jml_vm_global_pop(jml_obj_string_t *name,
     jml_value_t *value)
 {
-    if (vm->current == NULL || vm->current == (void*)1)
+    if (vm->current == NULL)
         return jml_hashmap_pop(&vm->globals, name, value);
 
     return jml_hashmap_pop(&vm->current->globals, name, value);
@@ -343,6 +343,14 @@ jml_vm_call(jml_obj_coroutine_t *coroutine,
     jml_obj_closure_t *closure, int arg_count)
 {
     if (closure->function->variadic) {
+        if (arg_count < closure->function->arity - 1) {
+            jml_vm_error(
+                "TooFewArgs: Expected '%d' arguments but got '%d'.",
+                closure->function->arity - 1, arg_count
+            );
+            return false;
+        }
+
         int             item_count  = arg_count - closure->function->arity + 1;
         jml_value_t     *values     = coroutine->stack_top -= item_count;
         jml_obj_array_t *array      = jml_obj_array_new();
@@ -2315,8 +2323,7 @@ jml_vm_run(jml_value_t *last)
 
                 jml_hashmap_add(
                     &AS_MODULE(jml_vm_peek(0))->globals,
-                    (vm->current == NULL || vm->current == (void*)1)
-                    ? &vm->globals : &vm->current->globals
+                    vm->current == NULL ? &vm->globals : &vm->current->globals
                 );
 
                 jml_vm_pop();
@@ -2335,8 +2342,7 @@ jml_vm_run(jml_value_t *last)
 
                 jml_hashmap_add(
                     &AS_MODULE(jml_vm_peek(0))->globals,
-                    (vm->current == NULL || vm->current == (void*)1)
-                    ? &vm->globals : &vm->current->globals
+                    vm->current == NULL ? &vm->globals : &vm->current->globals
                 );
 
                 jml_vm_pop();
