@@ -53,7 +53,7 @@ ifdef NDEBUG
 	DEFINES+=-DJML_NDEBUG
 	CFLAGS+=-O3 -fno-semantic-interposition
 else
-	CFLAGS+=-g3
+	CFLAGS+=-g3 -fsanitize=address
 endif
 
 ifdef READLINE

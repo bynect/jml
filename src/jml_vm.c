@@ -249,6 +249,12 @@ jml_vm_exception(jml_obj_exception_t *exc)
 void
 jml_vm_push(jml_value_t value)
 {
+    if ((vm->running->stack_top + 1 - vm->running->stack)
+        >= vm->running->stack_capacity) {
+
+        jml_obj_coroutine_grow(vm->running);
+    }
+
     *vm->running->stack_top++ = value;
 }
 

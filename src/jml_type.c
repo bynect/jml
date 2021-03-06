@@ -276,13 +276,18 @@ jml_obj_function_new(void)
 }
 
 
-jml_obj_coroutine_t *jml_obj_coroutine_new(
-    jml_obj_closure_t *closure)
+jml_obj_coroutine_t *
+jml_obj_coroutine_new(jml_obj_closure_t *closure)
 {
     jml_obj_coroutine_t *coro   = ALLOCATE_OBJ(
         jml_obj_coroutine_t, OBJ_COROUTINE);
 
+    coro->stack_capacity        = STACK_MIN;
+    coro->stack                 = GROW_ARRAY(jml_value_t, NULL, 0, STACK_MIN);
     coro->stack_top             = coro->stack;
+
+    coro->frame_capacity        = FRAMES_MIN;
+    coro->frames                = GROW_ARRAY(jml_call_frame_t, NULL, 0, FRAMES_MIN);
     coro->frame_count           = 0;
 
     coro->open_upvalues         = NULL;
@@ -299,6 +304,34 @@ jml_obj_coroutine_t *jml_obj_coroutine_new(
     }
 
     return coro;
+}
+
+
+void
+jml_obj_coroutine_grow(jml_obj_coroutine_t *coroutine)
+{
+    int capacity = GROW_CAPACITY(coroutine->stack_capacity);
+    jml_value_t *old_stack = coroutine->stack;
+
+    coroutine->stack = GROW_ARRAY(jml_value_t, coroutine->stack,
+        coroutine->stack_capacity, capacity);
+
+    coroutine->stack_capacity = capacity;
+
+    if (coroutine->stack != old_stack) {
+        for (int i = 0; i < coroutine->frame_count; ++i) {
+            jml_call_frame_t *frame = &coroutine->frames[i];
+            frame->slots = coroutine->stack + (frame->slots - old_stack);
+        }
+
+        for (jml_obj_upvalue_t *upvalue = coroutine->open_upvalues;
+            upvalue != NULL; upvalue = upvalue->next) {
+
+            upvalue->location = coroutine->stack + (upvalue->location - old_stack);
+        }
+
+        coroutine->stack_top = coroutine->stack + (coroutine->stack_top - old_stack);
+    }
 }
 
 

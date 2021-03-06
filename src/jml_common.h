@@ -8,7 +8,9 @@
 
 #define LOCAL_MAX                   (UINT8_MAX + 1)
 #define FRAMES_MAX                  128
+#define FRAMES_MIN                  8
 #define STACK_MAX                   (FRAMES_MAX * LOCAL_MAX)
+#define STACK_MIN                   128
 #define MAP_LOAD_MAX                0.75
 #define EXEMPT_MAX                  16
 

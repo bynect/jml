@@ -159,12 +159,13 @@ struct jml_obj_upvalue {
 
 struct jml_obj_coroutine {
     jml_obj_t                       obj;
-    jml_call_frame_t                frames[FRAMES_MAX];
-    uint8_t                         frame_count;
+    jml_call_frame_t               *frames;
+    uint16_t                        frame_count;
+    uint32_t                        frame_capacity;
     jml_obj_upvalue_t              *open_upvalues;
-
-    jml_value_t                     stack[STACK_MAX];
+    jml_value_t                    *stack;
     jml_value_t                    *stack_top;
+    uint32_t                        stack_capacity;
     struct jml_obj_coroutine       *caller;
 };
 
@@ -221,6 +222,8 @@ jml_obj_closure_t *jml_obj_closure_new(jml_obj_function_t *function);
 jml_obj_upvalue_t *jml_obj_upvalue_new(jml_value_t *slot);
 
 jml_obj_coroutine_t *jml_obj_coroutine_new(jml_obj_closure_t *closure);
+
+void jml_obj_coroutine_grow(jml_obj_coroutine_t *coroutine);
 
 jml_obj_cfunction_t *jml_obj_cfunction_new(jml_obj_string_t *name,
     jml_cfunction function, jml_obj_module_t *module);

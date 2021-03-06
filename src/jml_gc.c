@@ -313,6 +313,9 @@ jml_gc_free_object(jml_obj_t *object)
         }
 
         case OBJ_COROUTINE: {
+            jml_obj_coroutine_t *coro = (jml_obj_coroutine_t*)object;
+            FREE_ARRAY(jml_call_frame_t, coro->frames, coro->frame_capacity);
+            FREE_ARRAY(jml_value_t, coro->stack, coro->stack_capacity);
             FREE(jml_obj_coroutine_t, object);
             break;
         }
