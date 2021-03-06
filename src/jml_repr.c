@@ -216,7 +216,7 @@ jml_obj_print(jml_value_t value)
 
         case OBJ_COROUTINE:
             jml_obj_function_print(
-                AS_CLOSURE(AS_COROUTINE(value)->stack[0])->function,
+                AS_COROUTINE(value)->frames[0].closure->function,
                 "coroutine"
             );
             break;

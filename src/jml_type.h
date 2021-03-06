@@ -160,7 +160,7 @@ struct jml_obj_upvalue {
 struct jml_obj_coroutine {
     jml_obj_t                       obj;
     jml_call_frame_t               *frames;
-    uint16_t                        frame_count;
+    uint32_t                        frame_count;
     uint32_t                        frame_capacity;
     jml_obj_upvalue_t              *open_upvalues;
     jml_value_t                    *stack;

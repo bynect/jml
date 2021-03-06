@@ -177,7 +177,7 @@ jml_vm_error(const char *format, ...)
 
     for (int i = vm->running->frame_count - 1; i >= 0; --i) {
 #else
-    for (int i = 0; i < vm->running->frame_count; ++i) {
+    for (uint32_t i = 0; i < vm->running->frame_count; ++i) {
 #endif
         jml_call_frame_t    *frame    = &vm->running->frames[i];
         jml_obj_function_t  *function = frame->closure->function;
@@ -385,6 +385,9 @@ jml_vm_call(jml_obj_coroutine_t *coroutine,
         jml_vm_error("OverflowErr: Scope depth overflow.");
         return false;
     }
+
+    if (coroutine->frame_count + 1 >= coroutine->frame_capacity)
+        jml_obj_coroutine_grow(coroutine);
 
     jml_call_frame_t *frame = &coroutine->frames[coroutine->frame_count++];
     frame->closure = closure;

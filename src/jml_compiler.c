@@ -1683,7 +1683,7 @@ jml_function(jml_compiler_t *compiler, jml_function_type type)
     jml_obj_function_t *function = jml_compiler_end(&sub_compiler);
     function->variadic           = variadic == 1;
 
-    uint16_t constant = jml_bytecode_make_const(compiler, OBJ_VAL(function));
+    uint16_t constant            = jml_bytecode_make_const(compiler, OBJ_VAL(function));
     EMIT_EXTENDED_OP1(
         compiler, OP_CLOSURE, EXTENDED_OP(OP_CLOSURE), constant
     );
@@ -2436,8 +2436,14 @@ jml_compiler_compile(const char *source,
     parser.panicked = false;
 
     jml_parser_advance(&compiler);
-    jml_parser_match_line(&compiler);
 
+    if (jml_parser_match(&compiler, TOKEN_HASH)) {
+        while (!jml_parser_match(&compiler, TOKEN_EOF)
+            && !jml_parser_match(&compiler, TOKEN_LINE))
+            jml_parser_advance(&compiler);
+    }
+
+    jml_parser_match_line(&compiler);
     while (!jml_parser_match(&compiler, TOKEN_EOF))
         jml_declaration(&compiler);
 

@@ -319,7 +319,7 @@ jml_obj_coroutine_grow(jml_obj_coroutine_t *coroutine)
     coroutine->stack_capacity = capacity;
 
     if (coroutine->stack != old_stack) {
-        for (int i = 0; i < coroutine->frame_count; ++i) {
+        for (uint32_t i = 0; i < coroutine->frame_count; ++i) {
             jml_call_frame_t *frame = &coroutine->frames[i];
             frame->slots = coroutine->stack + (frame->slots - old_stack);
         }

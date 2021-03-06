@@ -462,7 +462,7 @@ jml_gc_blacken_obj(jml_obj_t *object)
                 jml_gc_mark_value(*slot);
             }
 
-            for (int i = 0; i < coro->frame_count; ++i) {
+            for (uint32_t i = 0; i < coro->frame_count; ++i) {
 
                 jml_gc_mark_obj((jml_obj_t*)coro->frames[i].closure);
             }
