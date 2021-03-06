@@ -8,11 +8,6 @@ jml_vm_free
 jml_vm_init
 jml_vm_interpret
 jml_vm_new
-jml_vm_peek
-jml_vm_pop
-jml_vm_pop_two
-jml_vm_push
-jml_vm_rot
 jml_hashmap_add
 jml_hashmap_del
 jml_hashmap_find
@@ -43,6 +38,7 @@ jml_obj_array_new
 jml_obj_cfunction_new
 jml_obj_class_new
 jml_obj_closure_new
+jml_obj_coroutine_grow
 jml_obj_coroutine_new
 jml_obj_exception_format
 jml_obj_exception_new

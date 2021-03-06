@@ -1461,7 +1461,7 @@ static void
 jml_piping(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 {
     jml_parser_match_line(compiler);
-    jml_parser_precedence_parse(compiler, PREC_PIPE);
+    jml_parser_precedence_parse(compiler, PREC_CALL + 1);
 
     jml_bytecode_emit_byte(compiler, OP_ROT);
     uint8_t arg_count = 1;
@@ -1494,7 +1494,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_AT*/        {NULL,          NULL,           PREC_NONE},
     /*TOKEN_ARROW*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_VBAR*/      {&jml_lambda,   NULL,           PREC_NONE},
-    /*TOKEN_PIPE*/      {NULL,          &jml_piping,    PREC_PIPE},
+    /*TOKEN_PIPE*/      {NULL,          &jml_piping,    PREC_CALL},
     /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
 
     /*TOKEN_COLCOLON*/  {NULL,          &jml_binary,    PREC_TERM},
@@ -1505,7 +1505,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_MINUSEQ*/   {NULL,          NULL,           PREC_NONE},
     /*TOKEN_STAR*/      {NULL,          &jml_binary,    PREC_FACTOR},
     /*TOKEN_STAREQ*/    {NULL,          NULL,           PREC_NONE},
-    /*TOKEN_STARSTAR*/  {NULL,          &jml_binary,    PREC_FACTOR},
+    /*TOKEN_STARSTAR*/  {NULL,          &jml_binary,    PREC_EXPONENT},
     /*TOKEN_STARSTAREQ*/{NULL,          NULL,           PREC_NONE},
     /*TOKEN_SLASH*/     {NULL,          &jml_binary,    PREC_FACTOR},
     /*TOKEN_SLASHEQ*/   {NULL,          NULL,           PREC_NONE},
