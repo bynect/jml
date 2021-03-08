@@ -25,6 +25,7 @@
 
 #define getcwd(...)                 _getcwd(__VA_ARGS__)
 #define chdir(...)                  _chdir(__VA_ARGS__)
+#define isatty(...)                 _isatty(__VA_ARGS__)
 
 #endif
 
@@ -273,4 +274,43 @@ jml_file_read(const char *path)
     fclose(file);
 
     return buffer;
+}
+
+
+bool
+jml_isatty_stdin(void)
+{
+#ifdef JML_PLATFORM_WIN
+    return isatty(fileno(stdin));
+
+#else
+    return isatty(STDIN_FILENO);
+
+#endif
+}
+
+
+bool
+jml_isatty_stdout(void)
+{
+#ifdef JML_PLATFORM_WIN
+    return isatty(fileno(stdout));
+
+#else
+    return isatty(STDOUT_FILENO);
+
+#endif
+}
+
+
+bool
+jml_isatty_stderr(void)
+{
+#ifdef JML_PLATFORM_WIN
+    return isatty(fileno(stderr));
+
+#else
+    return isatty(STDERR_FILENO);
+
+#endif
 }

@@ -126,4 +126,11 @@ bool jml_file_isdir(const char *path);
 char *jml_file_read(const char *path);
 
 
+bool jml_isatty_stdin(void);
+
+bool jml_isatty_stdout(void);
+
+bool jml_isatty_stderr(void);
+
+
 #endif /* JML_UTIL_H_ */

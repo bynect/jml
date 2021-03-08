@@ -252,7 +252,6 @@ jml_identifier_literal(jml_lexer_t *lexer)
 {
     while (jml_is_ident(jml_lexer_peek(lexer))
         || jml_is_digit(jml_lexer_peek(lexer)))
-
         jml_lexer_advance(lexer);
 
     return jml_token_emit(jml_identifier_check(lexer), lexer);

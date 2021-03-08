@@ -7,6 +7,7 @@
 #include <jml_gc.h>
 #include <jml_util.h>
 #include <jml_string.h>
+#include <jml_util.h>
 
 
 #define EMIT_SHORT(compiler, s)                         \
@@ -110,7 +111,7 @@ jml_parser_error_at(jml_compiler_t *compiler,
             fprintf(stderr, " at '%c'",
                 compiler->parser->lexer.source[token->offset]);
 
-        } else if (strncmp(token->start, "\n", token->length) == 0) {
+        } else if (token->type == TOKEN_LINE) {
             fprintf(stderr, " at newline");
 
         } else {
@@ -118,7 +119,42 @@ jml_parser_error_at(jml_compiler_t *compiler,
                 token->length, token->start);
         }
 
-        fprintf(stderr, ": %s\n", message);
+        fprintf(stderr, ": %s\n\n", message);
+
+        const char *source  = compiler->parser->lexer.source;
+        int base_offset     = token->offset;
+        int start_offset;
+        int end_offset;
+
+        for (start_offset = base_offset; start_offset > 0
+            && source[start_offset] != '\n'; --start_offset);
+
+        for (end_offset = base_offset; source[end_offset] != '\0'
+            && source[end_offset] != '\n'; ++end_offset);
+
+        int out = fprintf(stderr, "   %d | %.*s\n", token->line, end_offset - start_offset, source + start_offset);
+        int pad = out - (end_offset - start_offset) - 1;
+        char mark[] = "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^";
+
+#ifndef JML_PLATFORM_WIN
+
+        if (jml_isatty_stderr()) {
+            fprintf(
+                stderr, "%*s%*s\033[0;95m%.*s\033[0m%*s\n",
+                pad, "", base_offset - start_offset, "",
+                token->length, mark,
+                end_offset - (base_offset + token->length), ""
+            );
+        } else
+#endif
+        {
+            fprintf(
+                stderr, "%*s%*s%.*s%*s\n",
+                pad, "", base_offset - start_offset, "",
+                token->length, mark,
+                end_offset - (base_offset + token->length), ""
+            );
+        }
     }
 
     compiler->parser->panicked = true;
@@ -686,7 +722,8 @@ jml_parser_synchronize(jml_compiler_t *compiler)
     compiler->parser->panicked = false;
 
     while (compiler->parser->current.type != TOKEN_EOF) {
-        if (compiler->parser->previous.type == TOKEN_LINE) {
+        if (compiler->parser->previous.type == TOKEN_LINE
+            || compiler->parser->previous.type == TOKEN_SEMI) {
             jml_parser_match_line(compiler);
             return;
         }

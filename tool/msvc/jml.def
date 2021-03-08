@@ -28,6 +28,9 @@ jml_file_find
 jml_file_find_in
 jml_file_isdir
 jml_file_read
+jml_isatty_stderr
+jml_isatty_stdin
+jml_isatty_stdout
 jml_strcat
 jml_strdup
 jml_strsep
