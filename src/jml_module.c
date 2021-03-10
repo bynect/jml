@@ -120,7 +120,8 @@ jml_module_resolve(jml_obj_string_t *qualified,
         offset += snprintf(
             path + offset,
             JML_PATH_MAX,
-            JML_PATH_SEPARATOR "%s",
+            JML_PATH_SEPARATOR "%.*s",
+            (int32_t)vm->module_string->length,
             vm->module_string->chars
         );
 
@@ -199,7 +200,10 @@ jml_module_open(jml_obj_string_t *qualified,
 
         if (main == NULL) {
             jml_gc_exempt_pop();
-            jml_vm_error("ImportErr: Import of '%s' failed.", name->chars);
+            jml_vm_error(
+                "ImportErr: Import of '%.*s' failed.",
+                name->length, name->chars
+            );
             goto err;
         }
 
@@ -215,7 +219,10 @@ jml_module_open(jml_obj_string_t *qualified,
             jml_gc_exempt_pop();
             jml_gc_exempt_pop();
             vm->current = super;
-            jml_vm_error("ImportErr: Import of '%s' failed.", name->chars);
+            jml_vm_error(
+                "ImportErr: Import of '%.*s' failed.",
+                name->length, name->chars
+            );
             goto err;
         }
 

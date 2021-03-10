@@ -98,8 +98,11 @@ jml_parser_error_at(jml_compiler_t *compiler,
         fprintf(stderr, "[line %d", token->line);
 
         if (compiler->module != NULL) {
-            fprintf(stderr, " in module %s",
-                compiler->module->name->chars);
+            fprintf(
+                stderr, " in module %.*s",
+                (int32_t)compiler->module->name->length,
+                compiler->module->name->chars
+            );
         }
 
         fprintf(stderr, "] Error");
@@ -1023,13 +1026,7 @@ jml_string(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
                     };
 
                     c = strtoul(hex, NULL, 16);
-                    if (c > 0)
-                        buffer[size++] = c;
-                    else {
-                        buffer[size++] = '\\';
-                        buffer[size++] = '0';
-                    }
-
+                    buffer[size++] = c;
                     i += 4;
                     continue;
                 }
@@ -1598,7 +1595,7 @@ jml_parser_rule_get(jml_token_type type)
     JML_ASSERT(
         type >= TOKEN_RPAREN && type <= TOKEN_EOF,
         "Invalid token type %d.",
-        (int)type
+        (int32_t)type
     );
 
     return &rules[type];

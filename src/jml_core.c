@@ -100,7 +100,7 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
     jml_value_t fmt = jml_core_format(arg_count, args);
 
     if (IS_STRING(fmt)) {
-        printf("%s\n", AS_CSTRING(fmt));
+        printf("%.*s\n", (int32_t)AS_STRING(fmt)->length, AS_CSTRING(fmt));
         return NONE_VAL;
     }
 
@@ -118,7 +118,7 @@ jml_core_print_ln(int arg_count, jml_value_t *args)
 
     for (int i = 0; i < arg_count; ++i) {
         if (IS_STRING(args[i]))
-            printf("%s", AS_CSTRING(args[i]));
+            printf("%.*s", (int32_t)AS_STRING(args[i])->length, AS_CSTRING(args[i]));
         else
             jml_value_print(args[i]);
 
@@ -139,7 +139,7 @@ jml_core_print(int arg_count, jml_value_t *args)
 
     for (int i = 0; i < arg_count; ++i) {
         if (IS_STRING(args[i]))
-            printf("%s", AS_CSTRING(args[i]));
+            printf("%.*s", (int32_t)AS_STRING(args[i])->length, AS_CSTRING(args[i]));
         else
             jml_value_print(args[i]);
     }
@@ -288,7 +288,8 @@ jml_core_size(int arg_count, jml_value_t *args)
 
             return OBJ_VAL(jml_obj_exception_format(
                 "DiffTypes",
-                "Can't get size from instance of '%s'.",
+                "Can't get size from instance of '%.*s'.",
+                instance->klass->name->length,
                 instance->klass->name->chars
             ));
         }

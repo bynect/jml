@@ -149,7 +149,18 @@ jml_vm_free(jml_vm_t *vm)
 }
 
 
-void
+#ifdef __GNUC__
+
+#define ATTRIBUTE_FORMAT            __attribute__((format(printf, 1, 2)))
+
+#else
+
+#define ATTRIBUTE_FORMAT
+
+#endif
+
+
+ATTRIBUTE_FORMAT void
 jml_vm_error(const char *format, ...)
 {
     if (vm->running == NULL)
@@ -167,12 +178,15 @@ jml_vm_error(const char *format, ...)
         );
 
         if (vm->external->module != NULL)
-            fprintf(stderr, "%s.", vm->external->module->name->chars);
+            fprintf(stderr, "%.*s.", (int32_t)vm->external->module->name->length,
+                vm->external->module->name->chars);
 
         if (vm->external->klass_name != NULL)
-            fprintf(stderr, "%s.", vm->external->klass_name->chars);
+            fprintf(stderr, "%.*s.", (int32_t)vm->external->klass_name->length,
+                vm->external->klass_name->chars);
 
-        fprintf(stderr, "%s\n", vm->external->name->chars);
+        fprintf(stderr, "%.*s\n", (int32_t)vm->external->name->length,
+            vm->external->name->chars);
     }
 
     for (int i = vm->running->frame_count - 1; i >= 0; --i) {
@@ -189,14 +203,18 @@ jml_vm_error(const char *format, ...)
         );
 
         if (function->name != NULL) {
-            if (function->module != NULL)
-                fprintf(stderr, "%s.", function->module->name->chars);
+            if (function->module != NULL) {
+                fprintf(stderr, "%.*s.", (int32_t)function->module->name->length,
+                    function->module->name->chars);
+            }
 
-            if (function->klass_name != NULL)
-                fprintf(stderr, "%s.", function->klass_name->chars);
+            if (function->klass_name != NULL) {
+                fprintf(stderr, "%.*s.", (int32_t)function->klass_name->length,
+                    function->klass_name->chars);
+            }
 
-            fprintf(stderr, "%s/%d\n", function->name->chars,
-                function->arity);
+            fprintf(stderr, "%.*s/%d\n", (int32_t)function->name->length,
+                function->name->chars, function->arity);
         } else
             fprintf(stderr, "__main\n");
     }
@@ -213,12 +231,15 @@ jml_vm_error(const char *format, ...)
         );
 
         if (vm->external->module != NULL)
-            fprintf(stderr, "%s.", vm->external->module->name->chars);
+            fprintf(stderr, "%.*s.", (int32_t)vm->external->module->name->length,
+                vm->external->module->name->chars);
 
         if (vm->external->klass_name != NULL)
-            fprintf(stderr, "%s.", vm->external->klass_name->chars);
+            fprintf(stderr, "%.*s.", (int32_t)vm->external->klass_name->length,
+                vm->external->klass_name->chars);
 
-        fprintf(stderr, "%s\n", vm->external->name->chars);
+        fprintf(stderr, "%.*s\n", (int32_t)vm->external->name->length,
+            vm->external->name->chars);
     }
 #endif
 
@@ -240,8 +261,8 @@ jml_vm_exception(jml_obj_exception_t *exc)
 {
     jml_vm_error(
         "%.*s: %.*s",
-        (int)exc->name->length, exc->name->chars,
-        (int)exc->message->length, exc->message->chars
+        (int32_t)exc->name->length, exc->name->chars,
+        (int32_t)exc->message->length, exc->message->chars
     );
 }
 
@@ -472,7 +493,8 @@ jml_vm_call_value(jml_obj_coroutine_t *coroutine,
 
                 } else {
                     jml_vm_error(
-                        "DiffTypes: Can't call instance of '%s'.",
+                        "DiffTypes: Can't call instance of '%.*s'.",
+                        (int32_t)instance->klass->name->length,
                         instance->klass->name->chars
                     );
                     return false;
@@ -568,7 +590,10 @@ jml_vm_invoke(jml_obj_coroutine_t *coroutine,
         }
 
         if (!jml_vm_invoke_instance(coroutine, instance, name, arg_count)) {
-            jml_vm_error("UndefErr: Undefined property '%s'.", name->chars);
+            jml_vm_error(
+                "UndefErr: Undefined property '%.*s'.",
+                (int32_t)name->length, name->chars
+            );
             return false;
         }
         return true;
@@ -601,7 +626,8 @@ jml_vm_invoke(jml_obj_coroutine_t *coroutine,
 #ifndef JML_LAZY_IMPORT
         else {
             jml_vm_error(
-                "UndefErr: Undefined property '%s'.", name->chars
+                "UndefErr: Undefined property '%.*s'.",
+                (int32_t)name->length, name->chars
             );
             return false;
         }
@@ -611,7 +637,10 @@ jml_vm_invoke(jml_obj_coroutine_t *coroutine,
                 module, name->chars, true);
 
             if (cfunction == NULL || cfunction->function == NULL) {
-                jml_vm_error("UndefErr: Undefined property '%s'.", name->chars);
+                jml_vm_error(
+                    "UndefErr: Undefined property '%.*s'.",
+                    name->length, name->chars
+                );
                 return false;
             }
 
@@ -624,7 +653,8 @@ jml_vm_invoke(jml_obj_coroutine_t *coroutine,
     }
 
     jml_vm_error(
-        "DiffTypes: Can't call '%s'.", name->chars
+        "DiffTypes: Can't call '%.*s'.",
+        (int32_t)name->length, name->chars
     );
     return false;
 }
@@ -637,7 +667,8 @@ jml_vm_class_field_bind(jml_obj_class_t *klass, jml_obj_string_t *name)
 
     if (!jml_hashmap_get(&klass->statics, name, &value)) {
         jml_vm_error(
-            "UndefErr: Undefined property '%s'.", name->chars
+            "UndefErr: Undefined property '%.*s'.",
+            (int32_t)name->length, name->chars
         );
         return false;
     }
@@ -798,8 +829,11 @@ jml_vm_module_import(jml_obj_string_t *fullname,
         jml_vm_pop();
 
         if (!jml_module_initialize(module)) {
-            jml_vm_error("ImportErr: Importing module '%s' failed.",
-                module->name->chars);
+            jml_vm_error(
+                "ImportErr: Importing module '%.*s' failed.",
+                (int32_t)module->name->length,
+                module->name->chars
+            );
             return false;
         }
 
@@ -836,7 +870,8 @@ jml_vm_module_bind(jml_obj_module_t *module,
 #endif
         err: {
             jml_vm_error(
-                "UndefErr: Undefined member '%s'.", name->chars
+                "UndefErr: Undefined member '%.*s'.",
+                (int32_t)name->length, name->chars
             );
             return false;
         }
@@ -910,13 +945,14 @@ jml_vm_run(jml_value_t *last)
                                                         \
         } else if (IS_INSTANCE(a)) {                    \
             SAVE_FRAME();                               \
+            jml_obj_instance_t *obj = AS_INSTANCE(a);   \
             if (!jml_vm_invoke_instance(                \
-                running,                                \
-                AS_INSTANCE(a), string, 1)) {           \
+                running, obj, string, 1)) {             \
                 RUNTIME_ERROR(                          \
                     "DiffTypes: Can't " verb            \
-                    " instance of '%s'.",               \
-                    AS_INSTANCE(a)->klass->name->chars  \
+                    " instance of '%.*s'.",             \
+                    (int32_t)obj->klass->name->length,  \
+                    obj->klass->name->chars             \
                 );                                      \
                 return INTERPRET_RUNTIME_ERROR;         \
             }                                           \
@@ -956,13 +992,14 @@ jml_vm_run(jml_value_t *last)
                                                         \
         } else if (IS_INSTANCE(a)) {                    \
             SAVE_FRAME();                               \
+            jml_obj_instance_t *obj = AS_INSTANCE(a);   \
             if (!jml_vm_invoke_instance(                \
-                running,                                \
-                AS_INSTANCE(a), string, 1)) {           \
+                running, obj, string, 1)) {             \
                 RUNTIME_ERROR(                          \
                     "DiffTypes: Can't " verb            \
-                    " instance of '%s'.",               \
-                    AS_INSTANCE(a)->klass->name->chars  \
+                    " instance of '%.*s'.",             \
+                    (int32_t)obj->klass->name->length,  \
+                    obj->klass->name->chars             \
                 );                                      \
                 return INTERPRET_RUNTIME_ERROR;         \
             }                                           \
@@ -994,13 +1031,14 @@ jml_vm_run(jml_value_t *last)
                                                         \
         } else if (IS_INSTANCE(a)) {                    \
             SAVE_FRAME();                               \
+            jml_obj_instance_t *obj = AS_INSTANCE(a);   \
             if (!jml_vm_invoke_instance(                \
-                running,                                \
-                AS_INSTANCE(a), string, 1)) {           \
+                running, obj, string, 1)) {             \
                 RUNTIME_ERROR(                          \
                     "DiffTypes: Can't " verb            \
-                    " instance of '%s'.",               \
-                    AS_INSTANCE(a)->klass->name->chars  \
+                    " instance of '%.*s'.",             \
+                    (int32_t)obj->klass->name->length,  \
+                    obj->klass->name->chars             \
                 );                                      \
                 return INTERPRET_RUNTIME_ERROR;         \
             }                                           \
@@ -1166,7 +1204,7 @@ jml_vm_run(jml_value_t *last)
 
 #ifdef JML_STEP_STACK
         jml_bytecode_instruction_disassemble(&frame->closure->function->bytecode,
-            (int)(frame->pc - frame->closure->function->bytecode.code));
+            (int32_t)(frame->pc - frame->closure->function->bytecode.code));
 #endif
 
 #ifdef JML_COMPUTED_GOTO
@@ -1378,7 +1416,8 @@ jml_vm_run(jml_value_t *last)
                     if (!jml_vm_invoke_instance(running, AS_INSTANCE(head),
                         vm->concat_string, 1)) {
                         RUNTIME_ERROR(
-                            "DiffTypes: Can't concatenate instance of '%s'.",
+                            "DiffTypes: Can't concatenate instance of '%.*s'.",
+                            (int32_t)AS_INSTANCE(head)->klass->name->length,
                             AS_INSTANCE(head)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -1482,7 +1521,8 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
                 if (!jml_vm_invoke_class(running, superclass, method, arg_count)) {
                     RUNTIME_ERROR(
-                        "UndefErr: Undefined property '%s'.", method->chars
+                        "UndefErr: Undefined property '%.*s'.",
+                        (int32_t)method->length, method->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1499,7 +1539,8 @@ jml_vm_run(jml_value_t *last)
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
                 if (!jml_vm_invoke_class(running, superclass, method, arg_count)) {
                     RUNTIME_ERROR(
-                        "UndefErr: Undefined property '%s'.", method->chars
+                        "UndefErr: Undefined property '%.*s'.",
+                        (int32_t)method->length, method->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1733,7 +1774,8 @@ jml_vm_run(jml_value_t *last)
 
                     SAVE_FRAME();
                     RUNTIME_ERROR(
-                        "UndefErr: Undefined variable '%s'.", name->chars
+                        "UndefErr: Undefined variable '%.*s'.",
+                        (int32_t)name->length, name->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1747,7 +1789,8 @@ jml_vm_run(jml_value_t *last)
 
                     SAVE_FRAME();
                     RUNTIME_ERROR(
-                        "UndefErr: Undefined variable '%s'.", name->chars
+                        "UndefErr: Undefined variable '%.*s'.",
+                        (int32_t)name->length, name->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1761,7 +1804,8 @@ jml_vm_run(jml_value_t *last)
                 if (!jml_vm_global_get(name, &value)) {
                     SAVE_FRAME();
                     RUNTIME_ERROR(
-                        "UndefErr: Undefined variable '%s'.", name->chars
+                        "UndefErr: Undefined variable '%.*s'.",
+                        (int32_t)name->length, name->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1776,7 +1820,8 @@ jml_vm_run(jml_value_t *last)
                 if (!jml_vm_global_get(name, &value)) {
                     SAVE_FRAME();
                     RUNTIME_ERROR(
-                        "UndefErr: Undefined variable '%s'.", name->chars
+                        "UndefErr: Undefined variable '%.*s'.",
+                        (int32_t)name->length, name->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1920,7 +1965,8 @@ jml_vm_run(jml_value_t *last)
 
                     SAVE_FRAME();
                     RUNTIME_ERROR(
-                        "UndefErr: Undefined property '%s'.", name->chars
+                        "UndefErr: Undefined property '%.*s'.",
+                        (int32_t)name->length, name->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
 
@@ -1976,7 +2022,8 @@ jml_vm_run(jml_value_t *last)
 
                     SAVE_FRAME();
                     RUNTIME_ERROR(
-                        "UndefErr: Undefined property '%s'.", name->chars
+                        "UndefErr: Undefined property '%.*s'.",
+                        (int32_t)name->length, name->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
 
@@ -2053,7 +2100,8 @@ jml_vm_run(jml_value_t *last)
                     if (!jml_vm_invoke_instance(running, AS_INSTANCE(box),
                         vm->set_string, 2)) {
                         RUNTIME_ERROR(
-                            "DiffTypes: Can't index instance of '%s'.",
+                            "DiffTypes: Can't index instance of '%.*s'.",
+                            (int32_t)AS_INSTANCE(box)->klass->name->length,
                             AS_INSTANCE(box)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -2120,7 +2168,8 @@ jml_vm_run(jml_value_t *last)
                     if (!jml_vm_invoke_instance(running, AS_INSTANCE(box),
                         vm->get_string, 1)) {
                         RUNTIME_ERROR(
-                            "DiffTypes: Can't index instance of '%s'.",
+                            "DiffTypes: Can't index instance of '%.*s'.",
+                            (int32_t)AS_INSTANCE(box)->klass->name->length,
                             AS_INSTANCE(box)->klass->name->chars
                         );
                         return INTERPRET_RUNTIME_ERROR;
@@ -2150,7 +2199,8 @@ jml_vm_run(jml_value_t *last)
                 if (!jml_vm_global_pop(old_name, &value)) {
                     SAVE_FRAME();
                     RUNTIME_ERROR(
-                        "UndefErr: Undefined variable '%s'.", old_name->chars
+                        "UndefErr: Undefined variable '%.*s'.",
+                        (int32_t)old_name->length, old_name->chars
                     );
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -2166,7 +2216,10 @@ jml_vm_run(jml_value_t *last)
                 jml_value_t value;
                 if (!jml_vm_global_pop(old_name, &value)) {
                     SAVE_FRAME();
-                    RUNTIME_ERROR("UndefErr: Undefined variable '%s'.", old_name->chars);
+                    RUNTIME_ERROR(
+                        "UndefErr: Undefined variable '%.*s'.",
+                        (int32_t)old_name->length, old_name->chars
+                    );
                     return INTERPRET_RUNTIME_ERROR;
                 }
 

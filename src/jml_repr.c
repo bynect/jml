@@ -58,12 +58,15 @@ jml_obj_function_print(jml_obj_function_t *function,
     }
 
     if (function->module != NULL)
-        printf("%s.", function->module->name->chars);
+        printf("%.*s.", (int32_t)function->module->name->length,
+            function->module->name->chars);
 
     if (function->klass_name != NULL)
-        printf("%s.", function->klass_name->chars);
+        printf("%.*s.", (int32_t)function->klass_name->length,
+            function->klass_name->chars);
 
-    printf("%s", function->name->chars);
+    printf("%.*s", (int32_t)function->name->length,
+        function->name->chars);
 
     if (!function->variadic)
         printf("/%d", function->arity);
@@ -86,12 +89,15 @@ jml_obj_cfunction_print(jml_obj_cfunction_t *function,
     printf(" ");
 
     if (function->module != NULL)
-        printf("%s.", function->module->name->chars);
+        printf("%.*s.", (int32_t)function->module->name->length,
+            function->module->name->chars);
 
     if (function->klass_name != NULL)
-        printf("%s.", function->klass_name->chars);
+        printf("%.*s.", (int32_t)function->klass_name->length,
+            function->klass_name->chars);
 
-    printf("%s>", function->name->chars);
+    printf("%.*s>", (int32_t)function->name->length,
+        function->name->chars);
 }
 
 
@@ -99,9 +105,11 @@ void
 jml_obj_print(jml_value_t value)
 {
     switch (OBJ_TYPE(value)) {
-        case OBJ_STRING:
-            printf("\"%s\"", AS_CSTRING(value));
+        case OBJ_STRING: {
+            jml_obj_string_t *string = AS_STRING(value);
+            printf("\"%.*s\"", (int32_t)string->length, string->chars);
             break;
+        }
 
         case OBJ_ARRAY: {
             printf("[");
@@ -134,12 +142,14 @@ jml_obj_print(jml_value_t value)
             jml_hashmap_entry_t *entries = jml_hashmap_iterator(&hashmap);
 
             for (int i = 0; i < item_count; ++i) {
-                printf("\"%s\": ", entries[i].key->chars);
+                printf("\"%.*s\": ", (int32_t)entries[i].key->length,
+                    entries[i].key->chars);
                 jml_value_print(entries[i].value);
                 printf(", ");
             }
 
-            printf("\"%s\": ", entries[item_count].key->chars);
+            printf("\"%.*s\": ",(int32_t) entries[item_count].key->length,
+                entries[item_count].key->chars);
             jml_value_print(entries[item_count].value);
             printf("}");
 
@@ -147,18 +157,21 @@ jml_obj_print(jml_value_t value)
             break;
         }
 
-        case OBJ_MODULE:
-            printf("<module %s>", AS_MODULE(value)->name->chars);
+        case OBJ_MODULE: {
+            jml_obj_module_t *module = AS_MODULE(value);
+            printf("<module %.*s>", (int32_t)module->name->length, module->name->chars);
             break;
+        }
 
         case OBJ_CLASS: {
             jml_obj_class_t *klass  = AS_CLASS(value);
             printf("<class ");
 
             if (klass->module != NULL)
-                printf("%s.", klass->module->name->chars);
+                printf("%.*s.", (int32_t)klass->module->name->length,
+                    klass->module->name->chars);
 
-            printf("%s>", klass->name->chars);
+            printf("%.*s>", (int32_t)klass->name->length, klass->name->chars);
             break;
         }
 
@@ -189,9 +202,11 @@ jml_obj_print(jml_value_t value)
             printf("<instance of ");
 
             if (instance->klass->module != NULL)
-                printf("%s.", instance->klass->module->name->chars);
+                printf("%.*s.", (int32_t)instance->klass->module->name->length,
+                    instance->klass->module->name->chars);
 
-            printf("%s>", instance->klass->name->chars);
+            printf("%.*s>", (int32_t)instance->klass->name->length,
+                instance->klass->name->chars);
             break;
         }
 
@@ -231,9 +246,10 @@ jml_obj_print(jml_value_t value)
             printf("<exception ");
 
             if (exc->module != NULL)
-                printf("%s.", exc->module->name->chars);
+                printf("%.*s.", (int32_t)exc->module->name->length,
+                    exc->module->name->chars);
 
-            printf("%s>", exc->name->chars);
+            printf("%.*s>", (int32_t)exc->name->length, exc->name->chars);
             break;
         }
     }
@@ -293,16 +309,19 @@ jml_obj_function_stringify(jml_obj_function_t *function)
 
     if (function->module != NULL) {
         REALLOC(char, fn, size, pos + function->module->name->length);
-        pos += sprintf(fn + pos, "%s.", function->module->name->chars);
+        pos += sprintf(fn + pos, "%.*s.", (int32_t)function->module->name->length,
+            function->module->name->chars);
     }
 
     if (function->klass_name != NULL) {
         REALLOC(char, fn, size, pos + function->klass_name->length);
-        pos += sprintf(fn + pos, "%s.", function->klass_name->chars);
+        pos += sprintf(fn + pos, "%.*s.", (int32_t)function->klass_name->length,
+            function->klass_name->chars);
     }
 
     REALLOC(char, fn, size, pos + function->name->length + 10);
-    pos += sprintf(fn + pos, "%s", function->name->chars);
+    pos += sprintf(fn + pos, "%.*s", (int32_t)function->name->length,
+        function->name->chars);
 
     if (!function->variadic)
         pos += sprintf(fn + pos, "/%d", function->arity);
@@ -327,16 +346,19 @@ jml_obj_cfunction_stringify(jml_obj_cfunction_t *function)
 
     if (function->module != NULL) {
         REALLOC(char, cfn, size, pos + function->module->name->length);
-        pos += sprintf(cfn + pos, "%s.", function->module->name->chars);
+        pos += sprintf(cfn + pos, "%.*s.", (int32_t)function->module->name->length,
+            function->module->name->chars);
     }
 
     if (function->klass_name != NULL) {
         REALLOC(char, cfn, size, pos + function->klass_name->length);
-        pos += sprintf(cfn + pos, "%s.", function->klass_name->chars);
+        pos += sprintf(cfn + pos, "%.*s.", (int32_t)function->klass_name->length,
+            function->klass_name->chars);
     }
 
     REALLOC(char, cfn, size, pos + function->name->length + 3);
-    pos += sprintf(cfn + pos, "%s>", function->name->chars);
+    pos += sprintf(cfn + pos, "%.*s>", (int32_t)function->name->length,
+        function->name->chars);
 
     return cfn;
 }
@@ -348,13 +370,15 @@ jml_obj_cfunction_stringify(jml_obj_cfunction_t *function)
             REALLOC(char, buffer, size,                 \
                 pos + klass->module->name->length);     \
                                                         \
-            pos += sprintf(buffer + pos, "%s.",         \
+            pos += sprintf(buffer + pos, "%.*s.",       \
+                (int32_t)klass->module->name->length,   \
                 klass->module->name->chars);            \
         }                                               \
         REALLOC(char, buffer, size,                     \
             size + klass->name->length + 3);            \
                                                         \
-        pos += sprintf(buffer + pos, "%s",              \
+        pos += sprintf(buffer + pos, "%.*s",            \
+            (int32_t)klass->name->length,               \
             klass->name->chars);                        \
     } while (false)
 
@@ -399,7 +423,8 @@ jml_obj_instance_stringify(jml_obj_instance_t *instance)
             }
 
             jml_vm_error(
-                "DiffTypes: Can't get size from instance of '%s'.",
+                "DiffTypes: Can't get size from instance of '%.*s'.",
+                (int32_t)instance->klass->name->length,
                 instance->klass->name->chars
             );
         }
@@ -419,8 +444,15 @@ char *
 jml_obj_stringify(jml_value_t value)
 {
     switch (OBJ_TYPE(value)) {
-        case OBJ_STRING:
-            return jml_strdup(AS_CSTRING(value));
+        case OBJ_STRING: {
+            size_t length = AS_STRING(value)->length + 1;
+            char *dest = jml_realloc(NULL, length);
+
+            if (!dest)
+                return NULL;
+
+            return memcpy(dest, AS_CSTRING(value), length);
+        }
 
         case OBJ_ARRAY: {
             jml_value_array_t array = AS_ARRAY(value)->values;
@@ -471,7 +503,8 @@ jml_obj_stringify(jml_value_t value)
                 REALLOC(char, buffer, size,
                     (ptr - buffer) + strlen(temp) + entries[i].key->length + 1);
 
-                ptr += sprintf(ptr, "\"%s\": %s, ", entries[i].key->chars, temp);
+                ptr += sprintf(ptr, "\"%.*s\": %s, ", (int32_t)entries[i].key->length,
+                    entries[i].key->chars, temp);
                 jml_free(temp);
             }
 
@@ -479,7 +512,8 @@ jml_obj_stringify(jml_value_t value)
             REALLOC(char, buffer, size,
                 (ptr - buffer) + strlen(temp) + entries[item_count].key->length + 2);
 
-            ptr += sprintf(ptr, "\"%s\": %s", entries[item_count].key->chars, temp);
+            ptr += sprintf(ptr, "\"%.*s\": %s", (int32_t)entries[item_count].key->length,
+                entries[item_count].key->chars, temp);
             jml_free(temp);
             jml_free(entries);
 
@@ -490,11 +524,13 @@ jml_obj_stringify(jml_value_t value)
         }
 
         case OBJ_MODULE: {
-            size_t size = AS_MODULE(value)->name->length + 16;
-            char *buffer = jml_alloc(size);
+            jml_obj_module_t *module = AS_MODULE(value);
+            char *buffer = jml_alloc(module->name->length + 16);
 
-            sprintf(buffer, "<module %s>",
-                AS_MODULE(value)->name->chars);
+            sprintf(buffer, "<module %.*s>",
+                (int32_t)module->name->length,
+                module->name->chars
+            );
             return buffer;
         }
 
@@ -537,13 +573,17 @@ jml_obj_stringify(jml_value_t value)
 
             char *buffer = jml_alloc(size);
             if (exc->module != NULL) {
-                sprintf(buffer, "<exception %s.%s>",
+                sprintf(buffer, "<exception %.*s.%.*s>",
+                    (int32_t)exc->module->name->length,
                     exc->module->name->chars,
+                    (int32_t)exc->name->length,
                     exc->name->chars
                 );
             } else {
-                sprintf(buffer, "<exception %s>",
-                    exc->name->chars);
+                sprintf(buffer, "<exception %.*s>",
+                    (int32_t)exc->name->length,
+                    exc->name->chars
+                );
             }
 
             return buffer;

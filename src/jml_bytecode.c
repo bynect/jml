@@ -43,7 +43,7 @@ void
 jml_bytecode_free(jml_bytecode_t *bytecode)
 {
     FREE_ARRAY(uint8_t, bytecode->code, bytecode->capacity);
-    FREE_ARRAY(int, bytecode->lines, bytecode->capacity);
+    FREE_ARRAY(uint16_t, bytecode->lines, bytecode->capacity);
 
     jml_value_array_free(&bytecode->constants);
     jml_bytecode_init(bytecode);
