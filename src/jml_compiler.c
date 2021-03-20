@@ -1494,7 +1494,6 @@ jml_lambda(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 static void
 jml_piping(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 {
-    jml_parser_match_line(compiler);
     jml_parser_precedence_parse(compiler, PREC_CALL + 1);
 
     jml_bytecode_emit_byte(compiler, OP_ROT);
@@ -1504,6 +1503,21 @@ jml_piping(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
         arg_count += jml_arguments_list(compiler);
 
     jml_bytecode_emit_bytes(compiler, OP_CALL, arg_count);
+}
+
+
+static void
+jml_try(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
+{
+    jml_parser_precedence_parse(compiler, PREC_CALL + 1);
+    jml_parser_consume(compiler, TOKEN_LPAREN, "Expect '(' before function call.");
+
+    do {
+        jml_call(compiler, false);
+    } while (jml_parser_match(compiler, TOKEN_LPAREN));
+
+    int count = jml_bytecode_current(compiler)->count;
+    jml_bytecode_current(compiler)->code[count - 2] = OP_TRY_CALL;
 }
 
 
@@ -1572,6 +1586,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_IMPORT*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_ASYNC*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AWAIT*/     {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_TRY*/       {&jml_try,      NULL,           PREC_CALL},
     /*TOKEN_AND*/       {NULL,          &jml_and,       PREC_AND},
     /*TOKEN_NOT*/       {&jml_unary,    NULL,           PREC_NONE},
     /*TOKEN_OR*/        {NULL,          &jml_or,        PREC_OR},
@@ -1625,6 +1640,11 @@ jml_parser_precedence_parse(jml_compiler_t *compiler,
         jml_parser_advance(compiler);
         jml_parser_fn infix_rule = jml_parser_rule_get(
             compiler->parser->previous.type)->infix;
+
+        if (infix_rule == NULL) {
+            jml_parser_error(compiler, "Invalid expression.");
+            return;
+        }
 
         infix_rule(compiler, assignable);
     }

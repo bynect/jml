@@ -334,6 +334,9 @@ jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode, uint32_t offset)
         case OP_CALL:
             return jml_bytecode_instruction_byte("OP_CALL", bytecode, offset);
 
+        case OP_TRY_CALL:
+            return jml_bytecode_instruction_byte("OP_TRY_CALL", bytecode, offset);
+
         case OP_INVOKE:
             return jml_bytecode_instruction_invoke("OP_INVOKE", bytecode, offset);
 
@@ -571,6 +574,7 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
         case OP_GET_MEMBER:
         case OP_SUPER:
         case OP_CALL:
+        case OP_TRY_CALL:
         case OP_SET_LOCAL:
         case OP_GET_LOCAL:
         case OP_SET_UPVALUE:

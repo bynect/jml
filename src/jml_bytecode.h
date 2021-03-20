@@ -40,6 +40,7 @@ typedef enum {
     OP_JUMP_IF_FALSE,
     OP_LOOP,
     OP_CALL,
+    OP_TRY_CALL,
     OP_INVOKE,
     EXTENDED_OP(OP_INVOKE),
     OP_SUPER_INVOKE,

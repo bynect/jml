@@ -230,7 +230,14 @@ jml_identifier_check(jml_lexer_t *lexer)
             }
             break;
 
-        case 't': return jml_keyword_match(1, 3, "rue", TOKEN_TRUE, lexer);
+        case 't':
+            if (lexer->current - lexer->start > 2 && lexer->start[1] == 'r') {
+                switch (lexer->start[2]) {
+                    case 'u': return jml_keyword_match(3, 1, "e",   TOKEN_TRUE, lexer);
+                    case 'y': return jml_keyword_match(3, 0, "",    TOKEN_TRY, lexer);
+                }
+            }
+            break;
 
         case 'w':
             if (lexer->current - lexer->start > 1) {
@@ -509,6 +516,7 @@ jml_token_type_print(jml_token_type type)
         case PRINT_TOKEN(TOKEN_IMPORT);
         case PRINT_TOKEN(TOKEN_ASYNC);
         case PRINT_TOKEN(TOKEN_AWAIT);
+        case PRINT_TOKEN(TOKEN_TRY);
         case PRINT_TOKEN(TOKEN_AND);
         case PRINT_TOKEN(TOKEN_NOT);
         case PRINT_TOKEN(TOKEN_OR);

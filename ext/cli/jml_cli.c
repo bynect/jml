@@ -91,7 +91,7 @@ jml_cli_repl(jml_vm_t *vm)
 #ifdef JML_EVAL
         jml_value_t result = jml_vm_eval(vm, line);
 
-        if (!IS_EXCEPTION(result) && !IS_NONE(result)) {
+        if (!IS_NONE(result)) {
             printf("   ");
             jml_value_print(result);
             printf("\n");

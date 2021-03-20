@@ -149,124 +149,6 @@ jml_vm_free(jml_vm_t *vm)
 }
 
 
-#ifdef __GNUC__
-
-#define ATTRIBUTE_FORMAT            __attribute__((format(printf, 1, 2)))
-
-#else
-
-#define ATTRIBUTE_FORMAT
-
-#endif
-
-
-ATTRIBUTE_FORMAT void
-jml_vm_error(const char *format, ...)
-{
-    if (vm->running == NULL)
-        return;
-
-#ifndef JML_BACKTRACE
-    if (vm->external != NULL) {
-        jml_call_frame_t    *frame    = &vm->running->frames[0];
-        jml_obj_function_t  *function = frame->closure->function;
-
-        size_t instruction = frame->pc - function->bytecode.code - 1;
-
-        fprintf(stderr, "[line %d] in function ",
-            function->bytecode.lines[instruction]
-        );
-
-        if (vm->external->module != NULL)
-            fprintf(stderr, "%.*s.", (int32_t)vm->external->module->name->length,
-                vm->external->module->name->chars);
-
-        if (vm->external->klass_name != NULL)
-            fprintf(stderr, "%.*s.", (int32_t)vm->external->klass_name->length,
-                vm->external->klass_name->chars);
-
-        fprintf(stderr, "%.*s\n", (int32_t)vm->external->name->length,
-            vm->external->name->chars);
-    }
-
-    for (int i = vm->running->frame_count - 1; i >= 0; --i) {
-#else
-    for (uint32_t i = 0; i < vm->running->frame_count; ++i) {
-#endif
-        jml_call_frame_t    *frame    = &vm->running->frames[i];
-        jml_obj_function_t  *function = frame->closure->function;
-
-        size_t instruction = frame->pc - function->bytecode.code - 1;
-
-        fprintf(stderr, "[line %d] in function ",
-            function->bytecode.lines[instruction]
-        );
-
-        if (function->name != NULL) {
-            if (function->module != NULL) {
-                fprintf(stderr, "%.*s.", (int32_t)function->module->name->length,
-                    function->module->name->chars);
-            }
-
-            if (function->klass_name != NULL) {
-                fprintf(stderr, "%.*s.", (int32_t)function->klass_name->length,
-                    function->klass_name->chars);
-            }
-
-            fprintf(stderr, "%.*s/%d\n", (int32_t)function->name->length,
-                function->name->chars, function->arity);
-        } else
-            fprintf(stderr, "__main\n");
-    }
-
-#ifdef JML_BACKTRACE
-    if (vm->external != NULL) {
-        jml_call_frame_t    *frame    = &vm->running->frames[vm->running->frame_count - 1];
-        jml_obj_function_t  *function = frame->closure->function;
-
-        size_t instruction = frame->pc - function->bytecode.code - 1;
-
-        fprintf(stderr, "[line %d] in function ",
-            function->bytecode.lines[instruction]
-        );
-
-        if (vm->external->module != NULL)
-            fprintf(stderr, "%.*s.", (int32_t)vm->external->module->name->length,
-                vm->external->module->name->chars);
-
-        if (vm->external->klass_name != NULL)
-            fprintf(stderr, "%.*s.", (int32_t)vm->external->klass_name->length,
-                vm->external->klass_name->chars);
-
-        fprintf(stderr, "%.*s\n", (int32_t)vm->external->name->length,
-            vm->external->name->chars);
-    }
-#endif
-
-    va_list args;
-    va_start(args, format);
-
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
-
-    va_end(args);
-
-    vm->external                = NULL;
-    vm->running                 = NULL;
-}
-
-
-static void
-jml_vm_exception(jml_obj_exception_t *exc)
-{
-    jml_vm_error(
-        "%.*s: %.*s",
-        (int32_t)exc->name->length, exc->name->chars,
-        (int32_t)exc->message->length, exc->message->chars
-    );
-}
-
-
 static inline void
 jml_vm_push(jml_value_t value)
 {
@@ -356,6 +238,137 @@ jml_vm_global_pop(jml_obj_string_t *name,
         return jml_hashmap_pop(&vm->globals, name, value);
 
     return jml_hashmap_pop(&vm->current->globals, name, value);
+}
+
+
+#ifdef __GNUC__
+
+#define ATTRIBUTE_FORMAT            __attribute__((format(printf, 1, 2)))
+
+#else
+
+#define ATTRIBUTE_FORMAT
+
+#endif
+
+
+ATTRIBUTE_FORMAT void
+jml_vm_error(const char *format, ...)
+{
+    if (vm->running == NULL)
+        return;
+
+#ifndef JML_BACKTRACE
+    if (vm->external != NULL) {
+        jml_call_frame_t    *frame    = &vm->running->frames[0];
+        jml_obj_function_t  *function = frame->closure->function;
+
+        size_t instruction = frame->pc - function->bytecode.code - 1;
+
+        fprintf(stderr, "[line %d] in function ",
+            function->bytecode.lines[instruction]
+        );
+
+        if (vm->external->module != NULL)
+            fprintf(stderr, "%.*s.", (int32_t)vm->external->module->name->length,
+                vm->external->module->name->chars);
+
+        if (vm->external->klass_name != NULL)
+            fprintf(stderr, "%.*s.", (int32_t)vm->external->klass_name->length,
+                vm->external->klass_name->chars);
+
+        fprintf(stderr, "%.*s\n", (int32_t)vm->external->name->length,
+            vm->external->name->chars);
+    }
+
+    for (int32_t i = vm->running->frame_count - 1; i >= 0; --i) {
+#else
+    for (uint32_t i = 0; i < vm->running->frame_count; ++i) {
+#endif
+        jml_call_frame_t    *frame    = &vm->running->frames[i];
+        jml_obj_function_t  *function = frame->closure->function;
+
+        size_t instruction = frame->pc - function->bytecode.code - 1;
+
+        fprintf(stderr, "[line %d] in function ",
+            function->bytecode.lines[instruction]
+        );
+
+        if (function->name != NULL) {
+            if (function->module != NULL) {
+                fprintf(stderr, "%.*s.", (int32_t)function->module->name->length,
+                    function->module->name->chars);
+            }
+
+            if (function->klass_name != NULL) {
+                fprintf(stderr, "%.*s.", (int32_t)function->klass_name->length,
+                    function->klass_name->chars);
+            }
+
+            fprintf(stderr, "%.*s/%d\n", (int32_t)function->name->length,
+                function->name->chars, function->arity);
+        } else
+            fprintf(stderr, "__main\n");
+    }
+
+#ifdef JML_BACKTRACE
+    if (vm->external != NULL) {
+        jml_call_frame_t    *frame    = &vm->running->frames[vm->running->frame_count - 1];
+        jml_obj_function_t  *function = frame->closure->function;
+
+        size_t instruction = frame->pc - function->bytecode.code - 1;
+
+        fprintf(stderr, "[line %d] in function ",
+            function->bytecode.lines[instruction]
+        );
+
+        if (vm->external->module != NULL)
+            fprintf(stderr, "%.*s.", (int32_t)vm->external->module->name->length,
+                vm->external->module->name->chars);
+
+        if (vm->external->klass_name != NULL)
+            fprintf(stderr, "%.*s.", (int32_t)vm->external->klass_name->length,
+                vm->external->klass_name->chars);
+
+        fprintf(stderr, "%.*s\n", (int32_t)vm->external->name->length,
+            vm->external->name->chars);
+    }
+#endif
+
+    va_list args;
+    va_start(args, format);
+
+    vfprintf(stderr, format, args);
+    fprintf(stderr, "\n");
+
+    va_end(args);
+
+    vm->external                = NULL;
+    vm->running                 = NULL;
+}
+
+
+static bool
+jml_vm_exception(jml_obj_exception_t *exc)
+{
+    for (int32_t i = vm->running->frame_count - 1; i >= 0; --i) {
+        jml_call_frame_t    *frame    = &vm->running->frames[i];
+
+        if (frame->pc[-2] == OP_TRY_CALL) {
+            vm->running->frame_count = i + 1;
+            vm->external = NULL;
+            jml_vm_push(OBJ_VAL(exc));
+            return true;
+        }
+    }
+
+    jml_vm_error(
+        "%.*s: %.*s",
+        (int32_t)exc->name->length, exc->name->chars,
+        (int32_t)exc->message->length, exc->message->chars
+    );
+
+    return false;
 }
 
 
@@ -460,8 +473,7 @@ jml_vm_call_value(jml_obj_coroutine_t *coroutine,
 
                         if (IS_EXCEPTION(result)) {
                             vm->external = cfunction_obj;
-                            jml_vm_exception(AS_EXCEPTION(result));
-                            return false;
+                            return jml_vm_exception(AS_EXCEPTION(result));
 
                         } else {
                             jml_vm_push(instance);
@@ -511,8 +523,7 @@ jml_vm_call_value(jml_obj_coroutine_t *coroutine,
 
                 if (IS_EXCEPTION(result)) {
                     vm->external = cfunction_obj;
-                    jml_vm_exception(AS_EXCEPTION(result));
-                    return false;
+                    return jml_vm_exception(AS_EXCEPTION(result));
 
                 } else {
                     jml_vm_push(result);
@@ -1126,6 +1137,7 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(OP_JUMP_IF_FALSE),
         TABLE_OP(OP_LOOP),
         TABLE_OP(OP_CALL),
+        TABLE_OP(OP_TRY_CALL),
         TABLE_OP(OP_INVOKE),
         TABLE_OP(EXTENDED_OP(OP_INVOKE)),
         TABLE_OP(OP_SUPER_INVOKE),
@@ -1480,6 +1492,16 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_CALL) {
+                int arg_count       = READ_BYTE();
+                SAVE_FRAME();
+                if (!jml_vm_call_value(running, jml_vm_peek(arg_count), arg_count))
+                    return INTERPRET_RUNTIME_ERROR;
+
+                LOAD_FRAME();
+                END_OP();
+            }
+
+            EXEC_OP(OP_TRY_CALL) {
                 int arg_count       = READ_BYTE();
                 SAVE_FRAME();
                 if (!jml_vm_call_value(running, jml_vm_peek(arg_count), arg_count))
@@ -2523,7 +2545,7 @@ jml_vm_eval(jml_vm_t *_vm, const char *source)
         source, NULL, true);
 
     if (function == NULL)
-        goto err;
+        return NONE_VAL;
 
     jml_gc_exempt_push(OBJ_VAL(function));
     jml_obj_closure_t *closure = jml_obj_closure_new(function);
@@ -2538,16 +2560,11 @@ jml_vm_eval(jml_vm_t *_vm, const char *source)
 
     jml_value_t result = NONE_VAL;
     if (jml_vm_run(&result) != INTERPRET_OK)
-        goto err;
+        return NONE_VAL;
 
     return result;
 #else
     (void) source;
-    goto err;
+    return NONE_VAL;
 #endif
-
-err:
-    return OBJ_VAL(jml_obj_exception_new(
-        "EvalErr", "Source code couldn't be evaluated."
-    ));
 }

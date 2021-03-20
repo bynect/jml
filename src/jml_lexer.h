@@ -74,6 +74,7 @@ typedef enum {
     TOKEN_IMPORT,
     TOKEN_ASYNC,
     TOKEN_AWAIT,
+    TOKEN_TRY,
     TOKEN_AND,
     TOKEN_NOT,
     TOKEN_OR,
