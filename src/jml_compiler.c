@@ -135,9 +135,16 @@ jml_parser_error_at(jml_compiler_t *compiler,
         for (end_offset = base_offset; source[end_offset] != '\0'
             && source[end_offset] != '\n'; ++end_offset);
 
-        int out = fprintf(stderr, "   %d | %.*s\n", token->line, end_offset - start_offset, source + start_offset);
+        int out = fprintf(
+            stderr, "   %d | %.*s\n",
+            token->line, end_offset - start_offset,
+            source + start_offset
+        );
+
         int pad = out - (end_offset - start_offset) - 1;
-        char mark[] = "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^";
+        const char mark[] = \
+            "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" \
+            "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^";
 
 #ifndef JML_PLATFORM_WIN
 
@@ -145,7 +152,7 @@ jml_parser_error_at(jml_compiler_t *compiler,
             fprintf(
                 stderr, "%*s%*s\033[0;95m%.*s\033[0m%*s\n",
                 pad, "", base_offset - start_offset, "",
-                token->length, mark,
+                token->type == TOKEN_ERROR ? 1 : token->length, mark,
                 end_offset - (base_offset + token->length), ""
             );
         } else
@@ -154,7 +161,7 @@ jml_parser_error_at(jml_compiler_t *compiler,
             fprintf(
                 stderr, "%*s%*s%.*s%*s\n",
                 pad, "", base_offset - start_offset, "",
-                token->length, mark,
+                token->type == TOKEN_ERROR ? 1 : token->length, mark,
                 end_offset - (base_offset + token->length), ""
             );
         }
@@ -440,7 +447,7 @@ jml_compiler_end(jml_compiler_t *compiler)
     jml_obj_function_t *function = compiler->function;
 
 #ifdef JML_DISASSEMBLE
-    if (!compiler->parser->w_error) {
+    if (!compiler->parser->w_error && compiler->output) {
         jml_bytecode_disassemble(jml_bytecode_current(compiler),
             function->name != NULL ? function->name->chars : "__main");
     }
