@@ -635,6 +635,17 @@ static jml_module_function core_table[] = {
 };
 
 
+/*glue code*/
+static const char core_glue[] = "\
+fn exception(name, msg) {\n\
+    let exc = try __exception(name, msg)\n\
+    exc\n\
+}\n\
+\n\
+unset(\"__exception\")\n\
+";
+
+
 void
 jml_core_register(jml_vm_t *vm)
 {
@@ -646,6 +657,23 @@ jml_core_register(jml_vm_t *vm)
 
     jml_module_register(core_module, core_table);
     jml_hashmap_set(&vm->modules, core_string, jml_gc_exempt_peek(0));
+
+    jml_obj_function_t *main = jml_compiler_compile(core_glue, core_module, false);
+    jml_gc_exempt_push(OBJ_VAL(main));
+
+    jml_obj_closure_t *closure = jml_obj_closure_new(main);
+    jml_obj_coroutine_t *coroutine = jml_obj_coroutine_new(closure);
+    jml_gc_exempt_push(OBJ_VAL(coroutine));
+
+    jml_obj_module_t *super = vm->current;
+    vm->current = core_module;
+
+    JML_UNUSED(jml_interpret_result) result = jml_vm_call_coroutine(coroutine, NULL);
+    JML_ASSERT(result == INTERPRET_OK, "");
+
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
+    vm->current = super;
 
     jml_hashmap_add(&core_module->globals, &vm->builtins);
     jml_hashmap_add(&core_module->globals, &vm->globals);
