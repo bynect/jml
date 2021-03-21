@@ -2046,7 +2046,7 @@ jml_import_statement(jml_compiler_t *compiler)
 
     if (jml_parser_match(compiler, TOKEN_DOT)) {
         do {
-            if (jml_parser_match(compiler, TOKEN_STAR)) {
+            if (jml_parser_match(compiler, TOKEN_USCORE)) {
                 wildcard = true;
                 break;
             }

@@ -562,7 +562,8 @@ jml_vm_call_value(jml_obj_coroutine_t *coroutine,
     }
 
     jml_vm_error(
-        "DiffTypes: Can call only functions, classes and instances."
+        "DiffTypes: Can call value of type %s.",
+        jml_obj_stringify_type(callee)
     );
     return false;
 }
