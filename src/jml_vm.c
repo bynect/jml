@@ -472,8 +472,10 @@ jml_vm_call_value(jml_obj_coroutine_t *coroutine,
                         coroutine->stack_top                -= arg_count + 1;
 
                         if (IS_EXCEPTION(result)) {
-                            vm->external = cfunction_obj;
-                            return jml_vm_exception(AS_EXCEPTION(result));
+                            jml_obj_exception_t *exception  = AS_EXCEPTION(result);
+                            exception->module               = cfunction_obj->module;
+                            vm->external                    = cfunction_obj;
+                            return jml_vm_exception(exception);
 
                         } else {
                             jml_vm_push(instance);
@@ -522,8 +524,10 @@ jml_vm_call_value(jml_obj_coroutine_t *coroutine,
                 coroutine->stack_top                -= arg_count + 1;
 
                 if (IS_EXCEPTION(result)) {
-                    vm->external = cfunction_obj;
-                    return jml_vm_exception(AS_EXCEPTION(result));
+                    jml_obj_exception_t *exception  = AS_EXCEPTION(result);
+                    exception->module               = cfunction_obj->module;
+                    vm->external                    = cfunction_obj;
+                    return jml_vm_exception(exception);
 
                 } else {
                     jml_vm_push(result);

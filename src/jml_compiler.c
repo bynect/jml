@@ -126,8 +126,7 @@ jml_parser_error_at(jml_compiler_t *compiler,
 
         const char *source  = compiler->parser->lexer.source;
         int base_offset     = token->offset;
-        int start_offset;
-        int end_offset;
+        int start_offset, end_offset;
 
         for (start_offset = base_offset; start_offset > 0
             && source[start_offset] != '\n'; --start_offset);
@@ -140,10 +139,10 @@ jml_parser_error_at(jml_compiler_t *compiler,
             token->line, end_offset - start_offset,
             source + start_offset
         );
-
         int pad = out - (end_offset - start_offset) - 1;
-        const char mark[] = \
-            "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" \
+
+        const char mark[] =                                     \
+            "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"          \
             "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^";
 
 #ifndef JML_PLATFORM_WIN
