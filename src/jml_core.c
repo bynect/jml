@@ -450,33 +450,6 @@ jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
 
 
 static jml_value_t
-jml_core_unset(int arg_count, jml_value_t *args)
-{
-    jml_obj_exception_t *exc        = jml_error_args(
-        arg_count, 1);
-
-    if (exc != NULL)
-        goto err;
-
-    if (!IS_STRING(args[0])) {
-        exc = jml_error_types(false, 1, "string");
-        goto err;
-    }
-
-    if (vm->current == NULL) {
-        jml_hashmap_del(&vm->globals, AS_STRING(args[0]));
-    } else {
-        jml_hashmap_del(&vm->current->globals, AS_STRING(args[0]));
-    }
-
-    return NONE_VAL;
-
-err:
-    return OBJ_VAL(exc);
-}
-
-
-static jml_value_t
 jml_core_attr(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc        = jml_error_args(
@@ -619,7 +592,6 @@ static jml_module_function core_table[] = {
     {"subclass",                    &jml_core_subclass},
     {"type",                        &jml_core_type},
     {"globals",                     &jml_core_globals},
-    {"unset",                       &jml_core_unset},
     {"attr",                        &jml_core_attr},
     {"max",                         &jml_core_max},
     {"min",                         &jml_core_min},
@@ -631,12 +603,13 @@ static jml_module_function core_table[] = {
 
 /*glue code*/
 static const char core_glue[] = "\
+__exception -> _\n\
+\n\
 fn exception(name, msg) {\n\
-    let exc = try __exception(name, msg)\n\
+    import core\n\
+    let exc = try (core.__exception)(name, msg)\n\
     exc\n\
 }\n\
-\n\
-!unset(\"__exception\")\n\
 ";
 
 
@@ -653,6 +626,7 @@ jml_core_register(jml_vm_t *vm)
     jml_hashmap_set(&vm->modules, core_string, jml_gc_exempt_peek(0));
 
     jml_obj_function_t *main = jml_compiler_compile(core_glue, core_module, false);
+    JML_ASSERT(main != NULL, "");
     jml_gc_exempt_push(OBJ_VAL(main));
 
     jml_obj_closure_t *closure = jml_obj_closure_new(main);
