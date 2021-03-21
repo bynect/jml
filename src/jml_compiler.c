@@ -254,7 +254,7 @@ jml_parser_newline(jml_compiler_t *compiler, const char *message)
         && !jml_parser_match(compiler, TOKEN_SEMI))
         jml_parser_consume(compiler, TOKEN_LINE, message);
 
-    jml_parser_match_line(compiler);
+    while (jml_parser_match(compiler, TOKEN_LINE));
 }
 
 
@@ -732,6 +732,9 @@ jml_parser_synchronize(jml_compiler_t *compiler)
     compiler->parser->panicked = false;
 
     while (compiler->parser->current.type != TOKEN_EOF) {
+        if (compiler->parser->current.type == TOKEN_RBRACE)
+            return;
+
         if (compiler->parser->previous.type == TOKEN_LINE
             || compiler->parser->previous.type == TOKEN_SEMI) {
             jml_parser_match_line(compiler);
@@ -751,6 +754,7 @@ jml_parser_synchronize(jml_compiler_t *compiler)
             case TOKEN_FN:
             case TOKEN_RETURN:
             case TOKEN_IMPORT:
+            case TOKEN_SPREAD:
                 return;
 
             default:
@@ -1682,8 +1686,6 @@ jml_expression(jml_compiler_t *compiler)
 static void
 jml_block(jml_compiler_t *compiler)
 {
-    jml_parser_match_line(compiler);
-
     while (!jml_parser_check(compiler->parser, TOKEN_RBRACE)
         && !jml_parser_check(compiler->parser, TOKEN_EOF))
         jml_declaration(compiler);
@@ -1945,6 +1947,8 @@ jml_let_declaration(jml_compiler_t *compiler)
 static void
 jml_declaration(jml_compiler_t *compiler)
 {
+    jml_parser_match_line(compiler);
+
     if (jml_parser_match(compiler, TOKEN_CLASS)) {
         jml_class_declaration(compiler);
         jml_bytecode_emit_byte(compiler, OP_POP);
@@ -1993,7 +1997,7 @@ jml_return_statement(jml_compiler_t *compiler)
 
     } else {
         jml_expression(compiler);
-        jml_parser_match_line(compiler);
+        jml_parser_newline(compiler, "Expect newline after 'return'.");
         jml_bytecode_emit_byte(compiler, OP_RETURN);
     }
 }
@@ -2446,7 +2450,7 @@ static void
 jml_spread_statement(jml_compiler_t *compiler)
 {
     jml_expression(compiler);
-    jml_parser_newline(compiler, "Expect newline after spread.");
+    jml_parser_newline(compiler, "Expect newline after 'spread'.");
     jml_bytecode_emit_byte(compiler, OP_SPREAD);
 }
 
@@ -2454,8 +2458,6 @@ jml_spread_statement(jml_compiler_t *compiler)
 static void
 jml_statement(jml_compiler_t *compiler)
 {
-    jml_parser_match_line(compiler);
-
     if (jml_parser_match(compiler, TOKEN_RETURN))
         jml_return_statement(compiler);
 
@@ -2491,8 +2493,6 @@ jml_statement(jml_compiler_t *compiler)
 
     } else
         jml_expression_statement(compiler);
-
-    jml_parser_match_line(compiler);
 }
 
 

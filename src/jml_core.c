@@ -590,14 +590,8 @@ jml_core_assert(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
-jml_core_exception(int arg_count, jml_value_t *args)
+jml_core_exception(JML_UNUSED(int arg_count), jml_value_t *args)
 {
-    jml_obj_exception_t *exc        = jml_error_args(
-        arg_count, 2);
-
-    if (exc != NULL)
-        return OBJ_VAL(exc);
-
     if (!IS_STRING(args[0]) || !IS_STRING(args[0])) {
         return OBJ_VAL(
             jml_error_types(false, 2, "string", "string")
@@ -642,7 +636,7 @@ fn exception(name, msg) {\n\
     exc\n\
 }\n\
 \n\
-unset(\"__exception\")\n\
+!unset(\"__exception\")\n\
 ";
 
 
@@ -668,7 +662,7 @@ jml_core_register(jml_vm_t *vm)
     jml_obj_module_t *super = vm->current;
     vm->current = core_module;
 
-    JML_UNUSED(jml_interpret_result) result = jml_vm_call_coroutine(coroutine, NULL);
+    JML_UNUSED(jml_interpret_result result) = jml_vm_call_coroutine(coroutine, NULL);
     JML_ASSERT(result == INTERPRET_OK, "");
 
     jml_gc_exempt_pop();
