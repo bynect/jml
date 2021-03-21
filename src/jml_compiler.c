@@ -1519,15 +1519,22 @@ jml_piping(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 static void
 jml_try(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 {
-    jml_parser_precedence_parse(compiler, PREC_CALL + 1);
-    jml_parser_consume(compiler, TOKEN_LPAREN, "Expect '(' before function call.");
-
-    do {
-        jml_call(compiler, false);
-    } while (jml_parser_match(compiler, TOKEN_LPAREN));
-
+    jml_parser_precedence_parse(compiler, PREC_CALL);
     int count = jml_bytecode_current(compiler)->count;
-    jml_bytecode_current(compiler)->code[count - 2] = OP_TRY_CALL;
+
+    if (jml_bytecode_current(compiler)->code[count - 2] == OP_CALL)
+        jml_bytecode_current(compiler)->code[count - 2] = OP_TRY_CALL;
+
+    else if (jml_bytecode_current(compiler)->code[count - 3] == OP_INVOKE)
+        jml_bytecode_current(compiler)->code[count - 3] = OP_TRY_INVOKE;
+
+    else if (jml_bytecode_current(compiler)->code[count - 5] == EXTENDED_OP(OP_INVOKE))
+        jml_bytecode_current(compiler)->code[count - 5] = EXTENDED_OP(OP_TRY_INVOKE);
+
+    else
+        jml_parser_error(compiler, "Expect function call after 'try'.");
+
+    jml_bytecode_emit_byte(compiler, compiler->local_count);
 }
 
 

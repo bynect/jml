@@ -348,16 +348,35 @@ jml_vm_error(const char *format, ...)
 }
 
 
+/*forwarded declaration*/
+static void jml_vm_upvalue_close(
+    jml_obj_coroutine_t *coroutine, jml_value_t *last);
+
+
 static bool
 jml_vm_exception(jml_obj_exception_t *exc)
 {
-    for (int32_t i = vm->running->frame_count - 1; i >= 0; --i) {
-        jml_call_frame_t    *frame    = &vm->running->frames[i];
+    for (int32_t i = vm->running->frame_count; i > 0; --i) {
+        jml_call_frame_t *frame      = &vm->running->frames[i - 1];
 
-        if (frame->pc[-2] == OP_TRY_CALL) {
-            vm->running->frame_count = i + 1;
-            vm->external = NULL;
+        if (frame->pc[-3] == OP_TRY_CALL
+            || frame->pc[-4] == OP_TRY_INVOKE
+            || frame->pc[-6] == EXTENDED_OP(OP_TRY_INVOKE)) {
+
+            if (vm->external != NULL) {
+                vm->external         = NULL;
+                jml_vm_push(OBJ_VAL(exc));
+                return true;
+            }
+
+            int locals = frame->pc[-1] + 1;
+            printf("%d\n\n", locals);
+            jml_vm_upvalue_close(vm->running, frame->slots + locals);
+            vm->running->frame_count = i;
+            vm->running->stack_top   = frame->slots + locals;
+
             jml_vm_push(OBJ_VAL(exc));
+            jml_vm_rot();
             return true;
         }
     }
@@ -1097,9 +1116,8 @@ jml_vm_run(jml_value_t *last)
     do {                                                \
         JML_ASSERT(                                     \
             *pc >= OP_NOP && *pc <= OP_END,             \
-            "Out of range op (%u) on line %d",          \
-            *pc, __LINE__);                             \
-                                                        \
+            "Out of range op (%u)", *pc                 \
+        );                                              \
         END_OP_();                                      \
     } while (false)
 
@@ -1144,6 +1162,8 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(OP_TRY_CALL),
         TABLE_OP(OP_INVOKE),
         TABLE_OP(EXTENDED_OP(OP_INVOKE)),
+        TABLE_OP(OP_TRY_INVOKE),
+        TABLE_OP(EXTENDED_OP(OP_TRY_INVOKE)),
         TABLE_OP(OP_SUPER_INVOKE),
         TABLE_OP(EXTENDED_OP(OP_SUPER_INVOKE)),
         TABLE_OP(OP_CLOSURE),
@@ -1508,6 +1528,8 @@ jml_vm_run(jml_value_t *last)
 
             EXEC_OP(OP_TRY_CALL) {
                 int arg_count       = READ_BYTE();
+                ++pc;
+
                 SAVE_FRAME();
                 if (!jml_vm_call_value(running, jml_vm_peek(arg_count), arg_count))
                     return INTERPRET_RUNTIME_ERROR;
@@ -1531,6 +1553,32 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(EXTENDED_OP(OP_INVOKE)) {
                 jml_obj_string_t *name      = READ_STRING_EXTENDED();
                 int               arg_count = READ_SHORT();
+
+                SAVE_FRAME();
+                if (!jml_vm_invoke(running, name, arg_count))
+                    return INTERPRET_RUNTIME_ERROR;
+
+                LOAD_FRAME();
+                END_OP();
+            }
+
+            EXEC_OP(OP_TRY_INVOKE) {
+                jml_obj_string_t *name      = READ_STRING();
+                int               arg_count = READ_BYTE();
+                ++pc;
+
+                SAVE_FRAME();
+                if (!jml_vm_invoke(running, name, arg_count))
+                    return INTERPRET_RUNTIME_ERROR;
+
+                LOAD_FRAME();
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_TRY_INVOKE)) {
+                jml_obj_string_t *name      = READ_STRING_EXTENDED();
+                int               arg_count = READ_SHORT();
+                ++pc;
 
                 SAVE_FRAME();
                 if (!jml_vm_invoke(running, name, arg_count))

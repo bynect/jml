@@ -102,6 +102,19 @@ jml_bytecode_instruction_byte(const char *name,
 
 
 static uint32_t
+jml_bytecode_instruction_bytes(const char *name,
+    jml_bytecode_t *bytecode, uint32_t offset)
+{
+    printf(
+        "%-16s %4d %4d\n", name,
+        bytecode->code[offset + 1],
+        bytecode->code[offset + 2]
+    );
+    return offset + 3;
+}
+
+
+static uint32_t
 jml_bytecode_instruction_short(const char *name,
     jml_bytecode_t *bytecode, uint32_t offset)
 {
@@ -335,13 +348,19 @@ jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode, uint32_t offset)
             return jml_bytecode_instruction_byte("OP_CALL", bytecode, offset);
 
         case OP_TRY_CALL:
-            return jml_bytecode_instruction_byte("OP_TRY_CALL", bytecode, offset);
+            return jml_bytecode_instruction_bytes("OP_TRY_CALL", bytecode, offset);
 
         case OP_INVOKE:
             return jml_bytecode_instruction_invoke("OP_INVOKE", bytecode, offset);
 
         case EXTENDED_OP(OP_INVOKE):
             return jml_bytecode_instruction_invoke_extended("OP_INVOKE_EXTENDED", bytecode, offset);
+
+        case OP_TRY_INVOKE:
+            return jml_bytecode_instruction_invoke("OP_TRY_INVOKE", bytecode, offset) + 1;
+
+        case EXTENDED_OP(OP_TRY_INVOKE):
+            return jml_bytecode_instruction_invoke_extended("OP_TRY_INVOKE_EXTENDED", bytecode, offset) + 1;
 
         case OP_SUPER_INVOKE:
             return jml_bytecode_instruction_invoke("OP_SUPER_INVOKE", bytecode, offset);
@@ -578,7 +597,6 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
         case OP_GET_MEMBER:
         case OP_SUPER:
         case OP_CALL:
-        case OP_TRY_CALL:
         case OP_SET_LOCAL:
         case OP_GET_LOCAL:
         case OP_SET_UPVALUE:
@@ -594,6 +612,7 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
         case OP_JUMP:
         case OP_JUMP_IF_FALSE:
         case OP_LOOP:
+        case OP_TRY_CALL:
         case OP_INVOKE:
         case OP_SUPER_INVOKE:
         case EXTENDED_OP(OP_CONST):
@@ -615,11 +634,17 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
         case EXTENDED_OP(OP_MAP):
             return 3;
 
+        case OP_TRY_INVOKE:
+            return 4;
+
         case EXTENDED_OP(OP_INVOKE):
         case EXTENDED_OP(OP_SUPER_INVOKE):
         case EXTENDED_OP(OP_IMPORT):
         case EXTENDED_OP(OP_IMPORT_WILDCARD):
             return 5;
+
+        case EXTENDED_OP(OP_TRY_INVOKE):
+            return 6;
 
         case OP_CLOSURE: {
             uint32_t out        = 1;
