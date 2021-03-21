@@ -361,7 +361,9 @@ jml_vm_exception(jml_obj_exception_t *exc)
 
         if (frame->pc[-3] == OP_TRY_CALL
             || frame->pc[-4] == OP_TRY_INVOKE
-            || frame->pc[-6] == EXTENDED_OP(OP_TRY_INVOKE)) {
+            || frame->pc[-6] == EXTENDED_OP(OP_TRY_INVOKE)
+            || frame->pc[-4] == OP_TRY_SUPER_INVOKE
+            || frame->pc[-6] == EXTENDED_OP(OP_TRY_SUPER_INVOKE)) {
 
             if (vm->external != NULL) {
                 vm->external         = NULL;
@@ -1166,6 +1168,8 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(EXTENDED_OP(OP_TRY_INVOKE)),
         TABLE_OP(OP_SUPER_INVOKE),
         TABLE_OP(EXTENDED_OP(OP_SUPER_INVOKE)),
+        TABLE_OP(OP_TRY_SUPER_INVOKE),
+        TABLE_OP(EXTENDED_OP(OP_TRY_SUPER_INVOKE)),
         TABLE_OP(OP_CLOSURE),
         TABLE_OP(EXTENDED_OP(OP_CLOSURE)),
         TABLE_OP(OP_RETURN),
@@ -1609,6 +1613,44 @@ jml_vm_run(jml_value_t *last)
             EXEC_OP(EXTENDED_OP(OP_SUPER_INVOKE)) {
                 jml_obj_string_t *method    = READ_STRING_EXTENDED();
                 int               arg_count = READ_SHORT();
+
+                SAVE_FRAME();
+                jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
+                if (!jml_vm_invoke_class(running, superclass, method, arg_count)) {
+                    RUNTIME_ERROR(
+                        "UndefErr: Undefined property '%.*s'.",
+                        (int32_t)method->length, method->chars
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                LOAD_FRAME();
+                END_OP();
+            }
+
+            EXEC_OP(OP_TRY_SUPER_INVOKE) {
+                jml_obj_string_t *method    = READ_STRING();
+                int               arg_count = READ_BYTE();
+                ++pc;
+
+                SAVE_FRAME();
+                jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());
+                if (!jml_vm_invoke_class(running, superclass, method, arg_count)) {
+                    RUNTIME_ERROR(
+                        "UndefErr: Undefined property '%.*s'.",
+                        (int32_t)method->length, method->chars
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                LOAD_FRAME();
+                END_OP();
+            }
+
+            EXEC_OP(EXTENDED_OP(OP_TRY_SUPER_INVOKE)) {
+                jml_obj_string_t *method    = READ_STRING_EXTENDED();
+                int               arg_count = READ_SHORT();
+                ++pc;
 
                 SAVE_FRAME();
                 jml_obj_class_t *superclass = AS_CLASS(jml_vm_pop());

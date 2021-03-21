@@ -1531,6 +1531,12 @@ jml_try(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
     else if (jml_bytecode_current(compiler)->code[count - 5] == EXTENDED_OP(OP_INVOKE))
         jml_bytecode_current(compiler)->code[count - 5] = EXTENDED_OP(OP_TRY_INVOKE);
 
+    else if (jml_bytecode_current(compiler)->code[count - 3] == OP_SUPER_INVOKE)
+        jml_bytecode_current(compiler)->code[count - 3] = OP_TRY_SUPER_INVOKE;
+
+    else if (jml_bytecode_current(compiler)->code[count - 5] == EXTENDED_OP(OP_SUPER_INVOKE))
+        jml_bytecode_current(compiler)->code[count - 5] = EXTENDED_OP(OP_TRY_SUPER_INVOKE);
+
     else
         jml_parser_error(compiler, "Expect function call after 'try'.");
 

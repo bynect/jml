@@ -368,6 +368,12 @@ jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode, uint32_t offset)
         case EXTENDED_OP(OP_SUPER_INVOKE):
             return jml_bytecode_instruction_invoke_extended("OP_SUPER_INVOKE_EXTENDED", bytecode, offset);
 
+        case OP_TRY_SUPER_INVOKE:
+            return jml_bytecode_instruction_invoke("OP_TRY_SUPER_INVOKE", bytecode, offset) + 1;
+
+        case EXTENDED_OP(OP_TRY_SUPER_INVOKE):
+            return jml_bytecode_instruction_invoke_extended("OP_TRY_SUPER_INVOKE_EXTENDED", bytecode, offset) + 1;
+
         case OP_CLOSURE: {
             ++offset;
             uint8_t constant    = bytecode->code[offset++];
@@ -635,6 +641,7 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
             return 3;
 
         case OP_TRY_INVOKE:
+        case OP_TRY_SUPER_INVOKE:
             return 4;
 
         case EXTENDED_OP(OP_INVOKE):
@@ -644,6 +651,7 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
             return 5;
 
         case EXTENDED_OP(OP_TRY_INVOKE):
+        case EXTENDED_OP(OP_TRY_SUPER_INVOKE):
             return 6;
 
         case OP_CLOSURE: {
