@@ -1145,6 +1145,7 @@ jml_vm_run(jml_value_t *last)
         TABLE_OP(OP_CLOSURE),
         TABLE_OP(EXTENDED_OP(OP_CLOSURE)),
         TABLE_OP(OP_RETURN),
+        TABLE_OP(OP_SPREAD),
         TABLE_OP(OP_CLASS),
         TABLE_OP(EXTENDED_OP(OP_CLASS)),
         TABLE_OP(OP_CLASS_FIELD),
@@ -1618,6 +1619,21 @@ jml_vm_run(jml_value_t *last)
                 running->stack_top = frame->slots;
                 jml_vm_push(result);
 
+                LOAD_FRAME();
+                END_OP();
+            }
+
+            EXEC_OP(OP_SPREAD) {
+                SAVE_FRAME();
+                if (!IS_EXCEPTION(jml_vm_peek(0))) {
+                    jml_vm_error("Can spread only exceptions.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                if (!jml_vm_exception(AS_EXCEPTION(jml_vm_peek(0))))
+                    return INTERPRET_RUNTIME_ERROR;
+
+                jml_vm_pop();
                 LOAD_FRAME();
                 END_OP();
             }

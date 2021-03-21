@@ -393,6 +393,9 @@ jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode, uint32_t offset)
         case OP_RETURN:
             return jml_bytecode_instruction_simple("OP_RETURN", offset);
 
+        case OP_SPREAD:
+            return jml_bytecode_instruction_simple("OP_SPREAD", offset);
+
         case OP_CLASS:
             return jml_bytecode_instruction_const("OP_CLASS", bytecode, offset);
 
@@ -556,6 +559,7 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
         case OP_CONCAT:
         case OP_CONTAIN:
         case OP_RETURN:
+        case OP_SPREAD:
         case OP_INHERIT:
         case OP_CLOSE_UPVALUE:
         case OP_SET_INDEX:

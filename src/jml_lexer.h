@@ -75,6 +75,7 @@ typedef enum {
     TOKEN_ASYNC,
     TOKEN_AWAIT,
     TOKEN_TRY,
+    TOKEN_SPREAD,
     TOKEN_AND,
     TOKEN_NOT,
     TOKEN_OR,

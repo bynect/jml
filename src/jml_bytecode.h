@@ -48,6 +48,7 @@ typedef enum {
     OP_CLOSURE,
     EXTENDED_OP(OP_CLOSURE),
     OP_RETURN,
+    OP_SPREAD,
     OP_CLASS,
     EXTENDED_OP(OP_CLASS),
     OP_CLASS_FIELD,

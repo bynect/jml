@@ -1587,6 +1587,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_ASYNC*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AWAIT*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_TRY*/       {&jml_try,      NULL,           PREC_CALL},
+    /*TOKEN_SPREAD*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AND*/       {NULL,          &jml_and,       PREC_AND},
     /*TOKEN_NOT*/       {&jml_unary,    NULL,           PREC_NONE},
     /*TOKEN_OR*/        {NULL,          &jml_or,        PREC_OR},
@@ -2435,6 +2436,15 @@ jml_match_statement(jml_compiler_t *compiler)
 
 
 static void
+jml_spread_statement(jml_compiler_t *compiler)
+{
+    jml_expression(compiler);
+    jml_parser_newline(compiler, "Expect newline after spread.");
+    jml_bytecode_emit_byte(compiler, OP_SPREAD);
+}
+
+
+static void
 jml_statement(jml_compiler_t *compiler)
 {
     jml_parser_match_line(compiler);
@@ -2462,6 +2472,9 @@ jml_statement(jml_compiler_t *compiler)
 
     else if (jml_parser_match(compiler, TOKEN_MATCH))
         jml_match_statement(compiler);
+
+    else if (jml_parser_match(compiler, TOKEN_SPREAD))
+        jml_spread_statement(compiler);
 
     else if (jml_parser_match(compiler, TOKEN_LBRACE)) {
         jml_scope_begin(compiler);

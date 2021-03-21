@@ -175,22 +175,22 @@ jml_identifier_check(jml_lexer_t *lexer)
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->start[1]) {
                     case 's': return jml_keyword_match(2, 3, "ync", TOKEN_ASYNC, lexer);
-                    case 'n': return jml_keyword_match(2, 1, "d",   TOKEN_AND, lexer);
+                    case 'n': return jml_keyword_match(2, 1, "d", TOKEN_AND, lexer);
                     case 'w': return jml_keyword_match(2, 3, "ait", TOKEN_AWAIT, lexer);
                 }
             }
             break;
 
-        case 'b': return jml_keyword_match(1, 4, "reak",            TOKEN_BREAK, lexer);
-        case 'c': return jml_keyword_match(1, 4, "lass",            TOKEN_CLASS, lexer);
-        case 'e': return jml_keyword_match(1, 3, "lse",             TOKEN_ELSE, lexer);
+        case 'b': return jml_keyword_match(1, 4, "reak", TOKEN_BREAK, lexer);
+        case 'c': return jml_keyword_match(1, 4, "lass", TOKEN_CLASS, lexer);
+        case 'e': return jml_keyword_match(1, 3, "lse", TOKEN_ELSE, lexer);
 
         case 'f':
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->start[1]) {
                     case 'a': return jml_keyword_match(2, 3, "lse", TOKEN_FALSE, lexer);
-                    case 'n': return jml_keyword_match(2, 0, "",    TOKEN_FN, lexer);
-                    case 'o': return jml_keyword_match(2, 1, "r",   TOKEN_FOR, lexer);
+                    case 'n': return jml_keyword_match(2, 0, "", TOKEN_FN, lexer);
+                    case 'o': return jml_keyword_match(2, 1, "r", TOKEN_FOR, lexer);
                 }
             }
             break;
@@ -198,8 +198,8 @@ jml_identifier_check(jml_lexer_t *lexer)
         case 'i':
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->start[1]) {
-                    case 'f': return jml_keyword_match(2, 0, "",     TOKEN_IF, lexer);
-                    case 'n': return jml_keyword_match(2, 0, "",     TOKEN_IN, lexer);
+                    case 'f': return jml_keyword_match(2, 0, "", TOKEN_IF, lexer);
+                    case 'n': return jml_keyword_match(2, 0, "", TOKEN_IN, lexer);
                     case 'm': return jml_keyword_match(2, 4, "port", TOKEN_IMPORT, lexer);
                 }
             }
@@ -209,23 +209,24 @@ jml_identifier_check(jml_lexer_t *lexer)
             if (lexer->current - lexer->start > 1
                 && lexer->start[1] == 'o') {
                 switch (lexer->start[2]) {
-                    case 'n': return jml_keyword_match(3, 1, "e",   TOKEN_NONE, lexer);
-                    case 't': return jml_keyword_match(3, 0, "",    TOKEN_NOT, lexer);
+                    case 'n': return jml_keyword_match(3, 1, "e", TOKEN_NONE, lexer);
+                    case 't': return jml_keyword_match(3, 0, "", TOKEN_NOT, lexer);
                 }
             }
             break;
 
-        case 'm': return jml_keyword_match(1, 4, "atch",            TOKEN_MATCH, lexer);
-        case 'o': return jml_keyword_match(1, 1, "r",               TOKEN_OR, lexer);
-        case 'l': return jml_keyword_match(1, 2, "et",              TOKEN_LET, lexer);
-        case 'r': return jml_keyword_match(1, 5, "eturn",           TOKEN_RETURN, lexer);
+        case 'm': return jml_keyword_match(1, 4, "atch", TOKEN_MATCH, lexer);
+        case 'o': return jml_keyword_match(1, 1, "r", TOKEN_OR, lexer);
+        case 'l': return jml_keyword_match(1, 2, "et", TOKEN_LET, lexer);
+        case 'r': return jml_keyword_match(1, 5, "eturn", TOKEN_RETURN, lexer);
 
         case 's':
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->start[1]) {
-                    case 'e': return jml_keyword_match(2, 2, "lf",  TOKEN_SELF, lexer);
-                    case 'k': return jml_keyword_match(2, 2, "ip",  TOKEN_SKIP, lexer);
+                    case 'e': return jml_keyword_match(2, 2, "lf", TOKEN_SELF, lexer);
+                    case 'k': return jml_keyword_match(2, 2, "ip", TOKEN_SKIP, lexer);
                     case 'u': return jml_keyword_match(2, 3, "per", TOKEN_SUPER, lexer);
+                    case 'p': return jml_keyword_match(2, 4, "read", TOKEN_SPREAD, lexer);
                 }
             }
             break;
@@ -233,8 +234,8 @@ jml_identifier_check(jml_lexer_t *lexer)
         case 't':
             if (lexer->current - lexer->start > 2 && lexer->start[1] == 'r') {
                 switch (lexer->start[2]) {
-                    case 'u': return jml_keyword_match(3, 1, "e",   TOKEN_TRUE, lexer);
-                    case 'y': return jml_keyword_match(3, 0, "",    TOKEN_TRY, lexer);
+                    case 'u': return jml_keyword_match(3, 1, "e", TOKEN_TRUE, lexer);
+                    case 'y': return jml_keyword_match(3, 0, "", TOKEN_TRY, lexer);
                 }
             }
             break;
@@ -242,7 +243,7 @@ jml_identifier_check(jml_lexer_t *lexer)
         case 'w':
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->start[1]) {
-                    case 'i': return jml_keyword_match(2, 2, "th",  TOKEN_WITH, lexer);
+                    case 'i': return jml_keyword_match(2, 2, "th", TOKEN_WITH, lexer);
                     case 'h': return jml_keyword_match(2, 3, "ile", TOKEN_WHILE, lexer);
                 }
             }
@@ -517,6 +518,7 @@ jml_token_type_print(jml_token_type type)
         case PRINT_TOKEN(TOKEN_ASYNC);
         case PRINT_TOKEN(TOKEN_AWAIT);
         case PRINT_TOKEN(TOKEN_TRY);
+        case PRINT_TOKEN(TOKEN_SPREAD);
         case PRINT_TOKEN(TOKEN_AND);
         case PRINT_TOKEN(TOKEN_NOT);
         case PRINT_TOKEN(TOKEN_OR);
