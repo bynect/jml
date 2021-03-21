@@ -44,23 +44,20 @@ jml_error_types(bool mult, int arg_count, ...)
     va_start(types, arg_count);
 
     size_t size                 = (arg_count + 1) * 32;
-    size_t dest_size            = size;
+    size_t dest_size            = 0;
     char  *message              = jml_realloc(NULL, size);
     char  *head                 = message;
 
     char *next = va_arg(types, char*);
-    sprintf(message, "Expected arguments of <type %s>", next);
+    head += sprintf(message, "Expected arguments of <type %s>", next);
+    dest_size = head - message;
 
     for (int i = 1; i < arg_count; ++i) {
         char *next = va_arg(types, char*);
-        char temp[128];
+        dest_size += 16 + strlen(next);
 
-        sprintf(temp, mult ? " or <type %s>" : " and <type %s>", next);
-
-        dest_size += strlen(temp);
         REALLOC(char, message, size, dest_size);
-
-        head = jml_strcat(head, temp);
+        head += sprintf(head, mult ? " or <type %s>" : " and <type %s>", next);
     }
 
     *head++ = '.';

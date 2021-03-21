@@ -190,7 +190,6 @@ jml_module_open(jml_obj_string_t *qualified,
         module = jml_obj_module_new(name, handle);
 
     } else if (jml_strsfx(path_raw, path_len, ".jml", strlen(".jml"))) {
-
         module = jml_obj_module_new(name, NULL);
         jml_gc_exempt_push(OBJ_VAL(module));
 
@@ -215,7 +214,7 @@ jml_module_open(jml_obj_string_t *qualified,
 
         jml_obj_coroutine_t *coroutine = jml_obj_coroutine_new(closure);
 
-        if (jml_vm_call_coroutine(coroutine, NULL) != INTERPRET_OK){
+        if (jml_vm_call_coroutine(coroutine, NULL) != INTERPRET_OK) {
             jml_gc_exempt_pop();
             jml_gc_exempt_pop();
             vm->current = super;

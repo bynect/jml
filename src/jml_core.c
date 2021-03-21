@@ -438,15 +438,41 @@ jml_core_globals(int arg_count, JML_UNUSED(jml_value_t *args))
     jml_obj_map_t *map              = jml_obj_map_new();
     jml_gc_exempt_push(OBJ_VAL(map));
 
-    if (vm->current == NULL || vm->current == (void*)1)
+    if (vm->current == NULL) {
         jml_hashmap_add(&vm->globals, &map->hashmap);
-
-    else {
+    } else {
         jml_hashmap_add(&vm->current->globals, &map->hashmap);
         jml_hashmap_add(&vm->builtins, &map->hashmap);
     }
 
     return jml_gc_exempt_pop();
+}
+
+
+static jml_value_t
+jml_core_unset(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc        = jml_error_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        goto err;
+
+    if (!IS_STRING(args[0])) {
+        exc = jml_error_types(false, 1, "string");
+        goto err;
+    }
+
+    if (vm->current == NULL) {
+        jml_hashmap_del(&vm->globals, AS_STRING(args[0]));
+    } else {
+        jml_hashmap_del(&vm->current->globals, AS_STRING(args[0]));
+    }
+
+    return NONE_VAL;
+
+err:
+    return OBJ_VAL(exc);
 }
 
 
@@ -576,6 +602,7 @@ static jml_module_function core_table[] = {
     {"subclass",                    &jml_core_subclass},
     {"type",                        &jml_core_type},
     {"globals",                     &jml_core_globals},
+    {"unset",                       &jml_core_unset},
     {"attr",                        &jml_core_attr},
     {"max",                         &jml_core_max},
     {"min",                         &jml_core_min},
