@@ -241,18 +241,7 @@ jml_vm_global_pop(jml_obj_string_t *name,
 }
 
 
-#ifdef __GNUC__
-
-#define ATTRIBUTE_FORMAT            __attribute__((format(printf, 1, 2)))
-
-#else
-
-#define ATTRIBUTE_FORMAT
-
-#endif
-
-
-ATTRIBUTE_FORMAT void
+JML_FORMAT(1, 2) void
 jml_vm_error(const char *format, ...)
 {
     if (vm->running == NULL)
