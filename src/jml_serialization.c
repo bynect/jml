@@ -17,6 +17,61 @@
 
 
 size_t
+jml_serialize_short(uint16_t num, uint8_t *serial,
+    size_t *size, size_t pos)
+{
+    REALLOC(uint8_t, serial, *size, pos + sizeof(uint16_t));
+
+    serial[pos + 0] = (num >> 8) & 0xff;
+    serial[pos + 1] = num & 0xff;
+
+    return sizeof(uint16_t);
+}
+
+
+size_t
+jml_serialize_long(uint32_t num,uint8_t *serial,
+    size_t *size, size_t pos)
+{
+    REALLOC(uint8_t, serial, *size, pos + sizeof(uint32_t));
+
+    serial[pos + 0] = (num >> 24) & 0xff;
+    serial[pos + 1] = (num >> 16) & 0xff;
+    serial[pos + 2] = (num >> 8) & 0xff;
+    serial[pos + 3] = num & 0xff;
+
+    return sizeof(uint32_t);
+}
+
+
+size_t
+jml_serialize_longlong(uint64_t num, uint8_t *serial,
+    size_t *size, size_t pos)
+{
+    REALLOC(uint8_t, serial, *size, pos + sizeof(uint64_t));
+
+    serial[pos + 0] = (num >> 56) & 0xff;
+    serial[pos + 1] = (num >> 48) & 0xff;
+    serial[pos + 2] = (num >> 40) & 0xff;
+    serial[pos + 3] = (num >> 32) & 0xff;
+    serial[pos + 4] = (num >> 24) & 0xff;
+    serial[pos + 5] = (num >> 16) & 0xff;
+    serial[pos + 6] = (num >> 8) & 0xff;
+    serial[pos + 7] = num & 0xff;
+
+    return sizeof(uint64_t);
+}
+
+
+size_t
+jml_serialize_double(double num, uint8_t *serial,
+    size_t *size, size_t pos)
+{
+    return jml_serialize_longlong(*(uint64_t*)&num, serial, size, pos);
+}
+
+
+size_t
 jml_serialize_obj(jml_obj_t *obj,
     uint8_t *serial, size_t *size, size_t pos)
 {
@@ -37,16 +92,11 @@ jml_serialize_value(jml_value_t value,
         return jml_serialize_obj(AS_OBJ(value), serial, size, pos);
 
     else if (IS_NUM(value)) {
-        size_t posx = pos;
+        REALLOC(uint8_t, serial, *size, pos + 1);
+        snprintf((char*)serial + pos, *size - pos, "%c", JML_SERIAL_NUM);
+
         double num = AS_NUM(value);
-
-        REALLOC(uint8_t, serial, *size, pos + sizeof(double) + 1);
-        posx += snprintf((char*)serial + posx, *size - posx, "%c", JML_SERIAL_NUM);
-
-        for (uint8_t i = 0; i < sizeof(double); ++i)
-            posx += snprintf((char*)serial + posx, *size - posx, "%c", ((uint8_t*)&num)[i]);
-
-        return posx - pos;
+        return 1 + jml_serialize_double(num, serial, size, pos + 1);
 
     } else if (IS_BOOL(value)) {
         REALLOC(uint8_t, serial, *size, pos + 1);
@@ -73,16 +123,11 @@ jml_serialize_value(jml_value_t value,
         }
 
         case VAL_NUM: {
-            size_t posx = pos;
+            REALLOC(uint8_t, serial, *size, pos + 1);
+            snprintf((char*)serial + pos, *size - pos, "%c", JML_SERIAL_NUM);
+
             double num = AS_NUM(value);
-
-            REALLOC(uint8_t, serial, *size, pos + sizeof(double) + 1);
-            posx += snprintf((char*)serial + posx, *size - posx, "%c", JML_SERIAL_NUM);
-
-            for (uint8_t i = 0; i < sizeof(double); ++i)
-                posx += snprintf((char*)serial + posx, *size - posx, "%c", ((uint8_t*)&num)[i]);
-
-            return posx - pos;
+            return 1 + jml_serialize_double(num, serial, size, pos + 1);
         }
 
         case VAL_OBJ:
@@ -98,7 +143,7 @@ jml_serialize_bytecode(jml_bytecode_t *bytecode, size_t *length)
 {
     size_t size         = SERIAL_MIN;
     size_t pos          = 0;
-    size_t offset       = 0;
+    uint32_t offset     = 0;
     uint8_t *serial     = jml_realloc(NULL, size);
 
     /*shebang*/
@@ -111,12 +156,10 @@ jml_serialize_bytecode(jml_bytecode_t *bytecode, size_t *length)
 
     /*values offset*/
     offset = bytecode->constants.count;
-    for (uint8_t i = 0; i < sizeof(uint32_t); ++i)
-        pos += snprintf((char*)serial + pos, size - pos, "%c", ((uint8_t*)&offset)[i]);
+    pos += jml_serialize_long(offset, serial, &size, pos);
 
     offset = bytecode->count * (sizeof(uint16_t) + 1);
-    for (uint8_t i = 0; i < sizeof(uint32_t); ++i)
-        pos += snprintf((char*)serial + pos, size - pos, "%c", ((uint8_t*)&offset)[i]);
+    pos += jml_serialize_long(offset, serial, &size, pos);
 
     /*opcodes*/
     offset = bytecode->count;
@@ -136,8 +179,6 @@ jml_serialize_bytecode(jml_bytecode_t *bytecode, size_t *length)
             bytecode->constants.values[i], serial, &size, pos
         );
     }
-
-    pos += snprintf((char*)serial + pos, size - pos, "\n");
 
     if (length != NULL)
         *length = pos;
@@ -168,6 +209,67 @@ jml_serialize_bytecode_file(jml_bytecode_t *bytecode, const char *filename)
 
 
 bool
+jml_deserialize_short(uint8_t *serial, size_t length,
+    size_t *pos, uint16_t *num)
+{
+    if (length < (*pos + sizeof(uint16_t)))
+        return false;
+
+    *num = (uint16_t)serial[*pos + 0] << 8;
+    *num |= (uint16_t)serial[*pos + 1];
+
+    *pos += sizeof(uint16_t);
+    return true;
+}
+
+
+bool
+jml_deserialize_long(uint8_t *serial, size_t length,
+    size_t *pos, uint32_t *num)
+{
+    if (length < (*pos + sizeof(uint32_t)))
+        return false;
+
+    *num = (uint32_t)serial[*pos + 0] << 24;
+    *num += (uint32_t)serial[*pos + 1] << 16;
+    *num += (uint32_t)serial[*pos + 2] << 8;
+    *num += (uint32_t)serial[*pos + 3];
+
+    *pos += sizeof(uint32_t);
+    return true;
+}
+
+
+bool
+jml_deserialize_longlong(uint8_t *serial, size_t length,
+    size_t *pos, uint64_t *num)
+{
+    if (length < (*pos + sizeof(uint64_t)))
+        return false;
+
+    *num = (uint64_t)serial[*pos + 0] << 56;
+    *num += (uint64_t)serial[*pos + 1] << 48;
+    *num += (uint64_t)serial[*pos + 2] << 40;
+    *num += (uint64_t)serial[*pos + 3] << 32;
+    *num += (uint64_t)serial[*pos + 4] << 24;
+    *num += (uint64_t)serial[*pos + 5] << 16;
+    *num += (uint64_t)serial[*pos + 6] << 8;
+    *num += (uint64_t)serial[*pos + 7];
+
+    *pos += sizeof(uint64_t);
+    return true;
+}
+
+
+bool
+jml_deserialize_double(uint8_t *serial, size_t length,
+    size_t *pos, double *num)
+{
+    return jml_deserialize_longlong(serial, length, pos, (uint64_t*)num);
+}
+
+
+bool
 jml_deserialize_obj(uint8_t *serial, size_t length,
     size_t *pos, jml_value_t *value)
 {
@@ -183,17 +285,16 @@ bool
 jml_deserialize_value(uint8_t *serial, size_t length,
     size_t *pos, jml_value_t *value)
 {
+    if (length <= *pos)
+        return false;
+
     uint8_t byte = serial[(*pos)++];
     switch (byte) {
         case JML_SERIAL_NUM: {
-            if (length < (*pos + sizeof(double))) return false;
+            double num;
+            if (!jml_deserialize_double(serial, length, pos, &num))
+                return false;
 
-            uint8_t bytes[sizeof(double)];
-            for (uint8_t i = 0; i < sizeof(double); ++i)
-                bytes[i] = serial[*pos + i];
-
-            *pos += sizeof(double);
-            double num = *(double*)bytes;
             *value = NUM_VAL(num);
             break;
         }
@@ -225,7 +326,7 @@ jml_deserialize_bytecode(uint8_t *serial, size_t length, jml_bytecode_t *bytecod
     jml_bytecode_init(bytecode);
     size_t shebang_length   = strlen(JML_SHEBANG);
     size_t pos              = 0;
-    size_t offset           = 0;
+    uint32_t offset         = 0;
     uint32_t count          = 0;
     uint32_t constants      = 0;
 
@@ -245,22 +346,13 @@ jml_deserialize_bytecode(uint8_t *serial, size_t length, jml_bytecode_t *bytecod
         return false;
 
     /*values offset*/
-    if ((length - pos) > (sizeof(uint32_t) * 2)) {
-        uint8_t bytes[sizeof(uint32_t)];
-        for (uint8_t i = 0; i < sizeof(uint32_t); ++i)
-            bytes[i] = serial[pos + i];
+    if (!jml_deserialize_long(serial, length, &pos, &constants))
+        goto err;
 
-        constants = *(uint32_t*)bytes;
-        pos += sizeof(uint32_t);
+    if (!jml_deserialize_long(serial, length, &pos, &offset))
+        goto err;
 
-        for (uint8_t i = 0; i < sizeof(uint32_t); ++i)
-            bytes[i] = serial[pos + i];
-
-        offset = *(uint32_t*)bytes;
-        count = offset / (sizeof(uint16_t) + 1);
-        pos += sizeof(uint32_t);
-    } else
-        return false;
+    count = offset / (sizeof(uint16_t) + 1);
 
     if (length < (offset + pos))
         return false;
