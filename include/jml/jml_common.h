@@ -25,6 +25,7 @@
 
 #define JML_NAN_TAGGING
 #undef  JML_DISASSEMBLE
+#define JML_SERIALIZE
 #undef  JML_TRACE_STACK
 #undef  JML_TRACE_SLOT
 #undef  JML_STEP_STACK
@@ -39,6 +40,7 @@
 
 #define JML_NAN_TAGGING
 #define JML_DISASSEMBLE
+#define JML_SERIALIZE
 #define JML_TRACE_STACK
 #define JML_TRACE_SLOT
 #undef  JML_STEP_STACK

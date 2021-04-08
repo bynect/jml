@@ -141,7 +141,7 @@ main(int argc, char **argv)
         case 3: {
             jml_bytecode_t bytecode;
             if (strcmp(argv[1], "-b") == 0 &&
-                jml_bytecode_deserialize_file(&bytecode, argv[2])) {
+                jml_deserialize_bytecode_file(&bytecode, argv[2])) {
                 success = jml_vm_interpret_bytecode(vm, &bytecode) == INTERPRET_OK;
                 break;
             }

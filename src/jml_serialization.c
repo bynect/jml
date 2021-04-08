@@ -153,7 +153,7 @@ jml_serialize_bytecode_file(jml_bytecode_t *bytecode, const char *filename)
     if (file == NULL) return false;
 
     size_t length = 0;
-    uint8_t *serial = jml_bytecode_serialize(bytecode, &length);
+    uint8_t *serial = jml_serialize_bytecode(bytecode, &length);
 
     if (fwrite(serial, sizeof(uint8_t), length, file) < length) {
         fclose(file);
@@ -291,7 +291,7 @@ err:
 
 
 bool
-jml_deserialize_bytecode_file(jml_bytecode_t *bytecode, char *filename)
+jml_deserialize_bytecode_file(jml_bytecode_t *bytecode, const char *filename)
 {
     FILE *file = fopen(filename, "rb");
     if (file == NULL) return false;
@@ -306,8 +306,7 @@ jml_deserialize_bytecode_file(jml_bytecode_t *bytecode, char *filename)
         jml_free(serial);
         return false;
     }
-
-    bool result = jml_bytecode_deserialize(serial, size, bytecode);
+    bool result = jml_deserialize_bytecode(serial, size, bytecode);
 
     fclose(file);
     jml_free(serial);
