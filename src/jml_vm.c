@@ -196,48 +196,52 @@ jml_vm_peek(int distance)
 
 
 static inline bool
-jml_vm_global_get(jml_obj_string_t *name,
+jml_vm_global_get(jml_value_t module, jml_obj_string_t *name,
     jml_value_t **value)
 {
-    if (vm->current == NULL)
+    if (IS_NONE(module))
         return jml_hashmap_get(&vm->globals, name, value);
 
+    JML_ASSERT(IS_MODULE(module), "");
     if (jml_hashmap_get(&vm->builtins, name, value))
         return true;
 
-    return jml_hashmap_get(&vm->current->globals, name, value);
+    return jml_hashmap_get(&AS_MODULE(module)->globals, name, value);
 }
 
 
 static inline bool
-jml_vm_global_set(jml_obj_string_t *name,
+jml_vm_global_set(jml_value_t module, jml_obj_string_t *name,
     jml_value_t value)
 {
-    if (vm->current == NULL)
+    if (IS_NONE(module))
         return jml_hashmap_set(&vm->globals, name, value);
 
-    return jml_hashmap_set(&vm->current->globals, name, value);
+    JML_ASSERT(IS_MODULE(module), "");
+    return jml_hashmap_set(&AS_MODULE(module)->globals, name, value);
 }
 
 
 static inline bool
-jml_vm_global_del(jml_obj_string_t *name)
+jml_vm_global_del(jml_value_t module, jml_obj_string_t *name)
 {
-    if (vm->current == NULL)
+    if (IS_NONE(module))
         return jml_hashmap_del(&vm->globals, name);
 
-    return jml_hashmap_del(&vm->current->globals, name);
+    JML_ASSERT(IS_MODULE(module), "");
+    return jml_hashmap_del(&AS_MODULE(module)->globals, name);
 }
 
 
 static inline bool
-jml_vm_global_pop(jml_obj_string_t *name,
+jml_vm_global_pop(jml_value_t module, jml_obj_string_t *name,
     jml_value_t *value)
 {
-    if (vm->current == NULL)
+    if (IS_NONE(module))
         return jml_hashmap_pop(&vm->globals, name, value);
 
-    return jml_hashmap_pop(&vm->current->globals, name, value);
+    JML_ASSERT(IS_MODULE(module), "");
+    return jml_hashmap_pop(&AS_MODULE(module)->globals, name, value);
 }
 
 
@@ -1898,9 +1902,11 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_SET_GLOBAL) {
+                jml_value_t module      = READ_CONST();
                 jml_obj_string_t *name  = READ_STRING();
-                if (jml_vm_global_set(name, jml_vm_peek(0))) {
-                    jml_vm_global_del(name);
+
+                if (jml_vm_global_set(module, name, jml_vm_peek(0))) {
+                    jml_vm_global_del(module, name);
 
                     SAVE_FRAME();
                     RUNTIME_ERROR(
@@ -1913,9 +1919,11 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(EXTENDED_OP(OP_SET_GLOBAL)) {
+                jml_value_t module      = READ_CONST_EXTENDED();
                 jml_obj_string_t *name  = READ_STRING_EXTENDED();
-                if (jml_vm_global_set(name, jml_vm_peek(0))) {
-                    jml_vm_global_del(name);
+
+                if (jml_vm_global_set(module, name, jml_vm_peek(0))) {
+                    jml_vm_global_del(module, name);
 
                     SAVE_FRAME();
                     RUNTIME_ERROR(
@@ -1928,10 +1936,11 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_GET_GLOBAL) {
+                jml_value_t module      = READ_CONST();
                 jml_obj_string_t *name  = READ_STRING();
                 jml_value_t *value;
 
-                if (!jml_vm_global_get(name, &value)) {
+                if (!jml_vm_global_get(module, name, &value)) {
                     SAVE_FRAME();
                     RUNTIME_ERROR(
                         "UndefErr: Undefined variable '%.*s'.",
@@ -1944,10 +1953,11 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(EXTENDED_OP(OP_GET_GLOBAL)) {
+                jml_value_t module      = READ_CONST_EXTENDED();
                 jml_obj_string_t *name  = READ_STRING_EXTENDED();
                 jml_value_t *value;
 
-                if (!jml_vm_global_get(name, &value)) {
+                if (!jml_vm_global_get(module, name, &value)) {
                     SAVE_FRAME();
                     RUNTIME_ERROR(
                         "UndefErr: Undefined variable '%.*s'.",
@@ -1960,26 +1970,36 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_DEF_GLOBAL) {
+                jml_value_t module      = READ_CONST();
                 jml_obj_string_t *name  = READ_STRING();
-                jml_vm_global_set(name, jml_vm_peek(0));
+
+                jml_vm_global_set(module, name, jml_vm_peek(0));
                 jml_vm_pop();
                 END_OP();
             }
 
             EXEC_OP(EXTENDED_OP(OP_DEF_GLOBAL)) {
+                jml_value_t module      = READ_CONST_EXTENDED();
                 jml_obj_string_t *name  = READ_STRING_EXTENDED();
-                jml_vm_global_set(name, jml_vm_peek(0));
+
+                jml_vm_global_set(module, name, jml_vm_peek(0));
                 jml_vm_pop();
                 END_OP();
             }
 
             EXEC_OP(OP_DEL_GLOBAL) {
-                jml_vm_global_del(READ_STRING());
+                jml_value_t module      = READ_CONST();
+                jml_obj_string_t *name  = READ_STRING();
+
+                jml_vm_global_del(module, name);
                 END_OP();
             }
 
             EXEC_OP(EXTENDED_OP(OP_DEL_GLOBAL)) {
-                jml_vm_global_del(READ_STRING_EXTENDED());
+                jml_value_t module      = READ_CONST_EXTENDED();
+                jml_obj_string_t *name  = READ_STRING_EXTENDED();
+
+                jml_vm_global_del(module, name);
                 END_OP();
             }
 
@@ -2322,11 +2342,12 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_SWAP_GLOBAL) {
+                jml_value_t module          = READ_CONST();
                 jml_obj_string_t *old_name  = READ_STRING();
                 jml_obj_string_t *new_name  = READ_STRING();
 
                 jml_value_t value;
-                if (!jml_vm_global_pop(old_name, &value)) {
+                if (!jml_vm_global_pop(module, old_name, &value)) {
                     SAVE_FRAME();
                     RUNTIME_ERROR(
                         "UndefErr: Undefined variable '%.*s'.",
@@ -2335,16 +2356,17 @@ jml_vm_run(jml_value_t *last)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                jml_vm_global_set(new_name, value);
+                jml_vm_global_set(module, new_name, value);
                 END_OP();
             }
 
             EXEC_OP(EXTENDED_OP(OP_SWAP_GLOBAL)) {
+                jml_value_t module          = READ_CONST_EXTENDED();
                 jml_obj_string_t *old_name  = READ_STRING_EXTENDED();
                 jml_obj_string_t *new_name  = READ_STRING_EXTENDED();
 
                 jml_value_t value;
-                if (!jml_vm_global_pop(old_name, &value)) {
+                if (!jml_vm_global_pop(module, old_name, &value)) {
                     SAVE_FRAME();
                     RUNTIME_ERROR(
                         "UndefErr: Undefined variable '%.*s'.",
@@ -2353,7 +2375,7 @@ jml_vm_run(jml_value_t *last)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                jml_vm_global_set(new_name, value);
+                jml_vm_global_set(module, new_name, value);
                 END_OP();
             }
 
@@ -2608,6 +2630,7 @@ jml_cfunction_register(const char *name,
     ));
 
     jml_vm_global_set(
+        vm->current == NULL ? NONE_VAL : OBJ_VAL(vm->current),
         AS_STRING(jml_vm_peek(1)),
         jml_gc_exempt_peek(0)
     );
@@ -2632,8 +2655,8 @@ jml_vm_interpret(jml_vm_t *_vm, const char *source)
     jml_obj_closure_t *closure = jml_obj_closure_new(function);
     jml_gc_exempt_push(OBJ_VAL(closure));
 
-    jml_vm_global_set(vm->module_string, OBJ_VAL(vm->main_string));
-    jml_vm_global_set(vm->path_string, NONE_VAL);
+    jml_vm_global_set(NONE_VAL, vm->module_string, OBJ_VAL(vm->main_string));
+    jml_vm_global_set(NONE_VAL, vm->path_string, NONE_VAL);
 
     vm->running = jml_obj_coroutine_new(closure);
     jml_gc_exempt_pop();
@@ -2655,8 +2678,8 @@ jml_vm_interpret_bytecode(jml_vm_t *_vm, jml_bytecode_t *bytecode)
     jml_obj_closure_t *closure = jml_obj_closure_new(function);
     jml_gc_exempt_push(OBJ_VAL(closure));
 
-    jml_vm_global_set(vm->module_string, OBJ_VAL(vm->main_string));
-    jml_vm_global_set(vm->path_string, NONE_VAL);
+    jml_vm_global_set(NONE_VAL, vm->module_string, OBJ_VAL(vm->main_string));
+    jml_vm_global_set(NONE_VAL, vm->path_string, NONE_VAL);
 
     vm->running = jml_obj_coroutine_new(closure);
     jml_gc_exempt_pop();
@@ -2682,8 +2705,8 @@ jml_vm_eval(jml_vm_t *_vm, const char *source)
     jml_obj_closure_t *closure = jml_obj_closure_new(function);
     jml_gc_exempt_push(OBJ_VAL(closure));
 
-    jml_vm_global_set(vm->module_string, OBJ_VAL(vm->main_string));
-    jml_vm_global_set(vm->path_string, NONE_VAL);
+    jml_vm_global_set(NONE_VAL, vm->module_string, OBJ_VAL(vm->main_string));
+    jml_vm_global_set(NONE_VAL, vm->path_string, NONE_VAL);
 
     vm->running = jml_obj_coroutine_new(closure);
     jml_gc_exempt_pop();

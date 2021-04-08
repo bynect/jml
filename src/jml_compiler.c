@@ -391,7 +391,6 @@ jml_compiler_init(jml_compiler_t *compiler, jml_compiler_t *enclosing,
     compiler->function      = NULL;
     compiler->type          = type;
 
-    compiler->module        = module;
     compiler->parser        = parser;
     compiler->klass         = enclosing != NULL ? enclosing->klass : NULL;
 
@@ -427,7 +426,6 @@ jml_compiler_init(jml_compiler_t *compiler, jml_compiler_t *enclosing,
     if (type == FUNCTION_METHOD || type == FUNCTION_INIT) {
         local->name.start   = "self";
         local->name.length  = 4;
-
     } else {
         local->name.start   = "";
         local->name.length  = 0;
@@ -435,6 +433,12 @@ jml_compiler_init(jml_compiler_t *compiler, jml_compiler_t *enclosing,
 
     compiler->loop          = NULL;
     compiler->output        = output;
+
+    compiler->module        = module;
+    compiler->module_const  = jml_bytecode_add_const(
+        jml_bytecode_current(compiler),
+        module == NULL ? NONE_VAL : OBJ_VAL(module)
+    );
 }
 
 
@@ -714,8 +718,9 @@ jml_variable_definition(jml_compiler_t *compiler, uint16_t variable)
         return;
     }
 
-    EMIT_EXTENDED_OP1(
-        compiler, OP_DEF_GLOBAL, EXTENDED_OP(OP_DEF_GLOBAL), variable
+    EMIT_EXTENDED_OP2(
+        compiler, OP_DEF_GLOBAL, EXTENDED_OP(OP_DEF_GLOBAL),
+        compiler->module_const, variable
     );
 }
 
@@ -1210,12 +1215,16 @@ jml_map(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 
 
 static void
-jml_variable_assignment(jml_compiler_t *compiler, bool index,
+jml_variable_assignment(jml_compiler_t *compiler, bool index, bool global,
     uint8_t get_op, uint8_t set_op, uint16_t arg, uint8_t op)
 {
     if (index) {
         jml_bytecode_emit_byte(compiler, OP_SAVE);
-        EMIT_EXTENDED_OP1(compiler, get_op, get_op, arg);
+        if (global)
+            EMIT_EXTENDED_OP2(compiler, get_op, get_op, compiler->module_const, arg);
+        else
+            EMIT_EXTENDED_OP1(compiler, get_op, get_op, arg);
+
         jml_bytecode_emit_bytes(compiler, OP_ROT, OP_GET_INDEX);
 
         jml_parser_match_line(compiler);
@@ -1224,12 +1233,20 @@ jml_variable_assignment(jml_compiler_t *compiler, bool index,
         jml_bytecode_emit_bytes(compiler, op, OP_SET_INDEX);
 
     } else {
-        EMIT_EXTENDED_OP1(compiler, get_op, get_op, arg);
+        if (global)
+            EMIT_EXTENDED_OP2(compiler, get_op, get_op, compiler->module_const, arg);
+        else
+            EMIT_EXTENDED_OP1(compiler, get_op, get_op, arg);
+
         jml_parser_match_line(compiler);
         jml_expression(compiler);
 
         jml_bytecode_emit_byte(compiler, op);
-        EMIT_EXTENDED_OP1(compiler, set_op, set_op, arg);
+
+        if (global)
+            EMIT_EXTENDED_OP2(compiler, set_op, set_op, compiler->module_const, arg);
+        else
+            EMIT_EXTENDED_OP1(compiler, set_op, set_op, arg);
     }
 }
 
@@ -1240,6 +1257,7 @@ jml_variable_named(jml_compiler_t *compiler,
 {
     uint8_t get_op, set_op;
     bool index  = false;
+    bool global = false;
     int  arg    = jml_local_resolve(compiler, &name);
 
     if (arg != -1) {
@@ -1254,10 +1272,14 @@ jml_variable_named(jml_compiler_t *compiler,
         arg     = jml_identifier_const(compiler, &name);
         get_op  = arg > UINT8_MAX ? EXTENDED_OP(OP_GET_GLOBAL) : OP_GET_GLOBAL;
         set_op  = arg > UINT8_MAX ? EXTENDED_OP(OP_SET_GLOBAL) : OP_SET_GLOBAL;
+        global = true;
     }
 
     if (jml_parser_match(compiler, TOKEN_LSQARE)) {
-        EMIT_EXTENDED_OP1(compiler, get_op, get_op, arg);
+        if (global)
+            EMIT_EXTENDED_OP2(compiler, get_op, get_op, compiler->module_const, arg);
+        else
+            EMIT_EXTENDED_OP1(compiler, get_op, get_op, arg);
 
         jml_parser_match_line(compiler);
         jml_expression(compiler);
@@ -1276,6 +1298,8 @@ jml_variable_named(jml_compiler_t *compiler,
 
         if (index)
             jml_bytecode_emit_byte(compiler, OP_SET_INDEX);
+        else if (global)
+            EMIT_EXTENDED_OP2(compiler, set_op, set_op, compiler->module_const, arg);
         else
             EMIT_EXTENDED_OP1(compiler, set_op, set_op, arg);
 
@@ -1283,58 +1307,59 @@ jml_variable_named(jml_compiler_t *compiler,
         && jml_parser_match(compiler, TOKEN_COLCOLONEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, arg, OP_CONCAT
+            compiler, index, global, get_op, set_op, arg, OP_CONCAT
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_PLUSEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, arg, OP_ADD
+            compiler, index, global, get_op, set_op, arg, OP_ADD
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_MINUSEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, arg, OP_SUB
+            compiler, index, global, get_op, set_op, arg, OP_SUB
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_STAREQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, arg, OP_MUL
+            compiler, index, global, get_op, set_op, arg, OP_MUL
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_STARSTAREQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, arg, OP_POW
+            compiler, index, global, get_op, set_op, arg, OP_POW
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_SLASHEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, arg, OP_DIV
+            compiler, index, global, get_op, set_op, arg, OP_DIV
         );
 
     } else if (assignable
         && jml_parser_match(compiler, TOKEN_PERCENTEQ)) {
 
         jml_variable_assignment(
-            compiler, index, get_op, set_op, arg, OP_MOD
+            compiler, index, global, get_op, set_op, arg, OP_MOD
         );
 
     } else if (jml_parser_match(compiler, TOKEN_ARROW)) {
         if (!index) {
             jml_parser_match_line(compiler);
             if (jml_parser_match(compiler, TOKEN_USCORE)) {
-                if (get_op == OP_GET_GLOBAL || get_op == EXTENDED_OP(OP_GET_GLOBAL)) {
-                    EMIT_EXTENDED_OP1(
-                        compiler, OP_DEL_GLOBAL, EXTENDED_OP(OP_DEL_GLOBAL), arg
+                if (global) {
+                    EMIT_EXTENDED_OP2(
+                        compiler, OP_DEL_GLOBAL, EXTENDED_OP(OP_DEL_GLOBAL),
+                        compiler->module_const, arg
                     );
                     jml_bytecode_emit_byte(compiler, OP_NONE);
 
@@ -1350,10 +1375,11 @@ jml_variable_named(jml_compiler_t *compiler,
                 if (jml_identifier_equal(&name, &compiler->parser->previous))
                     jml_parser_error(compiler, "Can't swap variable to itself.");
 
-                if (get_op == OP_GET_GLOBAL || get_op == EXTENDED_OP(OP_GET_GLOBAL)) {
+                if (global) {
                     uint16_t new_arg = jml_identifier_const(compiler, &compiler->parser->previous);
-                    EMIT_EXTENDED_OP2(
-                        compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL), arg, new_arg
+                    EMIT_EXTENDED_OP3(
+                        compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL),
+                        compiler->module_const, arg, new_arg
                     );
 
                 } else
@@ -1362,10 +1388,14 @@ jml_variable_named(jml_compiler_t *compiler,
         } else
             jml_parser_error(compiler, "Can't swap indexed value.");
 
-    } else if (index)
+    } else if (index) {
         jml_bytecode_emit_byte(compiler, OP_GET_INDEX);
 
-    else {
+    } else if (global) {
+        EMIT_EXTENDED_OP2(
+            compiler, get_op, get_op, compiler->module_const, arg
+        );
+    } else {
         EMIT_EXTENDED_OP1(
             compiler, get_op, get_op, arg
         );
@@ -2112,14 +2142,16 @@ jml_import_statement(jml_compiler_t *compiler)
             compiler, OP_IMPORT, EXTENDED_OP(OP_IMPORT), full_arg, name_arg
         );
 
-        EMIT_EXTENDED_OP1(
-            compiler, OP_DEF_GLOBAL, EXTENDED_OP(OP_DEF_GLOBAL), name_arg
+        EMIT_EXTENDED_OP2(
+            compiler, OP_DEF_GLOBAL, EXTENDED_OP(OP_DEF_GLOBAL),
+            compiler->module_const, name_arg
         );
 
         if (jml_parser_match(compiler, TOKEN_ARROW)) {
             if (jml_parser_match(compiler, TOKEN_USCORE)) {
-                EMIT_EXTENDED_OP1(
-                    compiler, OP_DEL_GLOBAL, EXTENDED_OP(OP_DEL_GLOBAL), name_arg
+                EMIT_EXTENDED_OP2(
+                    compiler, OP_DEL_GLOBAL, EXTENDED_OP(OP_DEL_GLOBAL),
+                    compiler->module_const, name_arg
                 );
                 jml_bytecode_emit_byte(compiler, OP_NONE);
 
@@ -2131,8 +2163,9 @@ jml_import_statement(jml_compiler_t *compiler)
                     && memcmp(name, compiler->parser->previous.start, name_length) == 0)
                     jml_parser_error(compiler, "Can't swap variable to itself.");
 
-                EMIT_EXTENDED_OP2(
-                    compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL), name_arg, new_name
+                EMIT_EXTENDED_OP3(
+                    compiler, OP_SWAP_GLOBAL, EXTENDED_OP(OP_SWAP_GLOBAL),
+                    compiler->module_const, name_arg, new_name
                 );
             }
         }

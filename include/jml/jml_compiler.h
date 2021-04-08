@@ -91,6 +91,7 @@ struct jml_compiler {
     jml_upvalue_t                   upvalues[LOCAL_MAX];
     int                             scope_depth;
     jml_obj_module_t               *module;
+    int                             module_const;
     jml_loop_t                     *loop;
     bool                            output;
     jml_parser_t                   *parser;
