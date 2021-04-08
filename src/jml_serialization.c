@@ -11,6 +11,8 @@
 
 #define JML_SERIAL_NUM              'N'
 #define JML_SERIAL_OBJ              'O'
+#define JML_SERIAL_STRING           'S'
+
 #define JML_SERIAL_NONE             '|'
 #define JML_SERIAL_TRUE             '<'
 #define JML_SERIAL_FALSE            '>'
@@ -72,13 +74,32 @@ jml_serialize_double(double num, uint8_t *serial,
 
 
 size_t
-jml_serialize_obj(jml_obj_t *obj,
+jml_serialize_obj(jml_value_t value,
     uint8_t *serial, size_t *size, size_t pos)
 {
-    (void) obj;
-    (void) serial;
-    (void) size;
-    (void) pos;
+    switch (OBJ_TYPE(value)) {
+        case OBJ_STRING: {
+            size_t posx = pos;
+
+            REALLOC(uint8_t, serial, *size, posx + 2);
+            posx += snprintf((char*)serial + posx, *size - posx, "%c%c",
+                JML_SERIAL_OBJ, JML_SERIAL_STRING
+            );
+
+            jml_obj_string_t *string = AS_STRING(value);
+            posx += jml_serialize_long(string->length, serial, size, posx);
+
+            REALLOC(uint8_t, serial, *size, posx + string->length);
+            memcpy(serial + posx, string->chars, string->length);
+            posx += string->length;
+
+            return posx - pos;
+        }
+
+        default:
+            break;
+    }
+
     return 0;
 }
 
@@ -89,7 +110,7 @@ jml_serialize_value(jml_value_t value,
 {
 #ifdef JML_NAN_TAGGING
     if (IS_OBJ(value))
-        return jml_serialize_obj(AS_OBJ(value), serial, size, pos);
+        return jml_serialize_obj(value, serial, size, pos);
 
     else if (IS_NUM(value)) {
         REALLOC(uint8_t, serial, *size, pos + 1);
@@ -273,10 +294,34 @@ bool
 jml_deserialize_obj(uint8_t *serial, size_t length,
     size_t *pos, jml_value_t *value)
 {
-    (void) serial;
-    (void) length;
-    (void) pos;
-    (void) value;
+    if (length <= *pos)
+        return false;
+
+    uint8_t byte = serial[(*pos)++];
+    switch (byte) {
+        case JML_SERIAL_STRING: {
+            uint32_t size = 0;
+
+            if (!jml_deserialize_long(serial, length, pos, &size))
+                return false;
+
+            if (length < (*pos + size))
+                return false;
+
+            char *buffer = jml_realloc(NULL, size + 1);
+            memcpy(buffer, serial + *pos, size);
+            buffer[size] = '\0';
+            *pos += size;
+
+            jml_obj_string_t *string = jml_obj_string_take(buffer, size);
+            *value = OBJ_VAL(string);
+            return true;
+        }
+
+        default:
+            break;
+    }
+
     return false;
 }
 

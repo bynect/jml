@@ -18,7 +18,7 @@ size_t jml_serialize_longlong(uint64_t num, uint8_t *serial,
 size_t jml_serialize_double(double num, uint8_t *serial,
     size_t *size, size_t pos);
 
-size_t jml_serialize_obj(jml_obj_t *obj, uint8_t *serial,
+size_t jml_serialize_obj(jml_value_t value, uint8_t *serial,
     size_t *size, size_t pos);
 
 size_t jml_serialize_value(jml_value_t value, uint8_t *serial,
