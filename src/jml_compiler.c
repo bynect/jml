@@ -454,7 +454,7 @@ jml_compiler_end(jml_compiler_t *compiler)
 #endif
 
 #ifdef JML_SERIALIZE
-    if (compiler->type == FUNCTION_MAIN) {
+    if (compiler->type == FUNCTION_MAIN && vm->globals.count > 0) {
         jml_serialize_bytecode_file(
             jml_bytecode_current(compiler), "jml_cache.byte");
     }
@@ -729,7 +729,8 @@ static void jml_declaration(jml_compiler_t *compiler);
 
 static jml_parser_rule *jml_parser_rule_get(jml_token_type type);
 
-static void jml_parser_precedence_parse(jml_compiler_t *compiler, jml_parser_precedence precedence);
+static void jml_parser_precedence_parse(jml_compiler_t *compiler,
+    jml_parser_precedence precedence);
 
 static void jml_block(jml_compiler_t *compiler);
 

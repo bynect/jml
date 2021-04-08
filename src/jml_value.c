@@ -56,8 +56,7 @@ jml_hashmap_init(jml_hashmap_t *map)
 void
 jml_hashmap_free(jml_hashmap_t *map)
 {
-    FREE_ARRAY(jml_hashmap_entry_t,
-        map->entries, map->capacity + 1);
+    FREE_ARRAY(jml_hashmap_entry_t, map->entries, map->capacity + 1);
     jml_hashmap_init(map);
 }
 

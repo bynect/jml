@@ -4,6 +4,20 @@
 #include <jml.h>
 #include <jml/jml_bytecode.h>
 
+
+/*serialization*/
+size_t jml_serialize_short(uint16_t num, uint8_t *serial,
+    size_t *size, size_t pos);
+
+size_t jml_serialize_long(uint32_t num,uint8_t *serial,
+    size_t *size, size_t pos);
+
+size_t jml_serialize_longlong(uint64_t num, uint8_t *serial,
+    size_t *size, size_t pos);
+
+size_t jml_serialize_double(double num, uint8_t *serial,
+    size_t *size, size_t pos);
+
 size_t jml_serialize_obj(jml_obj_t *obj, uint8_t *serial,
     size_t *size, size_t pos);
 
@@ -15,6 +29,19 @@ uint8_t *jml_serialize_bytecode(jml_bytecode_t *bytecode, size_t *length);
 bool jml_serialize_bytecode_file(jml_bytecode_t *bytecode,
     const char *filename);
 
+
+/*deserialization*/
+bool jml_deserialize_short(uint8_t *serial, size_t length,
+    size_t *pos, uint16_t *num);
+
+bool jml_deserialize_long(uint8_t *serial, size_t length,
+    size_t *pos, uint32_t *num);
+
+bool jml_deserialize_longlong(uint8_t *serial, size_t length,
+    size_t *pos, uint64_t *num);
+
+bool jml_deserialize_double(uint8_t *serial, size_t length,
+    size_t *pos, double *num);
 
 bool jml_deserialize_obj(uint8_t *serial, size_t length,
     size_t *pos, jml_value_t *value);

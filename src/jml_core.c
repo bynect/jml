@@ -616,6 +616,7 @@ jml_core_register(jml_vm_t *vm)
 
     jml_module_register(core_module, core_table);
     jml_hashmap_set(&vm->modules, core_string, jml_gc_exempt_peek(0));
+    jml_hashmap_free(&vm->globals);
 
     jml_obj_function_t *main = jml_compiler_compile(core_glue, core_module, false);
     JML_ASSERT(main != NULL, "");
