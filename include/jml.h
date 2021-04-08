@@ -131,6 +131,7 @@ typedef struct jml_obj_exception    jml_obj_exception_t;
 
 #include <jml_value.h>
 #include <jml_type.h>
+#include <jml_bytecode.h>
 
 
 typedef jml_value_t (*jml_cfunction)(int arg_count, jml_value_t *args);

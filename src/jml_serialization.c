@@ -168,7 +168,7 @@ jml_bytecode_serialize_file(jml_bytecode_t *bytecode, const char *filename)
 
 
 static bool
-jml_bytecode_deserialize_value(uint8_t *serial, size_t length,
+jml_bytecode_deserialize_obj(uint8_t *serial, size_t length,
     size_t *pos, jml_bytecode_t *bytecode)
 {
     (void) serial;
