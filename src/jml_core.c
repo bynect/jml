@@ -563,18 +563,13 @@ jml_core_assert(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
-jml_core_exception(JML_UNUSED(int arg_count), jml_value_t *args)
+jml_core_exception(int arg_count, jml_value_t *args)
 {
-    if (!IS_STRING(args[0]) || !IS_STRING(args[0])) {
-        return OBJ_VAL(
-            jml_error_types(false, 2, "string", "string")
-        );
-    }
+    char *name      = arg_count > 0 && IS_STRING(args[0]) ? AS_CSTRING(args[0]) : "";
+    char *message   = arg_count > 1 && IS_STRING(args[1]) ? AS_CSTRING(args[1]) : "";
 
     return OBJ_VAL(
-        jml_obj_exception_new(
-            AS_CSTRING(args[0]), AS_CSTRING(args[1])
-        )
+        jml_obj_exception_new(name, message)
     );
 }
 
@@ -603,11 +598,8 @@ static jml_module_function core_table[] = {
 
 /*glue code*/
 static const char core_glue[] = "\
-__exception -> _\n\
-\n\
 fn exception(name, msg) {\n\
-    import core\n\
-    let exc = try (core.__exception)(name, msg)\n\
+    let exc = try __exception(name, msg)\n\
     exc\n\
 }\n\
 ";
