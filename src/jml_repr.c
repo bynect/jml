@@ -183,15 +183,12 @@ jml_obj_print(jml_value_t value)
                 if (jml_hashmap_get(&instance->klass->statics,
                     vm->print_string, &method)) {
 
-                    jml_obj_coroutine_t *coroutine  = jml_obj_coroutine_new(NULL);
-
                     if (IS_CFUNCTION(*method)) {
-                        *coroutine->stack_top++     = OBJ_VAL(instance);
-
-                        jml_vm_call_value(coroutine, *method, 1);
-                        jml_vm_call_coroutine(coroutine, NULL);
+                        jml_value_t args = OBJ_VAL(instance);
+                        AS_CFUNCTION(*method)->function(1, &args);
 
                     } else {
+                        jml_obj_coroutine_t *coroutine = jml_obj_coroutine_new(NULL);
                         jml_vm_call_value(coroutine, *method, 0);
                         jml_vm_call_coroutine(coroutine, NULL);
                     }
@@ -405,20 +402,17 @@ jml_obj_instance_stringify(jml_obj_instance_t *instance)
             vm->str_string, &method)) {
 
             jml_value_t last                = NONE_VAL;
-            jml_obj_coroutine_t *coroutine  = jml_obj_coroutine_new(NULL);
 
             if (IS_CFUNCTION(*method)) {
-                *coroutine->stack_top++     = OBJ_VAL(instance);
-
-                jml_vm_call_value(coroutine, *method, 1);
-                if (jml_vm_call_coroutine(coroutine, &last) == INTERPRET_OK)
-                    return jml_value_stringify(last);
+                jml_value_t args = OBJ_VAL(instance);
+                last = AS_CFUNCTION(*method)->function(1, &args);
+                return jml_value_stringify(last);
 
             } else {
-                *coroutine->stack_top++     = *method;
+                jml_obj_coroutine_t *coroutine  = jml_obj_coroutine_new(NULL);
 
-                jml_vm_call_value(coroutine, *method, 0);
-                if (jml_vm_call_coroutine(coroutine, &last) == INTERPRET_OK)
+                if (jml_vm_call_value(coroutine, *method, 0) &&
+                    jml_vm_call_coroutine(coroutine, &last) == INTERPRET_OK)
                     return jml_value_stringify(last);
             }
 
