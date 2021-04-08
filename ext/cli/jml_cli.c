@@ -21,6 +21,9 @@
     } while (false)
 
 
+static jml_vm_t *vm = NULL;
+
+
 static char *
 jml_cli_fread(const char *path)
 {
@@ -48,7 +51,7 @@ jml_cli_fread(const char *path)
 
 
 static bool
-jml_cli_run(jml_vm_t *vm, const char *path)
+jml_cli_run(const char *path)
 {
     char *buffer = jml_cli_fread(path);
     char *source = buffer;
@@ -66,7 +69,7 @@ jml_cli_run(jml_vm_t *vm, const char *path)
 
 
 static void
-jml_cli_repl(jml_vm_t *vm)
+jml_cli_repl(void)
 {
     signal(SIGINT, SIG_IGN);
 
@@ -118,34 +121,42 @@ jml_cli_repl(jml_vm_t *vm)
 }
 
 
+static void
+jml_cli_cleanup(void)
+{
+    jml_vm_free(vm);
+}
+
+
 int
 main(int argc, char **argv)
 {
-    jml_vm_t *vm = jml_vm_new();
-    bool success;
+    vm = jml_vm_new();
+    if (vm == NULL) return EXIT_FAILURE;
 
-    if (vm == NULL)
-        return EXIT_FAILURE;
+    bool success;
+    atexit(jml_cli_cleanup);
 
     switch (argc) {
         case 1:
-            jml_cli_repl(vm);
+            jml_cli_repl();
             printf("\n");
             success = true;
             break;
 
         case 2:
-            success = jml_cli_run(vm, argv[1]);
+            success = jml_cli_run(argv[1]);
             break;
 
-        case 3: {
-            jml_bytecode_t bytecode;
-            if (strcmp(argv[1], "-b") == 0 &&
-                jml_deserialize_bytecode_file(&bytecode, argv[2])) {
+        case 3:
+            if (strcmp(argv[1], "-b") == 0) {
+                jml_bytecode_t bytecode;
+                if (!jml_deserialize_bytecode_file(&bytecode, argv[2]))
+                    print_error("invalid bytecode file %s\n", argv[2]);
+
                 success = jml_vm_interpret_bytecode(vm, &bytecode) == INTERPRET_OK;
                 break;
-            }
-        }/*fallthrough*/
+            } /*fallthrough*/
 
         default:
             print_error("usage: %s [-b] [file]\n", argv[0]);
@@ -153,6 +164,5 @@ main(int argc, char **argv)
             break;
     }
 
-    jml_vm_free(vm);
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
