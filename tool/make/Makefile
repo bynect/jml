@@ -35,7 +35,7 @@ XSHARED=-shared -fpic
 LSHARED=
 
 DEFINES=
-INCLUDES=-I$(shell pwd)/src -I$(shell pwd)/include
+INCLUDES=-I$(shell pwd)/include
 LIBS=-lm -ldl
 
 
@@ -72,6 +72,9 @@ all: $(TARGET_BIN) $(TARGET_LIB) $(TARGET_SO)
 
 all: $(TARGET_STD)
 
+
+install: all
+	cp $(TARGET_BIN) /usr/local/bin/
 
 prelude:
 	$(MKD) $(BIN_D) $(LIB_D)
