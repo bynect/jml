@@ -138,8 +138,17 @@ main(int argc, char **argv)
             success = jml_cli_run(vm, argv[1]);
             break;
 
+        case 3: {
+            jml_bytecode_t bytecode;
+            if (strcmp(argv[1], "-b") == 0 &&
+                jml_bytecode_deserialize_file(&bytecode, argv[2])) {
+                success = jml_vm_interpret_bytecode(vm, &bytecode) == INTERPRET_OK;
+                break;
+            }
+        }/*fallthrough*/
+
         default:
-            print_error("usage: %s [file]\n", argv[0]);
+            print_error("usage: %s [-b] [file]\n", argv[0]);
             success = false;
             break;
     }

@@ -2646,6 +2646,29 @@ jml_vm_interpret(jml_vm_t *_vm, const char *source)
 }
 
 
+jml_interpret_result
+jml_vm_interpret_bytecode(jml_vm_t *_vm, jml_bytecode_t *bytecode)
+{
+    vm = _vm;
+
+    jml_obj_function_t *function = jml_obj_function_new();
+    memcpy(&function->bytecode, bytecode, sizeof(jml_bytecode_t));
+
+    jml_gc_exempt_push(OBJ_VAL(function));
+    jml_obj_closure_t *closure = jml_obj_closure_new(function);
+    jml_gc_exempt_push(OBJ_VAL(closure));
+
+    jml_vm_global_set(vm->module_string, OBJ_VAL(vm->main_string));
+    jml_vm_global_set(vm->path_string, NONE_VAL);
+
+    vm->running = jml_obj_coroutine_new(closure);
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
+
+    return jml_vm_run(NULL);
+}
+
+
 jml_value_t
 jml_vm_eval(jml_vm_t *_vm, const char *source)
 {

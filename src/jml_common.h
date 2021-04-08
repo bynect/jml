@@ -13,6 +13,7 @@
 #define STACK_MIN                   128
 #define MAP_LOAD_MAX                0.75
 #define EXEMPT_MAX                  16
+#define SERIAL_MIN                  512
 
 
 #define JML_BACKTRACE

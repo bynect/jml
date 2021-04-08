@@ -176,6 +176,8 @@ void jml_vm_free(jml_vm_t *vm);
 
 jml_interpret_result jml_vm_interpret(jml_vm_t *_vm, const char *source);
 
+jml_interpret_result jml_vm_interpret_bytecode(jml_vm_t *_vm, jml_bytecode_t *bytecode);
+
 jml_value_t jml_vm_eval(jml_vm_t *_vm, const char *source);
 
 
@@ -202,6 +204,8 @@ size_t jml_string_len(const char *str, size_t size);
 #include <jml_util.h>
 
 #include <jml_repr.h>
+
+#include <jml_serialization.h>
 
 
 #endif /* JML_H_ */
