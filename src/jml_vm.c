@@ -1277,7 +1277,15 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_POP_TWO) {
+#ifdef JML_EVAL
+                jml_value_t value = jml_vm_pop_two();
+                if (running->frame_count - 2 == 0) {
+                    if (last != NULL)
+                        *last = value;
+                }
+#else
                 jml_vm_pop_two();
+#endif
                 END_OP();
             }
 

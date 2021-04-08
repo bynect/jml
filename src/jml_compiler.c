@@ -1531,19 +1531,19 @@ jml_try(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
     jml_parser_precedence_parse(compiler, PREC_CALL);
     int count = jml_bytecode_current(compiler)->count;
 
-    if (jml_bytecode_current(compiler)->code[count - 2] == OP_CALL)
+    if (count >= 2 && jml_bytecode_current(compiler)->code[count - 2] == OP_CALL)
         jml_bytecode_current(compiler)->code[count - 2] = OP_TRY_CALL;
 
-    else if (jml_bytecode_current(compiler)->code[count - 3] == OP_INVOKE)
+    else if (count >= 3 && jml_bytecode_current(compiler)->code[count - 3] == OP_INVOKE)
         jml_bytecode_current(compiler)->code[count - 3] = OP_TRY_INVOKE;
 
-    else if (jml_bytecode_current(compiler)->code[count - 5] == EXTENDED_OP(OP_INVOKE))
+    else if (count >= 5 && jml_bytecode_current(compiler)->code[count - 5] == EXTENDED_OP(OP_INVOKE))
         jml_bytecode_current(compiler)->code[count - 5] = EXTENDED_OP(OP_TRY_INVOKE);
 
-    else if (jml_bytecode_current(compiler)->code[count - 3] == OP_SUPER_INVOKE)
+    else if (count >= 3 && jml_bytecode_current(compiler)->code[count - 3] == OP_SUPER_INVOKE)
         jml_bytecode_current(compiler)->code[count - 3] = OP_TRY_SUPER_INVOKE;
 
-    else if (jml_bytecode_current(compiler)->code[count - 5] == EXTENDED_OP(OP_SUPER_INVOKE))
+    else if (count >= 5 && jml_bytecode_current(compiler)->code[count - 5] == EXTENDED_OP(OP_SUPER_INVOKE))
         jml_bytecode_current(compiler)->code[count - 5] = EXTENDED_OP(OP_TRY_SUPER_INVOKE);
 
     else
@@ -1883,7 +1883,7 @@ jml_class_declaration(jml_compiler_t *compiler)
             if (jml_parser_match(compiler, TOKEN_USCORE)) {
                 if (jml_parser_match(compiler, TOKEN_EQUAL)) {
                     jml_expression(compiler);
-                    jml_bytecode_emit_byte(compiler, OP_POP);
+                    jml_bytecode_emit_bytes(compiler, OP_NONE, OP_POP_TWO);
                 }
                 jml_parser_newline(compiler, "Expect newline after 'let' declaration.");
 
@@ -1947,7 +1947,7 @@ jml_let_declaration(jml_compiler_t *compiler)
     if (jml_parser_match(compiler, TOKEN_USCORE)) {
         if (jml_parser_match(compiler, TOKEN_EQUAL)) {
             jml_expression(compiler);
-            jml_bytecode_emit_byte(compiler, OP_POP);
+            jml_bytecode_emit_bytes(compiler, OP_NONE, OP_POP_TWO);
         }
         jml_parser_newline(compiler, "Expect newline after 'let' declaration.");
 
