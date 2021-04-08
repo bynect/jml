@@ -50,9 +50,16 @@ jml_cli_fread(const char *path)
 static bool
 jml_cli_run(jml_vm_t *vm, const char *path)
 {
-    char *source = jml_cli_fread(path);
+    char *buffer = jml_cli_fread(path);
+    char *source = buffer;
+
+    if (strlen(buffer) > 2 && buffer[0] == '#' && buffer[1] == '!') {
+        while (*source != '\n' && *source != '\0')
+            ++source;
+    }
+
     jml_interpret_result result = jml_vm_interpret(vm, source);
-    free(source);
+    free(buffer);
 
     return result == INTERPRET_OK;
 }

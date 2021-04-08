@@ -648,7 +648,8 @@ jml_loop_end(jml_compiler_t *compiler)
 
             } else {
                 i += jml_bytecode_instruction_offset(
-                    jml_bytecode_current(compiler), i);
+                    jml_bytecode_current(compiler), i
+                );
             }
         }
         compiler->loop = loop->enclosing;
@@ -2523,12 +2524,6 @@ jml_compiler_compile(const char *source,
     parser.panicked = false;
 
     jml_parser_advance(&compiler);
-
-    if (jml_parser_match(&compiler, TOKEN_HASH)) {
-        while (!jml_parser_match(&compiler, TOKEN_EOF)
-            && !jml_parser_match(&compiler, TOKEN_LINE))
-            jml_parser_advance(&compiler);
-    }
 
     jml_parser_match_line(&compiler);
     while (!jml_parser_match(&compiler, TOKEN_EOF))
