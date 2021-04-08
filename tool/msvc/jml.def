@@ -7,6 +7,7 @@ jml_vm_eval
 jml_vm_free
 jml_vm_init
 jml_vm_interpret
+jml_vm_interpret_bytecode
 jml_vm_new
 jml_hashmap_add
 jml_hashmap_del
@@ -58,6 +59,14 @@ jml_string_decode
 jml_string_encode
 jml_string_intern
 jml_string_len
+jml_deserialize_bytecode
+jml_deserialize_bytecode_file
+jml_deserialize_obj
+jml_deserialize_value
+jml_serialize_bytecode
+jml_serialize_bytecode_file
+jml_serialize_obj
+jml_serialize_value
 jml_obj_print
 jml_obj_stringify
 jml_obj_stringify_type

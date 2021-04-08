@@ -16,8 +16,8 @@
 #define JML_SERIAL_FALSE            '>'
 
 
-static size_t
-jml_bytecode_serialize_obj(jml_obj_t *obj,
+size_t
+jml_serialize_obj(jml_obj_t *obj,
     uint8_t *serial, size_t *size, size_t pos)
 {
     (void) obj;
@@ -28,13 +28,13 @@ jml_bytecode_serialize_obj(jml_obj_t *obj,
 }
 
 
-static size_t
-jml_bytecode_serialize_value(jml_value_t value,
+size_t
+jml_serialize_value(jml_value_t value,
     uint8_t *serial, size_t *size, size_t pos)
 {
 #ifdef JML_NAN_TAGGING
     if (IS_OBJ(value))
-        return jml_bytecode_serialize_obj(AS_OBJ(value), serial, size, pos);
+        return jml_serialize_obj(AS_OBJ(value), serial, size, pos);
 
     else if (IS_NUM(value)) {
         size_t posx = pos;
@@ -86,7 +86,7 @@ jml_bytecode_serialize_value(jml_value_t value,
         }
 
         case VAL_OBJ:
-            return jml_bytecode_serialize_obj(AS_OBJ(value), serial, size, pos);
+            return jml_serialize_obj(AS_OBJ(value), serial, size, pos);
     }
 #endif
     return 0;
@@ -94,7 +94,7 @@ jml_bytecode_serialize_value(jml_value_t value,
 
 
 uint8_t *
-jml_bytecode_serialize(jml_bytecode_t *bytecode, size_t *length)
+jml_serialize_bytecode(jml_bytecode_t *bytecode, size_t *length)
 {
     size_t size         = SERIAL_MIN;
     size_t pos          = 0;
@@ -132,7 +132,7 @@ jml_bytecode_serialize(jml_bytecode_t *bytecode, size_t *length)
 
     /*values*/
     for (int i = 0; i < bytecode->constants.count; ++i) {
-        pos += jml_bytecode_serialize_value(
+        pos += jml_serialize_value(
             bytecode->constants.values[i], serial, &size, pos
         );
     }
@@ -147,7 +147,7 @@ jml_bytecode_serialize(jml_bytecode_t *bytecode, size_t *length)
 
 
 bool
-jml_bytecode_serialize_file(jml_bytecode_t *bytecode, const char *filename)
+jml_serialize_bytecode_file(jml_bytecode_t *bytecode, const char *filename)
 {
     FILE *file = fopen(filename, "wb");
     if (file == NULL) return false;
@@ -167,21 +167,21 @@ jml_bytecode_serialize_file(jml_bytecode_t *bytecode, const char *filename)
 }
 
 
-static bool
-jml_bytecode_deserialize_obj(uint8_t *serial, size_t length,
-    size_t *pos, jml_bytecode_t *bytecode)
+bool
+jml_deserialize_obj(uint8_t *serial, size_t length,
+    size_t *pos, jml_value_t *value)
 {
     (void) serial;
     (void) length;
     (void) pos;
-    (void) bytecode;
+    (void) value;
     return false;
 }
 
 
-static bool
-jml_bytecode_deserialize_value(uint8_t *serial, size_t length,
-    size_t *pos, jml_bytecode_t *bytecode)
+bool
+jml_deserialize_value(uint8_t *serial, size_t length,
+    size_t *pos, jml_value_t *value)
 {
     uint8_t byte = serial[(*pos)++];
     switch (byte) {
@@ -194,21 +194,21 @@ jml_bytecode_deserialize_value(uint8_t *serial, size_t length,
 
             *pos += sizeof(double);
             double num = *(double*)bytes;
-            jml_value_array_write(&bytecode->constants, NUM_VAL(num));
+            *value = NUM_VAL(num);
             break;
         }
 
         case JML_SERIAL_OBJ:
-            return jml_bytecode_deserialize_obj(serial, length, pos, bytecode);
+            return jml_deserialize_obj(serial, length, pos, value);
 
         case JML_SERIAL_NONE: {
-            jml_value_array_write(&bytecode->constants, NONE_VAL);
+            *value = NONE_VAL;
             break;
         }
 
         case JML_SERIAL_TRUE:
         case JML_SERIAL_FALSE: {
-            jml_value_array_write(&bytecode->constants, BOOL_VAL(byte == JML_SERIAL_TRUE));
+            *value = BOOL_VAL(byte == JML_SERIAL_TRUE);
             break;
         }
 
@@ -220,7 +220,7 @@ jml_bytecode_deserialize_value(uint8_t *serial, size_t length,
 
 
 bool
-jml_bytecode_deserialize(uint8_t *serial, size_t length, jml_bytecode_t *bytecode)
+jml_deserialize_bytecode(uint8_t *serial, size_t length, jml_bytecode_t *bytecode)
 {
     jml_bytecode_init(bytecode);
     size_t shebang_length   = strlen(JML_SHEBANG);
@@ -275,8 +275,11 @@ jml_bytecode_deserialize(uint8_t *serial, size_t length, jml_bytecode_t *bytecod
 
     /*values*/
     for (uint32_t i = 0; i < constants; ++i) {
-        if (!jml_bytecode_deserialize_value(serial, length, &pos, bytecode))
+        jml_value_t value;
+        if (!jml_deserialize_value(serial, length, &pos, &value))
             goto err;
+
+        jml_value_array_write(&bytecode->constants, value);
     }
 
     return true;
@@ -288,7 +291,7 @@ err:
 
 
 bool
-jml_bytecode_deserialize_file(jml_bytecode_t *bytecode, char *filename)
+jml_deserialize_bytecode_file(jml_bytecode_t *bytecode, char *filename)
 {
     FILE *file = fopen(filename, "rb");
     if (file == NULL) return false;
