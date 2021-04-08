@@ -2,7 +2,7 @@
 #define JML_SERIALIZATION_H_
 
 #include <jml.h>
-#include <jml_bytecode.h>
+#include <jml/jml_bytecode.h>
 
 
 uint8_t *jml_bytecode_serialize(jml_bytecode_t *bytecode, size_t *length);

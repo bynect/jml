@@ -3,8 +3,8 @@
 
 #include <jml.h>
 
-#include <jml_type.h>
-#include <jml_lexer.h>
+#include <jml/jml_type.h>
+#include <jml/jml_lexer.h>
 
 
 typedef struct jml_compiler jml_compiler_t;

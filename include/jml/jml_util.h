@@ -1,7 +1,7 @@
 #ifndef JML_UTIL_H_
 #define JML_UTIL_H_
 
-#include <jml_common.h>
+#include <jml/jml_common.h>
 
 
 char *jml_strsep(char **str, const char *sep);

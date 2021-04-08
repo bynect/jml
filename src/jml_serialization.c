@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <jml_serialization.h>
-#include <jml_gc.h>
+#include <jml/jml_serialization.h>
+#include <jml/jml_gc.h>
 
 
 #define JML_SHEBANG                 "#!/usr/bin/env -S jml -b\n"

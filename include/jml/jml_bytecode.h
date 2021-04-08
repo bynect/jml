@@ -1,8 +1,8 @@
 #ifndef JML_BYTECODE_H_
 #define JML_BYTECODE_H_
 
-#include <jml_common.h>
-#include <jml_value.h>
+#include <jml/jml_common.h>
+#include <jml/jml_value.h>
 
 
 #define EXTENDED_OP(op)             op ## _EXTENDED

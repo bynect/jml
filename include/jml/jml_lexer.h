@@ -1,7 +1,7 @@
 #ifndef JML_LEXER_H_
 #define JML_LEXER_H_
 
-#include <jml_common.h>
+#include <jml/jml_common.h>
 
 
 typedef enum {

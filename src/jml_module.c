@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <jml_module.h>
-#include <jml_vm.h>
-#include <jml_util.h>
-#include <jml_gc.h>
-#include <jml_compiler.h>
+#include <jml/jml_module.h>
+#include <jml/jml_vm.h>
+#include <jml/jml_util.h>
+#include <jml/jml_gc.h>
+#include <jml/jml_compiler.h>
 
 
 #ifdef JML_PLATFORM_NIX

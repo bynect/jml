@@ -1,8 +1,8 @@
 #ifndef JML_GC_H_
 #define JML_GC_H_
 
-#include <jml_common.h>
-#include <jml_type.h>
+#include <jml/jml_common.h>
+#include <jml/jml_type.h>
 
 
 #define GC_HEAP_GROW_FACTOR         1.5

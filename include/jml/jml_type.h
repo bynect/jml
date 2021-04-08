@@ -3,8 +3,8 @@
 
 #include <jml.h>
 
-#include <jml_value.h>
-#include <jml_bytecode.h>
+#include <jml/jml_value.h>
+#include <jml/jml_bytecode.h>
 
 
 #define OBJ_TYPE(value)             (AS_OBJ(value)->type)

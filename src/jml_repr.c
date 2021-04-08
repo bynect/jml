@@ -4,9 +4,9 @@
 #include <float.h>
 #include <limits.h>
 
-#include <jml_repr.h>
-#include <jml_gc.h>
-#include <jml_vm.h>
+#include <jml/jml_repr.h>
+#include <jml/jml_gc.h>
+#include <jml/jml_vm.h>
 
 
 void

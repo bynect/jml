@@ -1,9 +1,9 @@
 #ifndef JML_VM_H_
 #define JML_VM_H_
 
-#include <jml_value.h>
-#include <jml_type.h>
-#include <jml_compiler.h>
+#include <jml/jml_value.h>
+#include <jml/jml_type.h>
+#include <jml/jml_compiler.h>
 
 
 struct jml_vm {

@@ -1,8 +1,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <jml_lexer.h>
-#include <jml_util.h>
+#include <jml/jml_lexer.h>
+#include <jml/jml_util.h>
 
 
 void

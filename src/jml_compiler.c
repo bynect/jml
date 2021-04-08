@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <jml_compiler.h>
-#include <jml_vm.h>
-#include <jml_gc.h>
-#include <jml_util.h>
-#include <jml_string.h>
-#include <jml_util.h>
+#include <jml/jml_compiler.h>
+#include <jml/jml_vm.h>
+#include <jml/jml_gc.h>
+#include <jml/jml_util.h>
+#include <jml/jml_string.h>
+#include <jml/jml_util.h>
+#include <jml/jml_serialization.h>
 
 
 #define EMIT_SHORT(compiler, s)                         \

@@ -3,7 +3,7 @@
 
 #include <jml.h>
 
-#include <jml_gc.h>
+#include <jml/jml_gc.h>
 
 
 jml_obj_exception_t *

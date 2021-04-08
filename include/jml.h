@@ -129,9 +129,9 @@ typedef struct jml_obj_coroutine    jml_obj_coroutine_t;
 typedef struct jml_obj_cfunction    jml_obj_cfunction_t;
 typedef struct jml_obj_exception    jml_obj_exception_t;
 
-#include <jml_value.h>
-#include <jml_type.h>
-#include <jml_bytecode.h>
+#include <jml/jml_value.h>
+#include <jml/jml_type.h>
+#include <jml/jml_bytecode.h>
 
 
 typedef jml_value_t (*jml_cfunction)(int arg_count, jml_value_t *args);
@@ -202,11 +202,11 @@ jml_value_t jml_string_intern(const char *string);
 size_t jml_string_len(const char *str, size_t size);
 
 
-#include <jml_util.h>
+#include <jml/jml_util.h>
 
-#include <jml_repr.h>
+#include <jml/jml_repr.h>
 
-#include <jml_serialization.h>
+#include <jml/jml_serialization.h>
 
 
 #endif /* JML_H_ */

@@ -2,10 +2,10 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include <jml_type.h>
-#include <jml_gc.h>
-#include <jml_vm.h>
-#include <jml_util.h>
+#include <jml/jml_type.h>
+#include <jml/jml_gc.h>
+#include <jml/jml_vm.h>
+#include <jml/jml_util.h>
 
 
 #define ALLOCATE_OBJ(type, obj_type)                    \

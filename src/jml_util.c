@@ -4,8 +4,8 @@
 
 #include <jml.h>
 
-#include <jml_util.h>
-#include <jml_gc.h>
+#include <jml/jml_util.h>
+#include <jml/jml_gc.h>
 
 
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC

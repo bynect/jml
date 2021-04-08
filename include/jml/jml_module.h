@@ -3,8 +3,8 @@
 
 #include <jml.h>
 
-#include <jml_common.h>
-#include <jml_type.h>
+#include <jml/jml_common.h>
+#include <jml/jml_type.h>
 
 
 jml_obj_module_t *jml_module_open(jml_obj_string_t *qualified,
