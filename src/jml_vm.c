@@ -245,6 +245,19 @@ jml_vm_global_pop(jml_value_t module, jml_obj_string_t *name,
 }
 
 
+static inline void
+jml_vm_global_add(jml_value_t module, jml_hashmap_t *source)
+{
+    if (IS_NONE(module)) {
+        jml_hashmap_add(source, &vm->globals);
+        return;
+    }
+
+    JML_ASSERT(IS_MODULE(module), "");
+    jml_hashmap_add(source, &AS_MODULE(module)->globals);
+}
+
+
 JML_FORMAT(1, 2) void
 jml_vm_error(const char *format, ...)
 {
@@ -2521,6 +2534,7 @@ jml_vm_run(jml_value_t *last)
             }
 
             EXEC_OP(OP_IMPORT_WILDCARD) {
+                jml_value_t module           = READ_CONST();
                 jml_obj_string_t *fullname   = READ_STRING();
                 jml_obj_string_t *name       = READ_STRING();
 
@@ -2529,17 +2543,14 @@ jml_vm_run(jml_value_t *last)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                jml_hashmap_add(
-                    &AS_MODULE(jml_vm_peek(0))->globals,
-                    vm->current == NULL ? &vm->globals : &vm->current->globals
-                );
-
+                jml_vm_global_add(module, &AS_MODULE(jml_vm_peek(0))->globals);
                 jml_vm_pop();
                 LOAD_FRAME();
                 END_OP();
             }
 
             EXEC_OP(EXTENDED_OP(OP_IMPORT_WILDCARD)) {
+                jml_value_t module           = READ_CONST_EXTENDED();
                 jml_obj_string_t *fullname   = READ_STRING_EXTENDED();
                 jml_obj_string_t *name       = READ_STRING_EXTENDED();
 
@@ -2548,11 +2559,7 @@ jml_vm_run(jml_value_t *last)
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                jml_hashmap_add(
-                    &AS_MODULE(jml_vm_peek(0))->globals,
-                    vm->current == NULL ? &vm->globals : &vm->current->globals
-                );
-
+                jml_vm_global_add(module, &AS_MODULE(jml_vm_peek(0))->globals);
                 jml_vm_pop();
                 LOAD_FRAME();
                 END_OP();

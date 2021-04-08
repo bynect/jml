@@ -240,7 +240,7 @@ jml_bytecode_instruction_consts_extended(const char *name,
 
 
 static uint32_t
-jml_bytecode_instruction_swap(const char *name,
+jml_bytecode_instruction_triple(const char *name,
     jml_bytecode_t *bytecode, uint32_t offset)
 {
     uint8_t byte1       = bytecode->code[offset + 1];
@@ -260,7 +260,7 @@ jml_bytecode_instruction_swap(const char *name,
 
 
 static uint32_t
-jml_bytecode_instruction_swap_extended(const char *name,
+jml_bytecode_instruction_triple_extended(const char *name,
     jml_bytecode_t *bytecode, uint32_t offset)
 {
     uint16_t short1     = (uint16_t)(bytecode->code[offset + 1] << 8);
@@ -551,13 +551,13 @@ jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode, uint32_t offset)
             return jml_bytecode_instruction_simple("OP_GET_INDEX", offset);
 
         case OP_SWAP_GLOBAL:
-            return jml_bytecode_instruction_swap("OP_SWAP_GLOBAL", bytecode, offset);
+            return jml_bytecode_instruction_triple("OP_SWAP_GLOBAL", bytecode, offset);
 
         case EXTENDED_OP(OP_SWAP_GLOBAL):
-            return jml_bytecode_instruction_swap_extended("OP_SWAP_GLOBAL_EXTENDED", bytecode, offset);
+            return jml_bytecode_instruction_triple_extended("OP_SWAP_GLOBAL_EXTENDED", bytecode, offset);
 
         case OP_SWAP_LOCAL:
-            return jml_bytecode_instruction_swap("OP_SWAP_LOCAL", bytecode, offset);
+            return jml_bytecode_instruction_triple("OP_SWAP_LOCAL", bytecode, offset);
 
         case OP_SUPER:
             return jml_bytecode_instruction_const("OP_SUPER", bytecode, offset);
@@ -584,10 +584,10 @@ jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode, uint32_t offset)
             return jml_bytecode_instruction_consts_extended("OP_IMPORT_EXTENDED", bytecode, offset);
 
         case OP_IMPORT_WILDCARD:
-            return jml_bytecode_instruction_consts("OP_IMPORT_WILDCARD", bytecode, offset);
+            return jml_bytecode_instruction_triple("OP_IMPORT_WILDCARD", bytecode, offset);
 
         case EXTENDED_OP(OP_IMPORT_WILDCARD):
-            return jml_bytecode_instruction_consts_extended("OP_IMPORT_WILDCARD_EXTENDED", bytecode, offset);
+            return jml_bytecode_instruction_triple_extended("OP_IMPORT_WILDCARD_EXTENDED", bytecode, offset);
 
         case OP_END:
             return jml_bytecode_instruction_simple("OP_END", offset);
@@ -659,7 +659,6 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
         case OP_TRY_INVOKE:
         case OP_TRY_SUPER_INVOKE:
         case OP_IMPORT:
-        case OP_IMPORT_WILDCARD:
         case OP_JUMP:
         case OP_JUMP_IF_FALSE:
         case OP_LOOP:
@@ -682,6 +681,7 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
 
         case OP_SWAP_GLOBAL:
         case OP_SWAP_LOCAL:
+        case OP_IMPORT_WILDCARD:
             return 4;
 
         case EXTENDED_OP(OP_SET_GLOBAL):
@@ -691,12 +691,12 @@ jml_bytecode_instruction_offset(jml_bytecode_t *bytecode, uint32_t offset)
         case EXTENDED_OP(OP_INVOKE):
         case EXTENDED_OP(OP_SUPER_INVOKE):
         case EXTENDED_OP(OP_IMPORT):
-        case EXTENDED_OP(OP_IMPORT_WILDCARD):
         case EXTENDED_OP(OP_TRY_INVOKE):
         case EXTENDED_OP(OP_TRY_SUPER_INVOKE):
             return 5;
 
         case EXTENDED_OP(OP_SWAP_GLOBAL):
+        case EXTENDED_OP(OP_IMPORT_WILDCARD):
             return 7;
 
         case OP_CLOSURE: {

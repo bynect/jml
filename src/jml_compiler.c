@@ -2126,8 +2126,9 @@ jml_import_statement(jml_compiler_t *compiler)
 
     if (wildcard) {
         if (compiler->type == FUNCTION_MAIN) {
-            EMIT_EXTENDED_OP2(
-                compiler, OP_IMPORT_WILDCARD, EXTENDED_OP(OP_IMPORT_WILDCARD), full_arg, name_arg
+            EMIT_EXTENDED_OP3(
+                compiler, OP_IMPORT_WILDCARD, EXTENDED_OP(OP_IMPORT_WILDCARD),
+                compiler->module_const, full_arg, name_arg
             );
 
         } else {
