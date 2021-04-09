@@ -1801,11 +1801,16 @@ jml_vm_run(jml_value_t *last)
                 if (jml_hashmap_get(&AS_CLASS(superclass)->statics,
                     vm->inherit_string, &initializer)) {
 
+                    int arg_count = 1;
                     SAVE_FRAME();
-                    if (!jml_vm_invoke_class(running,
-                        AS_CLASS(superclass), vm->inherit_string, 1)) {
+
+                    if (IS_CFUNCTION(*initializer)) {
+                        jml_vm_push(OBJ_VAL(jml_vm_peek(arg_count)));
+                        if (!jml_vm_call_value(running, *initializer, arg_count + 1))
+                            return INTERPRET_RUNTIME_ERROR;
+
+                    } else if (!jml_vm_call_value(running, *initializer, arg_count))
                         return INTERPRET_RUNTIME_ERROR;
-                    }
 
                     LOAD_FRAME();
                     END_OP();
