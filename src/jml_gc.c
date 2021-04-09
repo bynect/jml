@@ -151,6 +151,7 @@ jml_gc_mark_roots(void)
     jml_gc_mark_obj((jml_obj_t*)vm->size_string);
     jml_gc_mark_obj((jml_obj_t*)vm->print_string);
     jml_gc_mark_obj((jml_obj_t*)vm->str_string);
+    jml_gc_mark_obj((jml_obj_t*)vm->inherit_string);
 
     jml_gc_mark_obj((jml_obj_t*)vm->running);
     jml_gc_mark_obj((jml_obj_t*)vm->current);

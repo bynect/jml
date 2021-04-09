@@ -74,6 +74,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->size_string         = NULL;
     vm->print_string        = NULL;
     vm->str_string          = NULL;
+    vm->inherit_string      = NULL;
 
     vm->main_string         = jml_obj_string_copy("__main", 6);
     vm->module_string       = jml_obj_string_copy("__module", 8);
@@ -97,6 +98,7 @@ jml_vm_init(jml_vm_t *vm)
     vm->size_string         = jml_obj_string_copy("__size", 6);
     vm->print_string        = jml_obj_string_copy("__print", 7);
     vm->str_string          = jml_obj_string_copy("__str", 5);
+    vm->inherit_string      = jml_obj_string_copy("__inherit", 9);
 
     jml_core_register(vm);
 }
@@ -132,6 +134,7 @@ jml_vm_free(jml_vm_t *vm)
     vm->size_string         = NULL;
     vm->print_string        = NULL;
     vm->str_string          = NULL;
+    vm->inherit_string      = NULL;
 
     vm->running             = NULL;
     vm->current             = NULL;
@@ -1793,7 +1796,21 @@ jml_vm_run(jml_value_t *last)
                     &AS_CLASS(superclass)->statics,
                     &subclass->statics
                 );
-                jml_vm_pop();
+
+                jml_value_t *initializer;
+                if (jml_hashmap_get(&AS_CLASS(superclass)->statics,
+                    vm->inherit_string, &initializer)) {
+
+                    SAVE_FRAME();
+                    if (!jml_vm_invoke_class(running,
+                        AS_CLASS(superclass), vm->inherit_string, 1)) {
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    LOAD_FRAME();
+                    END_OP();
+                }
+
                 END_OP();
             }
 

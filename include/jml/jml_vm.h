@@ -51,6 +51,7 @@ struct jml_vm {
     jml_obj_string_t               *size_string;
     jml_obj_string_t               *print_string;
     jml_obj_string_t               *str_string;
+    jml_obj_string_t               *inherit_string;
 };
 
 
