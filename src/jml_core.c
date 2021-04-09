@@ -602,6 +602,14 @@ fn exception(name, msg) {\n\
     let exc = try __exception(name, msg)\n\
     exc\n\
 }\n\
+\n\
+class Abstract {\n\
+    fn __init(^_) {\n\
+        __exception(\n\
+            \"AbstractErr\", \"Can't instantiate Abstract class\"\n\
+        )\n\
+    }\n\
+}\n\
 ";
 
 

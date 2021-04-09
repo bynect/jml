@@ -364,12 +364,13 @@ jml_vm_exception(jml_obj_exception_t *exc)
 {
     for (int32_t i = vm->running->frame_count; i > 0; --i) {
         jml_call_frame_t *frame      = &vm->running->frames[i - 1];
+        uint32_t pclen = frame->pc - frame->closure->function->bytecode.code;
 
-        if (frame->pc[-3] == OP_TRY_CALL
-            || frame->pc[-4] == OP_TRY_INVOKE
-            || frame->pc[-6] == EXTENDED_OP(OP_TRY_INVOKE)
-            || frame->pc[-4] == OP_TRY_SUPER_INVOKE
-            || frame->pc[-6] == EXTENDED_OP(OP_TRY_SUPER_INVOKE)) {
+        if ((pclen > 3 && frame->pc[-3] == OP_TRY_CALL)
+            || (pclen > 4 && frame->pc[-4] == OP_TRY_INVOKE)
+            || (pclen > 6 && frame->pc[-6] == EXTENDED_OP(OP_TRY_INVOKE))
+            || (pclen > 4 && frame->pc[-4] == OP_TRY_SUPER_INVOKE)
+            || (pclen > 6 && frame->pc[-6] == EXTENDED_OP(OP_TRY_SUPER_INVOKE))) {
 
             if (vm->external != NULL) {
                 vm->external         = NULL;
