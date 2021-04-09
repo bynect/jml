@@ -18,6 +18,9 @@ size_t jml_serialize_longlong(uint64_t num, uint8_t *serial,
 size_t jml_serialize_double(double num, uint8_t *serial,
     size_t *size, size_t pos);
 
+size_t jml_serialize_string(jml_obj_string_t *string,
+    uint8_t *serial, size_t *size, size_t pos);
+
 size_t jml_serialize_obj(jml_value_t value, uint8_t *serial,
     size_t *size, size_t pos);
 
@@ -42,6 +45,9 @@ bool jml_deserialize_longlong(uint8_t *serial, size_t length,
 
 bool jml_deserialize_double(uint8_t *serial, size_t length,
     size_t *pos, double *num);
+
+bool jml_deserialize_string(uint8_t *serial, size_t length,
+    size_t *pos, jml_obj_string_t **string);
 
 bool jml_deserialize_obj(uint8_t *serial, size_t length,
     size_t *pos, jml_value_t *value);

@@ -74,6 +74,21 @@ jml_serialize_double(double num, uint8_t *serial,
 
 
 size_t
+jml_serialize_string(jml_obj_string_t *string,
+    uint8_t *serial, size_t *size, size_t pos)
+{
+    size_t posx = pos;
+    posx += jml_serialize_long(string->length, serial, size, posx);
+
+    REALLOC(uint8_t, serial, *size, posx + string->length);
+    memcpy(serial + posx, string->chars, string->length);
+    posx += string->length;
+
+    return posx - pos;
+}
+
+
+size_t
 jml_serialize_obj(jml_value_t value,
     uint8_t *serial, size_t *size, size_t pos)
 {
@@ -86,13 +101,7 @@ jml_serialize_obj(jml_value_t value,
                 JML_SERIAL_OBJ, JML_SERIAL_STRING
             );
 
-            jml_obj_string_t *string = AS_STRING(value);
-            posx += jml_serialize_long(string->length, serial, size, posx);
-
-            REALLOC(uint8_t, serial, *size, posx + string->length);
-            memcpy(serial + posx, string->chars, string->length);
-            posx += string->length;
-
+            posx += jml_serialize_string(AS_STRING(value), serial, size, posx);
             return posx - pos;
         }
 
@@ -291,6 +300,27 @@ jml_deserialize_double(uint8_t *serial, size_t length,
 
 
 bool
+jml_deserialize_string(uint8_t *serial, size_t length,
+    size_t *pos, jml_obj_string_t **string)
+{
+    uint32_t size = 0;
+
+    if (!jml_deserialize_long(serial, length, pos, &size))
+        return false;
+
+    if (length < (*pos + size))
+        return false;
+
+    char *buffer = jml_realloc(NULL, size + 1);
+    memcpy(buffer, serial + *pos, size);
+    buffer[size] = '\0';
+    *pos += size;
+
+    *string = jml_obj_string_take(buffer, size);
+}
+
+
+bool
 jml_deserialize_obj(uint8_t *serial, size_t length,
     size_t *pos, jml_value_t *value)
 {
@@ -300,22 +330,20 @@ jml_deserialize_obj(uint8_t *serial, size_t length,
     uint8_t byte = serial[(*pos)++];
     switch (byte) {
         case JML_SERIAL_STRING: {
-            uint32_t size = 0;
-
-            if (!jml_deserialize_long(serial, length, pos, &size))
+            jml_obj_string_t *string;
+            if (!jml_deserialize_string(serial, length, pos, &string))
                 return false;
 
-            if (length < (*pos + size))
-                return false;
-
-            char *buffer = jml_realloc(NULL, size + 1);
-            memcpy(buffer, serial + *pos, size);
-            buffer[size] = '\0';
-            *pos += size;
-
-            jml_obj_string_t *string = jml_obj_string_take(buffer, size);
             *value = OBJ_VAL(string);
             return true;
+        }
+
+        case JML_SERIAL_MODULE: {
+            break;
+        }
+
+        case JML_SERIAL_FUNCTION: {
+            break;
         }
 
         default:
