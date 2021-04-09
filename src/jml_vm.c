@@ -405,7 +405,7 @@ jml_vm_call(jml_obj_coroutine_t *coroutine,
     jml_obj_closure_t *closure, int arg_count)
 {
     if (closure->function->variadic) {
-        if (arg_count < closure->function->arity - 1) {
+        if (arg_count < (int)closure->function->arity - 1) {
             jml_vm_error(
                 "TooFewArgs: Expected '%d' arguments but got '%d'.",
                 closure->function->arity - 1, arg_count
@@ -426,7 +426,7 @@ jml_vm_call(jml_obj_coroutine_t *coroutine,
         jml_vm_push(OBJ_VAL(array));
 
     } else {
-        if (arg_count < closure->function->arity) {
+        if (arg_count < (int)closure->function->arity) {
             jml_vm_error(
                 "TooFewArgs: Expected '%d' arguments but got '%d'.",
                 closure->function->arity, arg_count
@@ -434,7 +434,7 @@ jml_vm_call(jml_obj_coroutine_t *coroutine,
             return false;
         }
 
-        if (arg_count > closure->function->arity) {
+        if (arg_count > (int)closure->function->arity) {
             jml_vm_error(
                 "TooManyArgs: Expected '%d' arguments but got '%d'.",
                 closure->function->arity, arg_count

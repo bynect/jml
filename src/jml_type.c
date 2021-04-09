@@ -228,7 +228,7 @@ jml_obj_closure_new(jml_obj_function_t *function)
     jml_obj_upvalue_t **upvalues = ALLOCATE(
         jml_obj_upvalue_t*, function->upvalue_count);
 
-    for (int i = 0; i < function->upvalue_count; i++) {
+    for (uint32_t i = 0; i < function->upvalue_count; i++) {
         upvalues[i] = NULL;
     }
 

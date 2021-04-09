@@ -131,9 +131,9 @@ struct jml_obj_method {
 
 struct jml_obj_function {
     jml_obj_t                       obj;
-    uint8_t                         arity;
+    uint32_t                        arity;
     bool                            variadic;
-    uint16_t                        upvalue_count;
+    uint32_t                        upvalue_count;
     jml_bytecode_t                  bytecode;
     jml_obj_string_t               *name;
     jml_obj_string_t               *klass_name;

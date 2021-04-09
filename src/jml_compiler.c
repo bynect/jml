@@ -1525,7 +1525,7 @@ jml_lambda(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
         compiler, OP_CLOSURE, EXTENDED_OP(OP_CLOSURE), constant
     );
 
-    for (int i = 0; i < function->upvalue_count; ++i) {
+    for (uint32_t i = 0; i < function->upvalue_count; ++i) {
         jml_bytecode_emit_byte(compiler, sub_compiler.upvalues[i].local ? 1 : 0);
         jml_bytecode_emit_byte(compiler, sub_compiler.upvalues[i].index);
     }
@@ -1796,7 +1796,7 @@ jml_function(jml_compiler_t *compiler, jml_function_type type)
         compiler, OP_CLOSURE, EXTENDED_OP(OP_CLOSURE), constant
     );
 
-    for (int i = 0; i < function->upvalue_count; ++i) {
+    for (uint32_t i = 0; i < function->upvalue_count; ++i) {
         jml_bytecode_emit_byte(compiler, sub_compiler.upvalues[i].local ? 1 : 0);
         jml_bytecode_emit_byte(compiler, sub_compiler.upvalues[i].index);
     }

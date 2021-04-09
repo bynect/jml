@@ -170,52 +170,40 @@ jml_serialize_value(jml_value_t value,
 }
 
 
-uint8_t *
-jml_serialize_bytecode(jml_bytecode_t *bytecode, size_t *length)
+size_t
+jml_serialize_bytecode(jml_bytecode_t *bytecode,
+    uint8_t *serial, size_t *size, size_t pos)
 {
-    size_t size         = SERIAL_MIN;
-    size_t pos          = 0;
     uint32_t offset     = 0;
-    uint8_t *serial     = jml_realloc(NULL, size);
-
-    /*shebang*/
-    pos += snprintf((char*)serial, size, "%s", JML_SHEBANG);
-
-    /*magic*/
-    pos += snprintf((char*)serial + pos, size - pos, "%s%c%c%c", JML_MAGIC,
-        JML_VERSION_MAJOR, JML_VERSION_MINOR, JML_VERSION_MICRO
-    );
+    size_t posx         = pos;
 
     /*values offset*/
     offset = bytecode->constants.count;
-    pos += jml_serialize_long(offset, serial, &size, pos);
+    posx += jml_serialize_long(offset, serial, size, posx);
 
     offset = bytecode->count * (sizeof(uint16_t) + 1);
-    pos += jml_serialize_long(offset, serial, &size, pos);
+    posx += jml_serialize_long(offset, serial, size, posx);
 
     /*opcodes*/
     offset = bytecode->count;
-    REALLOC(uint8_t, serial, size, pos + offset);
-    memcpy(serial + pos, bytecode->code, offset);
-    pos += offset;
+    REALLOC(uint8_t, serial, *size, posx + offset);
+    memcpy(serial + posx, bytecode->code, offset);
+    posx += offset;
 
     /*lines*/
     offset = bytecode->count * sizeof(uint16_t);
-    REALLOC(uint8_t, serial, size, pos + offset);
-    memcpy(serial + pos, bytecode->lines, offset);
-    pos += offset;
+    REALLOC(uint8_t, serial, *size, posx + offset);
+    memcpy(serial + posx, bytecode->lines, offset);
+    posx += offset;
 
     /*values*/
     for (int i = 0; i < bytecode->constants.count; ++i) {
-        pos += jml_serialize_value(
-            bytecode->constants.values[i], serial, &size, pos
+        posx += jml_serialize_value(
+            bytecode->constants.values[i], serial, size, posx
         );
     }
 
-    if (length != NULL)
-        *length = pos;
-
-    return serial;
+    return posx - pos;
 }
 
 
@@ -223,12 +211,25 @@ bool
 jml_serialize_bytecode_file(jml_bytecode_t *bytecode, const char *filename)
 {
     FILE *file = fopen(filename, "wb");
-    if (file == NULL) return false;
+    if (file == NULL)
+        return false;
 
-    size_t length = 0;
-    uint8_t *serial = jml_serialize_bytecode(bytecode, &length);
+    size_t size         = SERIAL_MIN;
+    size_t pos          = 0;
+    uint8_t *serial     = jml_realloc(NULL, size);
 
-    if (fwrite(serial, sizeof(uint8_t), length, file) < length) {
+    /*shebang*/
+    pos += snprintf((char*)serial + pos, size, "%s", JML_SHEBANG);
+
+    /*magic*/
+    pos += snprintf((char*)serial + pos, size - pos, "%s%c%c%c", JML_MAGIC,
+        JML_VERSION_MAJOR, JML_VERSION_MINOR, JML_VERSION_MICRO
+    );
+
+    /*main bytecode*/
+    pos += jml_serialize_bytecode(bytecode, serial, &size, pos);
+
+    if (fwrite(serial, sizeof(uint8_t), pos, file) < pos) {
         fclose(file);
         jml_free(serial);
         return false;
@@ -397,54 +398,38 @@ jml_deserialize_value(uint8_t *serial, size_t length,
 
 
 bool
-jml_deserialize_bytecode(uint8_t *serial, size_t length, jml_bytecode_t *bytecode)
+jml_deserialize_bytecode(uint8_t *serial, size_t length,
+    size_t *pos, jml_bytecode_t *bytecode)
 {
-    jml_bytecode_init(bytecode);
-    size_t shebang_length   = strlen(JML_SHEBANG);
-    size_t pos              = 0;
     uint32_t offset         = 0;
     uint32_t count          = 0;
     uint32_t constants      = 0;
-
-    /*shebang*/
-    if (length > shebang_length && memcmp(serial, JML_SHEBANG, shebang_length) == 0)
-        pos += shebang_length;
-
-    /*magic*/
-    uint8_t magic[] = {
-        JML_MAGIC[0], JML_MAGIC[1], JML_MAGIC[2],
-        JML_VERSION_MAJOR, JML_VERSION_MINOR, JML_VERSION_MICRO
-    };
-
-    if ((length - pos) > sizeof(magic) && memcmp(serial + pos, magic, sizeof(magic)) == 0)
-        pos += sizeof(magic);
-    else
-        return false;
+    jml_bytecode_init(bytecode);
 
     /*values offset*/
-    if (!jml_deserialize_long(serial, length, &pos, &constants))
+    if (!jml_deserialize_long(serial, length, pos, &constants))
         goto err;
 
-    if (!jml_deserialize_long(serial, length, &pos, &offset))
+    if (!jml_deserialize_long(serial, length, pos, &offset))
         goto err;
 
     count = offset / (sizeof(uint16_t) + 1);
 
-    if (length < (offset + pos))
+    if (length < (offset + *pos))
         return false;
 
     /*opcodes and lines*/
     for (uint32_t i = 0; i < count; ++i) {
         uint16_t line;
-        memcpy(&line, &serial[pos + count + (i * 2)], sizeof(uint16_t));
-        jml_bytecode_write(bytecode, serial[pos + i], line);
+        memcpy(&line, &serial[*pos + count + (i * 2)], sizeof(uint16_t));
+        jml_bytecode_write(bytecode, serial[*pos + i], line);
     }
-    pos += offset;
+    *pos += offset;
 
     /*values*/
     for (uint32_t i = 0; i < constants; ++i) {
         jml_value_t value;
-        if (!jml_deserialize_value(serial, length, &pos, &value))
+        if (!jml_deserialize_value(serial, length, pos, &value))
             goto err;
 
         jml_value_array_write(&bytecode->constants, value);
@@ -474,7 +459,27 @@ jml_deserialize_bytecode_file(jml_bytecode_t *bytecode, const char *filename)
         jml_free(serial);
         return false;
     }
-    bool result = jml_deserialize_bytecode(serial, size, bytecode);
+
+    size_t shebang_length   = strlen(JML_SHEBANG);
+    size_t pos              = 0;
+
+    /*shebang*/
+    if (size > shebang_length && memcmp(serial, JML_SHEBANG, shebang_length) == 0)
+        pos += shebang_length;
+
+    /*magic*/
+    uint8_t magic[] = {
+        JML_MAGIC[0], JML_MAGIC[1], JML_MAGIC[2],
+        JML_VERSION_MAJOR, JML_VERSION_MINOR, JML_VERSION_MICRO
+    };
+
+    if ((size - pos) > sizeof(magic) && memcmp(serial + pos, magic, sizeof(magic)) == 0)
+        pos += sizeof(magic);
+    else
+        return false;
+
+    /*main bytecode*/
+    bool result = jml_deserialize_bytecode(serial, size, &pos, bytecode);
 
     fclose(file);
     jml_free(serial);

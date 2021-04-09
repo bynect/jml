@@ -429,9 +429,9 @@ jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode, uint32_t offset)
 
             jml_obj_function_t *function = AS_FUNCTION(bytecode->constants.values[constant]);
 
-            for (int i = 0; i < function->upvalue_count; ++i) {
-                int local       = bytecode->code[offset++];
-                int index       = bytecode->code[offset++];
+            for (uint32_t i = 0; i < function->upvalue_count; ++i) {
+                uint8_t local       = bytecode->code[offset++];
+                uint8_t index       = bytecode->code[offset++];
 
                 printf("%04d       |    %-16s %4d\n",
                     offset - 2, local ? "local" : "upvalue", index);
@@ -450,9 +450,9 @@ jml_bytecode_instruction_disassemble(jml_bytecode_t *bytecode, uint32_t offset)
 
             jml_obj_function_t *function = AS_FUNCTION(bytecode->constants.values[constant]);
 
-            for (int i = 0; i < function->upvalue_count; ++i) {
-                int local = bytecode->code[offset++];
-                int index = bytecode->code[offset++];
+            for (uint32_t i = 0; i < function->upvalue_count; ++i) {
+                uint8_t local = bytecode->code[offset++];
+                uint8_t index = bytecode->code[offset++];
 
                 printf("%04d       |    %-16s %4d\n",
                     offset - 2, local ? "local" : "upvalue", index);
