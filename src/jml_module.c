@@ -157,7 +157,9 @@ jml_module_open(jml_obj_string_t *qualified,
         || path_len == 0 || *path_raw == '\0'
         || !jml_file_exist(path_raw)) {
 
-        jml_vm_error("ImportErr: Module not found.");
+        jml_vm_error("ImportErr: Module %.*s not found.",
+            name->length, name->chars
+        );
         return NULL;
     }
 
@@ -230,7 +232,9 @@ jml_module_open(jml_obj_string_t *qualified,
         vm->current = super;
 
     } else {
-        jml_vm_error("ImportErr: Module not loadable.");
+        jml_vm_error("ImportErr: Module %.*s not loadable.",
+            name->length, name->chars
+        );
         goto err;
     }
 
