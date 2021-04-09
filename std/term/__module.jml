@@ -1,4 +1,9 @@
 !! Terminal utilities
 
 import term.ansi._
-import term.color._
+import term.vt100._
+
+! Shared reset color function
+let reset = || {
+    print("\e[0m")
+}

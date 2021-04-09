@@ -35,3 +35,16 @@ let BG_BRIGHT_BLUE = 104
 let BG_BRIGHT_MAGENTA = 105
 let BG_BRIGHT_CYAN = 106
 let BG_BRIGHT_WHITE = 107
+
+! ANSI escape codes utilities
+fn set_bg(b) {
+    printfmt("\e[{}m", b)
+}
+
+fn set_fg(f) {
+    printfmt("\e[{}m", f)
+}
+
+fn set_fg_bg(f, b) {
+    printfmt("\e[{};{}m", f, b)
+}
