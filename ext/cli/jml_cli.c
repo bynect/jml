@@ -4,6 +4,7 @@
 #include <signal.h>
 
 #include <jml.h>
+#include <jml/jml_serialization.h>
 
 
 #ifdef JML_CLI_READLINE

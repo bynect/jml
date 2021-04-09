@@ -209,7 +209,5 @@ size_t jml_string_len(const char *str, size_t size);
 
 #include <jml/jml_repr.h>
 
-#include <jml/jml_serialization.h>
-
 
 #endif /* JML_H_ */
