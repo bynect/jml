@@ -524,13 +524,6 @@ jml_local_mark(jml_compiler_t *compiler)
 }
 
 
-static inline void
-jml_local_unmark(jml_compiler_t *compiler)
-{
-    compiler->locals[compiler->local_count - 1].depth = -1;
-}
-
-
 static void
 jml_local_add(jml_compiler_t *compiler, jml_token_t name)
 {
