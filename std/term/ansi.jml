@@ -1,0 +1,37 @@
+!! ANSI color codes for 4 bit sequences
+
+! Foreground colors
+let FG_BLACK = 30
+let FG_RED = 31
+let FG_GREEN = 32
+let FG_YELLOW = 33
+let FG_BLUE = 34
+let FG_MAGENTA = 35
+let FG_CYAN = 36
+let FG_WHITE = 37
+let FG_BRIGHT_BLACK = 90
+let FG_BRIGHT_RED = 91
+let FG_BRIGHT_GREEN = 92
+let FG_BRIGHT_YELLOW = 93
+let FG_BRIGHT_BLUE = 94
+let FG_BRIGHT_MAGENTA = 95
+let FG_BRIGHT_CYAN = 96
+let FG_BRIGHT_WHITE = 97
+
+! Background colors
+let BG_BLACK = 40
+let BG_RED = 41
+let BG_GREEN = 42
+let BG_YELLOW = 43
+let BG_BLUE = 44
+let BG_MAGENTA = 45
+let BG_CYAN = 46
+let BG_WHITE = 47
+let BG_BRIGHT_BLACK = 100
+let BG_BRIGHT_RED = 101
+let BG_BRIGHT_GREEN = 102
+let BG_BRIGHT_YELLOW = 103
+let BG_BRIGHT_BLUE = 104
+let BG_BRIGHT_MAGENTA = 105
+let BG_BRIGHT_CYAN = 106
+let BG_BRIGHT_WHITE = 107
