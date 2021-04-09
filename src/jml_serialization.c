@@ -12,6 +12,8 @@
 #define JML_SERIAL_NUM              'N'
 #define JML_SERIAL_OBJ              'O'
 #define JML_SERIAL_STRING           'S'
+#define JML_SERIAL_MODULE           'M'
+#define JML_SERIAL_FUNCTION         'F'
 
 #define JML_SERIAL_NONE             '|'
 #define JML_SERIAL_TRUE             '<'
@@ -317,6 +319,7 @@ jml_deserialize_string(uint8_t *serial, size_t length,
     *pos += size;
 
     *string = jml_obj_string_take(buffer, size);
+    return true;
 }
 
 

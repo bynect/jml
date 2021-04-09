@@ -69,6 +69,50 @@ jml_cli_run(const char *path)
 }
 
 
+#ifdef JML_CLI_READLINE
+
+
+static char *
+jml_cli_keywords(const char *text, int state)
+{
+    char *keywords[] = {
+        "for", "while", "break", "skip", "in",
+        "match", "with", "if", "else", "class",
+        "self", "super", "let", "fn", "return",
+        "import", "async", "await", "try",
+        "spread", "and", "not", "or", NULL
+    };
+
+    static int list_index, len;
+    char *name = NULL;
+
+    if (!state) {
+        list_index = 0;
+        len = strlen(text);
+    }
+
+    while ((name = keywords[list_index++])) {
+        if (strncmp(name, text, len) == 0) {
+            return jml_strdup(name);
+        }
+    }
+
+    return NULL;
+}
+
+
+static char **
+jml_cli_completion(const char *text,
+    JML_UNUSED(int start), JML_UNUSED(int end))
+{
+    rl_attempted_completion_over = 1;
+    return rl_completion_matches(text, jml_cli_keywords);
+}
+
+
+#endif
+
+
 static void
 jml_cli_repl(void)
 {
@@ -81,6 +125,8 @@ jml_cli_repl(void)
     );
 
 #ifdef JML_CLI_READLINE
+    rl_attempted_completion_function = jml_cli_completion;
+
     char *line;
     while ((line = readline("~> ")) != NULL) {
         if (strlen(line) > 0)
