@@ -12,6 +12,7 @@
 #include <jml/jml_type.h>
 #include <jml/jml_module.h>
 #include <jml/jml_util.h>
+#include <jml/jml_signal.h>
 
 
 jml_vm_t *vm                        = NULL;
@@ -31,6 +32,8 @@ jml_vm_new(void)
 void
 jml_vm_init(jml_vm_t *vm)
 {
+    jml_signal_init();
+
     vm->objects             = NULL;
     vm->allocated           = 0;
     vm->next_gc             = 1024 * 1024 * 2;

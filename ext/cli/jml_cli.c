@@ -116,8 +116,6 @@ jml_cli_completion(const char *text,
 static void
 jml_cli_repl(void)
 {
-    signal(SIGINT, SIG_IGN);
-
     printf(
         "interactive jml -- v%s (on %s)\n",
         JML_VERSION_STRING,
@@ -144,6 +142,7 @@ jml_cli_repl(void)
         if (*line == '\n')
             continue;
 #endif
+        signal(SIGINT, SIG_IGN);
 
 #ifdef JML_EVAL
         jml_value_t result = jml_vm_eval(vm, line);
