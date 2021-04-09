@@ -167,13 +167,6 @@ jml_cli_repl(void)
 }
 
 
-static void
-jml_cli_cleanup(void)
-{
-    jml_vm_free(vm);
-}
-
-
 int
 main(int argc, char **argv)
 {
@@ -181,7 +174,7 @@ main(int argc, char **argv)
     if (vm == NULL) return EXIT_FAILURE;
 
     bool success;
-    atexit(jml_cli_cleanup);
+    atexit(jml_vm_free);
 
     switch (argc) {
         case 1:

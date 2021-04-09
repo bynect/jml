@@ -21,6 +21,9 @@ jml_vm_t *vm                        = NULL;
 jml_vm_t *
 jml_vm_new(void)
 {
+    if (vm != NULL)
+        return vm;
+
     jml_vm_t *_vm = jml_alloc(sizeof(jml_vm_t));
     vm = _vm;
 
@@ -108,8 +111,11 @@ jml_vm_init(jml_vm_t *vm)
 
 
 void
-jml_vm_free(jml_vm_t *vm)
+jml_vm_free(void)
 {
+    if (vm == NULL)
+        return;
+
     jml_hashmap_free(&vm->globals);
     jml_hashmap_free(&vm->strings);
     jml_hashmap_free(&vm->modules);
@@ -152,6 +158,7 @@ jml_vm_free(jml_vm_t *vm)
     );
 
     jml_free(vm);
+    vm = NULL;
 }
 
 

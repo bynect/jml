@@ -176,7 +176,7 @@ typedef struct jml_vm jml_vm_t;
 
 jml_vm_t *jml_vm_new(void);
 
-void jml_vm_free(jml_vm_t *vm);
+void jml_vm_free(void);
 
 jml_interpret_result jml_vm_interpret(jml_vm_t *_vm, const char *source);
 
