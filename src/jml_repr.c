@@ -186,7 +186,6 @@ jml_obj_print(jml_value_t value)
                     if (IS_CFUNCTION(*method)) {
                         jml_value_t args = OBJ_VAL(instance);
                         AS_CFUNCTION(*method)->function(1, &args);
-
                     } else {
                         jml_obj_coroutine_t *coroutine = jml_obj_coroutine_new(NULL);
                         jml_vm_call_value(coroutine, *method, 0);

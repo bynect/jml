@@ -1352,7 +1352,7 @@ jml_variable_named(jml_compiler_t *compiler,
             compiler, index, global, get_op, set_op, arg, OP_MOD
         );
 
-    } else if (jml_parser_match(compiler, TOKEN_ARROW)) {
+    } else if (jml_parser_match(compiler, TOKEN_RARROW)) {
         if (!index) {
             jml_parser_match_line(compiler);
             if (jml_parser_match(compiler, TOKEN_USCORE)) {
@@ -1415,7 +1415,7 @@ jml_variable(jml_compiler_t *compiler, bool assignable)
 static void
 jml_wildcard(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
 {
-    if (jml_parser_match(compiler, TOKEN_ARROW))
+    if (jml_parser_match(compiler, TOKEN_RARROW))
         jml_parser_error(compiler, "Can't swap wildcard.");
 
     else
@@ -1603,7 +1603,8 @@ static jml_parser_rule rules[] = {
     /*TOKEN_BANG*/      {NULL,          NULL,           PREC_NONE},
     /*TOKEN_HASH*/      {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AT*/        {NULL,          NULL,           PREC_NONE},
-    /*TOKEN_ARROW*/     {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_RARROW*/    {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_LARROW*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_VBAR*/      {&jml_lambda,   NULL,           PREC_NONE},
     /*TOKEN_PIPE*/      {NULL,          &jml_piping,    PREC_CALL},
     /*TOKEN_COLON*/     {NULL,          NULL,           PREC_NONE},
@@ -1855,7 +1856,7 @@ jml_class_declaration(jml_compiler_t *compiler)
     class_compiler.w_superclass         = false;
     compiler->klass                     = &class_compiler;
 
-    if (jml_parser_match(compiler, TOKEN_LESS)) {
+    if (jml_parser_match(compiler, TOKEN_LARROW)) {
         jml_parser_match_line(compiler);
 
         jml_parser_consume(compiler, TOKEN_NAME, "Expect superclass name.");
@@ -2148,7 +2149,7 @@ jml_import_statement(jml_compiler_t *compiler)
             compiler->module_const, name_arg
         );
 
-        if (jml_parser_match(compiler, TOKEN_ARROW)) {
+        if (jml_parser_match(compiler, TOKEN_RARROW)) {
             if (jml_parser_match(compiler, TOKEN_USCORE)) {
                 EMIT_EXTENDED_OP2(
                     compiler, OP_DEL_GLOBAL, EXTENDED_OP(OP_DEL_GLOBAL),
@@ -2181,7 +2182,7 @@ jml_import_statement(jml_compiler_t *compiler)
             compiler, OP_IMPORT, EXTENDED_OP(OP_IMPORT), full_arg, name_arg
         );
 
-        if (jml_parser_match(compiler, TOKEN_ARROW)) {
+        if (jml_parser_match(compiler, TOKEN_RARROW)) {
             jml_parser_consume(compiler, TOKEN_NAME, "Expect identifier after '->'.");
 
             if (name_length == compiler->parser->previous.length
@@ -2455,7 +2456,7 @@ jml_match_statement(jml_compiler_t *compiler)
             break;
         }
 
-        jml_parser_consume(compiler, TOKEN_ARROW, "Expect '->' after literal.");
+        jml_parser_consume(compiler, TOKEN_RARROW, "Expect '->' after literal.");
         jml_parser_consume(compiler, TOKEN_LBRACE, "Expect '{' after '->'.");
 
         if (wildcard != 1) {
