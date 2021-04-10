@@ -1,6 +1,3 @@
-#include <stdio.h>
-
-
 #include <jml.h>
 
 
@@ -45,6 +42,9 @@ BIT_FUNC2(jml_std_bit_rshift, >>)
 BIT_FUNC2(jml_std_bit_and, &)
 BIT_FUNC2(jml_std_bit_or, |)
 BIT_FUNC2(jml_std_bit_xor, ^)
+
+
+#undef BIT_FUNC2
 
 
 static jml_value_t

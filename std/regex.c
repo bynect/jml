@@ -10,7 +10,7 @@
 
 #else
 
-#error Current platform not supported.
+#error "Current platform not supported."
 
 #endif
 
