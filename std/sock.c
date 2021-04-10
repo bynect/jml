@@ -15,9 +15,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
+#include <netinet/in.h>
 
 #include <arpa/inet.h>
 #include <arpa/telnet.h>

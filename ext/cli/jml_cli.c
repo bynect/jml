@@ -160,7 +160,7 @@ jml_cli_repl(void)
         free(line);
     }
 
-    rl_clear_history();
+    clear_history();
 #else
     }
 #endif
