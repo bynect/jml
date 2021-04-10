@@ -100,7 +100,7 @@ jml_core_print_fmt(int arg_count, jml_value_t *args)
     jml_value_t fmt = jml_core_format(arg_count, args);
 
     if (IS_STRING(fmt)) {
-        printf("%.*s\n", (int32_t)AS_STRING(fmt)->length, AS_CSTRING(fmt));
+        printf("%.*s", (int32_t)AS_STRING(fmt)->length, AS_CSTRING(fmt));
         return NONE_VAL;
     }
 
