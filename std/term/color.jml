@@ -1,4 +1,4 @@
-!! ANSI color codes for 4 bit sequences
+!! ANSI color codes
 
 ! Foreground colors
 let FG_BLACK = 30
@@ -36,7 +36,7 @@ let BG_BRIGHT_MAGENTA = 105
 let BG_BRIGHT_CYAN = 106
 let BG_BRIGHT_WHITE = 107
 
-! ANSI escape codes utilities
+! ANSI escape codes
 fn set_bg(b) {
     printfmt("\e[{}m", b)
 }
@@ -47,4 +47,21 @@ fn set_fg(f) {
 
 fn set_fg_bg(f, b) {
     printfmt("\e[{};{}m", f, b)
+}
+
+fn set_rgb(r, g, b) {
+    printfmt("\e[38;2;{};{};{}m", r, g, b)
+}
+
+fn set_hex(n) {
+    import bit
+    let r = bit.rshift(n, 16)
+    let g = bit.rshift(bit._and(n, 0x00ff00), 8)
+    let b = bit._and(n, 0x0000ff)
+    rgb(r, g, b)
+}
+
+! Reset color
+let reset = || {
+    print("\e[0m")
 }
