@@ -1,0 +1,4 @@
+!! Hash functions
+
+! Non cryptographic hash
+import hash.noncrypto._
