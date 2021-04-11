@@ -14,19 +14,10 @@
 
 
 static jml_value_t
-jml_core_format(int arg_count, jml_value_t *args)
+jml_core_format_internal(jml_value_t format,
+    int arg_count, jml_value_t *args)
 {
-    if (arg_count == 0)
-        return OBJ_VAL(
-            jml_obj_exception_new("FormatErr", "Expected format string.")
-        );
-
-    if (!IS_STRING(args[0]))
-        return OBJ_VAL(
-            jml_obj_exception_new("FormatErr", "Expected format string.")
-        );
-
-    jml_obj_string_t *fmt_obj   = AS_STRING(args[0]);
+    jml_obj_string_t *fmt_obj   = AS_STRING(format);
     char             *fmt_str   = jml_strdup(fmt_obj->chars);
     int32_t           fmt_args  = 0;
     int32_t           fmt_extra = 0;
@@ -41,10 +32,10 @@ jml_core_format(int arg_count, jml_value_t *args)
     char             *last      = token;
 
     while (token != NULL) {
-        if (fmt_args + 1 >= arg_count)
+        if (fmt_args >= arg_count)
             ++fmt_extra;
         else {
-            char *value_str     = jml_value_stringify(args[fmt_args + 1]);
+            char *value_str     = jml_value_stringify(args[fmt_args]);
 
             dest_size          += strlen(value_str) + strlen(token);
             REALLOC(char, buffer, size, dest_size);
@@ -72,19 +63,70 @@ jml_core_format(int arg_count, jml_value_t *args)
 
     jml_free(fmt_str);
 
-    if (fmt_extra > 0 || fmt_err + 1 != arg_count) {
+    if (fmt_extra > 0 || fmt_err != arg_count) {
         jml_free(buffer);
         return OBJ_VAL(
             jml_obj_exception_format(
                 "FormatErr",
                 "Expected '%d' format arguments but got '%d'.",
-                fmt_err, arg_count - 1
+                fmt_err, arg_count
             )
         );
     }
 
     return OBJ_VAL(
         jml_obj_string_take(buffer, strlen(buffer))
+    );
+}
+
+
+static jml_value_t
+jml_core_format(int arg_count, jml_value_t *args)
+{
+    if (arg_count == 0) {
+        return OBJ_VAL(
+            jml_obj_exception_new("FormatErr", "Expected format string.")
+        );
+    }
+
+    if (!IS_STRING(args[0])) {
+        return OBJ_VAL(
+            jml_obj_exception_new("FormatErr", "Expected format string.")
+        );
+    }
+
+    return jml_core_format_internal(
+        args[0], arg_count - 1, args + 1
+    );
+}
+
+
+static jml_value_t
+jml_core_format_array(int arg_count, jml_value_t *args)
+{
+    if (arg_count == 0) {
+        return OBJ_VAL(
+            jml_obj_exception_new("FormatErr", "Expected format string.")
+        );
+    }
+
+    jml_obj_exception_t *exc = jml_error_args(
+        arg_count, 2);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    if (!IS_STRING(args[0]) || !IS_ARRAY(args[1])) {
+        return OBJ_VAL(
+            jml_error_types(false, 2, "string", "array")
+        );
+    }
+
+    jml_obj_array_t *array = AS_ARRAY(args[1]);
+    return jml_core_format_internal(
+        args[0],
+        array->values.count,
+        array->values.values
     );
 }
 
@@ -577,6 +619,7 @@ jml_core_exception(int arg_count, jml_value_t *args)
 /*core table*/
 static jml_module_function core_table[] = {
     {"format",                      &jml_core_format},
+    {"format_array",                &jml_core_format_array},
     {"printfmt",                    &jml_core_print_fmt},
     {"println",                     &jml_core_print_ln},
     {"print",                       &jml_core_print},
