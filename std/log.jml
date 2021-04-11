@@ -1,0 +1,74 @@
+!! Logging functions
+
+! Logging levels
+let LOG_UNSET = 0
+let LOG_DEBUG = 1
+let LOG_INFO = 2
+let LOG_WARNING = 3
+let LOG_ERROR = 4
+let LOG_FATAL = 5
+
+class Logger {
+    let levels = [
+        "UNSET",
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "FATAL"
+    ]
+
+    fn __init() {
+        self.level = LOG_UNSET
+    }
+
+    fn set_level(level) {
+        assert(
+            level >= LOG_UNSET and level <= LOG_FATAL,
+            "Invalid logging level"
+        )
+
+        self.level = level
+        none
+    }
+
+    fn get_level() {
+        self.level
+    }
+
+    fn log(msg, level) {
+        assert(
+            level > LOG_UNSET and level <= LOG_FATAL,
+            "Invalid logging level"
+        )
+
+        if (level >= self.level and self.level != LOG_UNSET) {
+            print("[LOG " :: self.levels[level] :: "] ", msg, "\n")
+        }
+
+        none
+    }
+}
+
+! Global logger
+let logger = Logger()
+
+fn debug(msg, ^args) {
+    logger.log(format_array(msg, args), LOG_DEBUG)
+}
+
+fn info(msg, ^args) {
+    logger.log(format_array(msg, args), LOG_INFO)
+}
+
+fn warning(msg, ^args) {
+    logger.log(format_array(msg, args), LOG_WARNING)
+}
+
+fn error(msg, ^args) {
+    logger.log(format_array(msg, args), LOG_ERROR)
+}
+
+fn fatal(msg, ^args) {
+    logger.log(format_array(msg, args), LOG_FATAL)
+}
