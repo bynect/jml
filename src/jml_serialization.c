@@ -82,7 +82,7 @@ jml_serialize_string(jml_obj_string_t *string,
     size_t posx = pos;
     posx += jml_serialize_long(string->length, serial, size, posx);
 
-    REALLOC(uint8_t, serial, *size, posx + string->length);
+    REALLOC(uint8_t, serial, *size, posx + string->length + 1);
     memcpy(serial + posx, string->chars, string->length);
     posx += string->length;
 
@@ -449,7 +449,7 @@ jml_deserialize_bytecode_file(jml_bytecode_t *bytecode, const char *filename)
     FILE *file = fopen(filename, "rb");
     if (file == NULL) return false;
 
-    fseek(file, 0L, SEEK_END);
+    fseek(file, 0, SEEK_END);
     size_t size = ftell(file);
     rewind(file);
 

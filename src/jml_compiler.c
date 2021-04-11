@@ -458,8 +458,12 @@ jml_compiler_end(jml_compiler_t *compiler)
 #endif
 
 #ifdef JML_SERIALIZE
-    if (compiler->type == FUNCTION_MAIN && vm->current == NULL && vm->globals.count > 0)
-        jml_serialize_bytecode_file(jml_bytecode_current(compiler), "jml_cache.byte");
+    if (compiler->type == FUNCTION_MAIN && vm->globals.count > 0
+        && compiler->module == NULL) {
+        jml_serialize_bytecode_file(
+            jml_bytecode_current(compiler), "jml_cache.byte"
+        );
+    }
 #endif
 
     vm->compiler_top[-1]         = compiler->enclosing;

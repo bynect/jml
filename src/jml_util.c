@@ -253,7 +253,7 @@ jml_file_read(const char *path)
     if (file == NULL)
         return NULL;
 
-    fseek(file, 0L, SEEK_END);
+    fseek(file, 0, SEEK_END);
     size_t size = ftell(file);
     rewind(file);
 
