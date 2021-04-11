@@ -588,16 +588,34 @@ jml_core_min(int arg_count, jml_value_t *args)
 static jml_value_t
 jml_core_assert(int arg_count, jml_value_t *args)
 {
-    jml_obj_exception_t *exc        = jml_error_args(
-        arg_count, 1);
+    char *message = "Assertion failed.";
 
-    if (exc != NULL)
-        return OBJ_VAL(exc);
+    switch (arg_count) {
+        case 0: {
+            return OBJ_VAL(
+                jml_obj_exception_new("TooFewArgs", "Expected assert condition.")
+            );
+        }
 
-    if (jml_value_falsey(args[0])) {
-        return OBJ_VAL(jml_obj_exception_new(
-            "AssertErr", "Assertion failed."
-        ));
+        case 2: {
+            if (!IS_STRING(args[1]))
+                jml_obj_exception_new("DiffTypes", "Expected assert message.");
+        } /*fallthrough*/
+
+        case 1: {
+            if (jml_value_falsey(args[0]))
+                return OBJ_VAL(jml_obj_exception_new("AssertErr", message));
+            else
+                break;
+        }
+
+        default: {
+            return OBJ_VAL(
+                jml_obj_exception_new(
+                    "TooManyArgs", "Expected assert condition and message."
+                )
+            );
+        }
     }
 
     return NONE_VAL;
