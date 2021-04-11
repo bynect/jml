@@ -461,8 +461,15 @@ jml_vm_call(jml_obj_coroutine_t *coroutine,
         return false;
     }
 
-    if (coroutine->frame_count + 1 >= coroutine->frame_capacity)
+    if (coroutine->frame_count + 1 >= coroutine->frame_capacity) {
+        uint32_t new_capacity = coroutine->frame_capacity * 2;
+        coroutine->frames = GROW_ARRAY(
+            jml_call_frame_t, coroutine->frames,
+            coroutine->frame_capacity, new_capacity
+        );
+        coroutine->frame_capacity = new_capacity;
         jml_obj_coroutine_grow(coroutine);
+    }
 
     jml_call_frame_t *frame = &coroutine->frames[coroutine->frame_count++];
     frame->closure = closure;
@@ -1150,7 +1157,7 @@ jml_vm_run(jml_value_t *last)
 
 #endif
 
-    static const void *dispatcher[] = {
+    const void *dispatcher[] = {
         TABLE_OP(OP_NOP),
         TABLE_OP(OP_POP),
         TABLE_OP(OP_POP_TWO),

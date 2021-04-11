@@ -313,8 +313,10 @@ jml_obj_coroutine_grow(jml_obj_coroutine_t *coroutine)
     int capacity = GROW_CAPACITY(coroutine->stack_capacity);
     jml_value_t *old_stack = coroutine->stack;
 
-    if (capacity >= STACK_MAX)
+    if (capacity >= STACK_MAX) {
+        jml_vm_error("OverflowErr: Stack overflow.");
         return;
+    }
 
     coroutine->stack = GROW_ARRAY(jml_value_t, coroutine->stack,
         coroutine->stack_capacity, capacity);

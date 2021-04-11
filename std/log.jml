@@ -45,8 +45,6 @@ class Logger {
         if (level >= self.level and self.level != LOG_UNSET) {
             print("[LOG " :: self.levels[level] :: "] ", msg, "\n")
         }
-
-        none
     }
 }
 
