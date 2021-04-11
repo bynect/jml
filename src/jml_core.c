@@ -23,7 +23,7 @@ jml_core_format_internal(jml_value_t format,
     int32_t           fmt_extra = 0;
     int32_t           fmt_err   = 0;
 
-    size_t            size      = (fmt_obj->length + 1) + (arg_count - 1) * 16;
+    size_t            size      = (fmt_obj->length + 1) + arg_count * 16;
     size_t            dest_size = size;
 
     char             *buffer    = jml_alloc(size);
