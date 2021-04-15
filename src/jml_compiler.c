@@ -461,7 +461,7 @@ jml_compiler_end(jml_compiler_t *compiler)
     if (compiler->type == FUNCTION_MAIN && vm->globals.count > 0
         && compiler->module == NULL) {
         jml_serialize_bytecode_file(
-            jml_bytecode_current(compiler), "jml_cache.byte"
+            jml_bytecode_current(compiler), "cache.jbc"
         );
     }
 #endif
