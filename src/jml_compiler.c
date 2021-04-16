@@ -1643,6 +1643,7 @@ static jml_parser_rule rules[] = {
     /*TOKEN_FN*/        {NULL,          NULL,           PREC_NONE},
     /*TOKEN_RETURN*/    {NULL,          NULL,           PREC_NONE},
     /*TOKEN_IMPORT*/    {NULL,          NULL,           PREC_NONE},
+    /*TOKEN_FROM*/      {NULL,          NULL,           PREC_NONE},
     /*TOKEN_ASYNC*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_AWAIT*/     {NULL,          NULL,           PREC_NONE},
     /*TOKEN_TRY*/       {&jml_try,      NULL,           PREC_CALL},
@@ -1851,7 +1852,7 @@ jml_class_declaration(jml_compiler_t *compiler)
     class_compiler.w_superclass         = false;
     compiler->klass                     = &class_compiler;
 
-    if (jml_parser_match(compiler, TOKEN_LARROW)) {
+    if (jml_parser_match(compiler, TOKEN_FROM)) {
         jml_parser_match_line(compiler);
 
         jml_parser_consume(compiler, TOKEN_NAME, "Expect superclass name.");

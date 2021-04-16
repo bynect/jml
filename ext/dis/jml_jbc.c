@@ -18,8 +18,10 @@ jml_dis_dump(const char *filename)
     size_t size = 0;
     uint8_t *bytes = (uint8_t*)jml_file_read(filename, &size);
 
-    if (bytes == NULL || size == 0)
+    if (bytes == NULL || size == 0) {
+        jml_bytecode_free(&bytecode);
         return false;
+    }
 
     printf(
         "%s (jml bytecode v%s)\n",

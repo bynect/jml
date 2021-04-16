@@ -191,6 +191,7 @@ jml_identifier_check(jml_lexer_t *lexer)
                     case 'a': return jml_keyword_match(2, 3, "lse", TOKEN_FALSE, lexer);
                     case 'n': return jml_keyword_match(2, 0, "", TOKEN_FN, lexer);
                     case 'o': return jml_keyword_match(2, 1, "r", TOKEN_FOR, lexer);
+                    case 'r': return jml_keyword_match(2, 2, "om", TOKEN_FROM, lexer);
                 }
             }
             break;
@@ -517,6 +518,7 @@ jml_token_type_print(jml_token_type type)
         case PRINT_TOKEN(TOKEN_FN);
         case PRINT_TOKEN(TOKEN_RETURN);
         case PRINT_TOKEN(TOKEN_IMPORT);
+        case PRINT_TOKEN(TOKEN_FROM);
         case PRINT_TOKEN(TOKEN_ASYNC);
         case PRINT_TOKEN(TOKEN_AWAIT);
         case PRINT_TOKEN(TOKEN_TRY);
