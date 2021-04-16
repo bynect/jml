@@ -195,7 +195,7 @@ jml_module_open(jml_obj_string_t *qualified,
         module = jml_obj_module_new(name, NULL);
         jml_gc_exempt_push(OBJ_VAL(module));
 
-        char *source = jml_file_read(path_raw);
+        char *source = jml_file_read(path_raw, NULL);
         jml_obj_function_t *main = jml_compiler_compile(source, module, true);
         jml_free(source);
 

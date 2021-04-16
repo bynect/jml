@@ -247,7 +247,7 @@ jml_file_isdir(const char *filename)
 
 
 char *
-jml_file_read(const char *filename)
+jml_file_read(const char *filename, size_t *length)
 {
     FILE *file = fopen(filename, "rb");
     if (file == NULL)
@@ -273,6 +273,8 @@ jml_file_read(const char *filename)
     buffer[read] = '\0';
     fclose(file);
 
+    if (length)
+        *length = size;
     return buffer;
 }
 

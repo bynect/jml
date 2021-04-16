@@ -123,7 +123,7 @@ bool jml_file_exist(const char *filename);
 
 bool jml_file_isdir(const char *filename);
 
-char *jml_file_read(const char *filename);
+char *jml_file_read(const char *filename, size_t *length);
 
 
 bool jml_isatty_stdin(void);
