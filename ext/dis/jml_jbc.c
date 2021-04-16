@@ -28,7 +28,7 @@ jml_dis_dump(const char *filename)
     );
 
     for (uint32_t i = 0, j = 0; i < size; ) {
-        printf("   |");
+        printf("%04x   |", i);
         for (j = 0; j < 25; ++j) {
             if (i + j < size) {
                 printf("%c",
