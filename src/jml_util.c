@@ -205,51 +205,51 @@ done:
 
 
 bool
-jml_file_exist(const char *path)
+jml_file_exist(const char *filename)
 {
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 
-    return access(path, F_OK) != -1;
+    return access(filename, F_OK) != -1;
 #elif defined JML_PLATFORM_WIN
 
-    DWORD attr = GetFileAttributes(path);
+    DWORD attr = GetFileAttributes(filename);
 
     return ((attr != INVALID_FILE_ATTRIBUTES)
         && !(attr & FILE_ATTRIBUTE_DIRECTORY));
 #else
-    (void) path;
+    (void) filename;
     return false;
 #endif
 }
 
 
 bool
-jml_file_isdir(const char *path)
+jml_file_isdir(const char *filename)
 {
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 
     struct stat path_stat;
-    if (stat(path, &path_stat) < 0)
+    if (stat(filename, &path_stat) < 0)
         return false;
 
     return S_ISDIR(path_stat.st_mode);
 #elif defined JML_PLATFORM_WIN
 
-    DWORD attr = GetFileAttributes(path);
+    DWORD attr = GetFileAttributes(filename);
 
     return ((attr != INVALID_FILE_ATTRIBUTES)
         && (attr & FILE_ATTRIBUTE_DIRECTORY));
 #else
-    (void) path;
+    (void) filename;
     return false;
 #endif
 }
 
 
 char *
-jml_file_read(const char *path)
+jml_file_read(const char *filename)
 {
-    FILE *file = fopen(path, "rb");
+    FILE *file = fopen(filename, "rb");
     if (file == NULL)
         return NULL;
 

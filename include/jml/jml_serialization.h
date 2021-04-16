@@ -5,6 +5,20 @@
 #include <jml/jml_bytecode.h>
 
 
+#define JML_SHEBANG                 "#!/usr/bin/env -S jml -b\n"
+#define JML_MAGIC                   "jml"
+
+#define JML_SERIAL_NUM              'N'
+#define JML_SERIAL_OBJ              'O'
+#define JML_SERIAL_STRING           'S'
+#define JML_SERIAL_MODULE           'M'
+#define JML_SERIAL_FUNCTION         'F'
+
+#define JML_SERIAL_NONE             '|'
+#define JML_SERIAL_TRUE             '<'
+#define JML_SERIAL_FALSE            '>'
+
+
 /*serialization*/
 size_t jml_serialize_short(uint16_t num, uint8_t *serial,
     size_t *size, size_t pos);

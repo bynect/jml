@@ -119,11 +119,11 @@ bool jml_file_find(const char *filename, char *result);
 bool jml_file_find_in(const char *path,
     const char *filename, char *result);
 
-bool jml_file_exist(const char *path);
+bool jml_file_exist(const char *filename);
 
-bool jml_file_isdir(const char *path);
+bool jml_file_isdir(const char *filename);
 
-char *jml_file_read(const char *path);
+char *jml_file_read(const char *filename);
 
 
 bool jml_isatty_stdin(void);
