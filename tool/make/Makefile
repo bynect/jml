@@ -68,6 +68,10 @@ ifdef LINK_STD
 	LSHARED+=-Llib -ljml
 endif
 
+ifdef PROFILE
+	CFLAGS+=-pg
+endif
+
 
 all: prelude
 
