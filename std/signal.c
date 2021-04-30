@@ -2,64 +2,254 @@
 #include <stdlib.h>
 
 #include <jml.h>
-#include <jml/jml_signal.h>
+
+
+/*placeholder*/
+static jml_value_t
+jml_std_signal_sigdfl(JML_UNUSED(int arg_count),
+    JML_UNUSED(jml_value_t *args))
+{
+    return NONE_VAL;
+}
+
+
+static jml_value_t
+jml_std_signal_sigign(JML_UNUSED(int arg_count),
+    JML_UNUSED(jml_value_t *args))
+{
+    return NONE_VAL;
+}
+
+
+static jml_value_t
+jml_std_signal_sighold(JML_UNUSED(int arg_count),
+    JML_UNUSED(jml_value_t *args))
+{
+    return NONE_VAL;
+}
+
+
+static jml_cfunction jml_signal_handlers[] = {
+#ifdef SIGINT
+    [SIGINT] = NULL,
+#endif
+
+#ifdef SIGILL
+    [SIGILL] = NULL,
+#endif
+
+#ifdef SIGABRT
+    [SIGABRT] = NULL,
+#endif
+
+#ifdef SIGFPE
+    [SIGFPE] = NULL,
+#endif
+
+#ifdef SIGSEGV
+    [SIGSEGV] = NULL,
+#endif
+
+#ifdef SIGTERM
+    [SIGTERM] = NULL,
+#endif
+
+#ifdef SIGHUP
+    [SIGHUP] = NULL,
+#endif
+
+#ifdef SIGQUIT
+    [SIGQUIT] = NULL,
+#endif
+
+#ifdef SIGTRAP
+    [SIGTRAP] = NULL,
+#endif
+
+#ifdef SIGKILL
+    [SIGKILL] = NULL,
+#endif
+
+#ifdef SIGBUS
+    [SIGBUS] = NULL,
+#endif
+
+#ifdef SIGSYS
+    [SIGSYS] = NULL,
+#endif
+
+#ifdef SIGPIPE
+    [SIGPIPE] = NULL,
+#endif
+
+#ifdef SIGALRM
+    [SIGALRM] = NULL,
+#endif
+
+#ifdef SIGURG
+    [SIGURG] = NULL,
+#endif
+
+#ifdef SIGSTOP
+    [SIGSTOP] = NULL,
+#endif
+
+#ifdef SIGTSTP
+    [SIGTSTP] = NULL,
+#endif
+
+#ifdef SIGCONT
+    [SIGCONT] = NULL,
+#endif
+
+#ifdef SIGCHLD
+    [SIGCHLD] = NULL,
+#endif
+
+#ifdef SIGTTIN
+    [SIGTTIN] = NULL,
+#endif
+
+#ifdef SIGTTOU
+    [SIGTTOU] = NULL,
+#endif
+
+#ifdef SIGPOLL
+    [SIGPOLL] = NULL,
+#endif
+
+#ifdef SIGXCPU
+    [SIGXCPU] = NULL,
+#endif
+
+#ifdef SIGXFSZ
+    [SIGXFSZ] = NULL,
+#endif
+
+#ifdef SIGVTALRM
+    [SIGVTALRM] = NULL,
+#endif
+
+#ifdef SIGPROF
+    [SIGPROF] = NULL,
+#endif
+
+#ifdef SIGUSR1
+    [SIGUSR1] = NULL,
+#endif
+
+#ifdef SIGUSR2
+    [SIGUSR2] = NULL,
+#endif
+
+#ifdef SIGWINCH
+    [SIGWINCH] = NULL,
+#endif
+
+#ifdef SIGEMT
+    [SIGEMT] = NULL,
+#endif
+
+#ifdef SIGPWR
+    [SIGPWR] = NULL,
+#endif
+
+#ifdef SIGLOST
+    [SIGLOST] = NULL,
+#endif
+
+#ifdef SIGSTKFLT
+    [SIGSTKFLT] = NULL,
+#endif
+
+#ifdef SIGUNUSED
+    [SIGUNUSED] = NULL,
+#endif
+
+#ifdef SIGTHR
+    [SIGTHR] = NULL,
+#endif
+
+#ifdef SIGLIBRT
+    [SIGLIBRT] = NULL,
+#endif
+
+#ifdef SIGBREAK
+    [SIGBREAK] = NULL,
+#endif
+
+#if defined SIGIO && !defined SIGPOLL
+    [SIGIO] = NULL,
+#endif
+
+#if defined SIGIOT && !defined SIGABRT
+    [SIGIOT] = NULL,
+#endif
+
+#if defined SIGCLD && !defined SIGCHLD
+    [SIGCLD] = NULL,
+#endif
+};
+
+
+static void
+jml_signal_handler(int signum)
+{
+    signal(signum, jml_signal_handler);
+
+    jml_cfunction handler = jml_signal_handlers[signum];
+
+    if (handler != NULL) {
+        jml_value_t arg = NUM_VAL(signum);
+        handler(1, &arg);
+    }
+}
 
 
 static jml_value_t
 jml_std_signal_signal(int arg_count, jml_value_t *args)
 {
-jml_obj_exception_t *exc = jml_error_args(
+    jml_obj_exception_t *exc = jml_error_args(
         arg_count, 2);
 
     if (exc != NULL)
         goto err;
 
-    if (!IS_NUM(args[0]) && !IS_OBJ(args[1]) && !IS_NUM(args[1])) {
+    if (!IS_NUM(args[0]) && !IS_OBJ(args[1])) {
         exc = jml_error_types(false, 2, "number", "handler");
         goto err;
     }
 
     int signum          = AS_NUM(args[0]);
-    intptr_t old        = -1;
+    const int sigsize   = sizeof(jml_signal_handlers) / sizeof(jml_value_t);
 
-    if (IS_NUM(args[1])) {
-        intptr_t handler = AS_NUM(args[1]);
+    if (signum < 0 || signum > sigsize) {
+        exc = jml_error_value("signal");
+        goto err;
+    }
 
-        switch (handler) {
-            case (intptr_t)SIG_DFL:
-                jml_signal_unset(signum);
-                old = 0;
-                break;
+    if (IS_CFUNCTION(args[1])) {
+        jml_cfunction handler = AS_CFUNCTION(args[1])->function;
 
-            case (intptr_t)SIG_IGN:
-                jml_signal_unset(signum);
-                old = (intptr_t)signal(signum, SIG_IGN);
-                break;
-
+        if (handler == jml_std_signal_sigdfl)
+            signal(signum, SIG_DFL);
+        else if (handler == jml_std_signal_sigign)
+            signal(signum, SIG_IGN);
+        else if (handler == jml_std_signal_sighold) {
 #ifdef SIG_HOLD
-            case (intptr_t)SIG_HOLD:
-                jml_signal_unset(signum);
-                old = (intptr_t)signal(signum, SIG_HOLD);
-                break;
+
+            signal(signum, SIG_HOLD);
+
 #endif
-            default:
-                break;
+        } else {
+            jml_signal_handlers[signum] = handler;
+            signal(signum, jml_signal_handler);
         }
-    } else if (IS_CFUNCTION(args[1])) {
-        jml_signal_set(signum, AS_OBJ(args[1]));
-        old = 0;
 
-    } else {
-        exc = jml_error_implemented(args[1]);
-        goto err;
+        return NONE_VAL;
     }
 
-    if (old == -1) {
-        exc = jml_obj_exception_new("WrongValue", "Invalid signal handler.");
-        goto err;
-    }
-
-    return NONE_VAL;
+    return OBJ_VAL(jml_error_implemented(args[1]));
 
 err:
     return OBJ_VAL(exc);
@@ -69,6 +259,15 @@ err:
 /*module table*/
 MODULE_TABLE_HEAD module_table[] = {
     {"signal",                      &jml_std_signal_signal},
+    {"SIG_DFL",                     &jml_std_signal_sigdfl},
+    {"SIG_IGN",                     &jml_std_signal_sigign},
+
+#ifdef SIG_HOLD
+
+    {"SIG_HOLD",                    &jml_std_signal_sighold},
+
+#endif
+
     {NULL,                          NULL}
 };
 
@@ -234,13 +433,5 @@ module_init(jml_obj_module_t *module)
 
 #ifdef SIGBREAK
     jml_module_add_value(module, "SIGBREAK", NUM_VAL(SIGBREAK));
-#endif
-
-    /*default handlers*/
-    jml_module_add_value(module, "SIG_DFL", NUM_VAL((intptr_t)SIG_DFL));
-    jml_module_add_value(module, "SIG_IGN", NUM_VAL((intptr_t)SIG_IGN));
-
-#ifdef SIG_HOLD
-    jml_module_add_value(module, "SIG_HOLD", NUM_VAL((intptr_t)SIG_HOLD));
 #endif
 }
