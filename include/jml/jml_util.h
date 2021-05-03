@@ -69,11 +69,25 @@ jml_is_alpha(char c)
 
 
 static inline bool
+jml_is_alnum(char c)
+{
+    return jml_is_alpha(c) || jml_is_digit(c);
+}
+
+
+static inline bool
 jml_is_ident(char c)
 {
     return (c >= 'a' && c <= 'z')
         || (c >= 'A' && c <= 'Z')
         || (c == '_');
+}
+
+
+static inline bool
+jml_is_identnum(char c)
+{
+    return jml_is_ident(c) || jml_is_digit(c);
 }
 
 
