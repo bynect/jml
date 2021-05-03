@@ -268,17 +268,14 @@ jml_gc_free_object(jml_obj_t *object)
                 if (jml_hashmap_get(&instance->klass->statics,
                     vm->free_string, &destructor)) {
 
-                    jml_obj_coroutine_t *coroutine  = jml_obj_coroutine_new(NULL);
-
                     if (IS_CFUNCTION(*destructor)) {
-                        *coroutine->stack_top++     = OBJ_VAL(instance);
-
-                        jml_vm_call_value(coroutine, *destructor, 1);
-                        jml_vm_call_coroutine(coroutine, NULL);
-
+                        jml_value_t args = OBJ_VAL(instance);
+                        AS_CFUNCTION(*destructor)->function(1, &args);
                     } else {
-                        jml_vm_call_value(coroutine, *destructor, 0);
-                        jml_vm_call_coroutine(coroutine, NULL);
+                        //FIXME
+                        // jml_obj_coroutine_t *coroutine = jml_obj_coroutine_new(NULL);
+                        // jml_vm_call_value(coroutine, *destructor, 0);
+                        // jml_vm_call_coroutine(coroutine, NULL);
                     }
                 }
             }

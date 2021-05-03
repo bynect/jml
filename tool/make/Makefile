@@ -101,7 +101,7 @@ $(STD_D)/%.o: $(STD_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) -fpic
 
 $(STD_D)/%.so: $(STD_D)/%.o $(TARGET_SO)
-	$(CC) $< -o $@ $(XSHARED) $(LSHARED)
+	$(CC) $< -o $@ $(CFLAGS) $(XSHARED) $(LSHARED)
 
 $(TARGET_BIN): $(SRC_O) $(CLI_O)
 	$(CC) $^ -o $@ $(CFLAGS) $(LFLAGS) $(INCLUDES) $(LIBS)

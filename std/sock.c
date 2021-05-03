@@ -32,7 +32,9 @@
 #endif
 
 
-static jml_obj_class_t  *socket_class   = NULL;
+static jml_obj_class_t *socket_class    = NULL;
+static jml_obj_string_t *domain_string  = NULL;
+static jml_obj_string_t *type_string    = NULL;
 
 
 typedef struct {
@@ -93,8 +95,8 @@ jml_std_sock_socket_init(int arg_count, jml_value_t *args)
 
     self->extra = internal;
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("domain", 6), args[0]);
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("type", 4), args[1]);
+    jml_hashmap_set(&self->fields, domain_string, args[0]);
+    jml_hashmap_set(&self->fields, type_string, args[1]);
 
     return NONE_VAL;
 
@@ -152,8 +154,8 @@ jml_std_sock_socket_open(int arg_count, jml_value_t *args)
     internal->bound             = false;
     internal->connd             = false;
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("domain", 6), args[0]);
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("type", 4), args[1]);
+    jml_hashmap_set(&self->fields, domain_string, args[0]);
+    jml_hashmap_set(&self->fields, type_string, args[1]);
 
     return NONE_VAL;
 
@@ -343,8 +345,8 @@ jml_std_sock_socket_accept(int arg_count, jml_value_t *args)
 
     new_socket->extra = new_internal;
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("domain", 6), NUM_VAL(internal->domain));
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("type", 4), NUM_VAL(internal->type));
+    jml_hashmap_set(&self->fields, domain_string, NUM_VAL(internal->domain));
+    jml_hashmap_set(&self->fields, type_string, NUM_VAL(internal->type));
 
     return NONE_VAL;
 
@@ -634,8 +636,8 @@ jml_std_sock_socket_close(int arg_count, jml_value_t *args)
     internal->bound             = false;
     internal->connd             = false;
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("domain", 6), NONE_VAL);
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("type", 4), NONE_VAL);
+    jml_hashmap_set(&self->fields, domain_string, NONE_VAL);
+    jml_hashmap_set(&self->fields, type_string, NONE_VAL);
 
     return NONE_VAL;
 
@@ -714,6 +716,10 @@ module_init(jml_obj_module_t *module)
     jml_module_add_value(module, "SO_SNDTIMEO", NUM_VAL(SO_SNDTIMEO));
 
     jml_module_add_class(module, "Socket", socket_table, false);
+
+    //FIXME
+    domain_string = jml_obj_string_copy("domain", 6);
+    type_string = jml_obj_string_copy("type", 4);
 
     jml_value_t *socket_value;
     if (jml_hashmap_get(&module->globals,

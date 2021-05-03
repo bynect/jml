@@ -20,6 +20,8 @@
 
 
 static jml_obj_class_t *file_class      = NULL;
+static jml_obj_string_t *mode_string    = NULL;
+static jml_obj_string_t *name_string    = NULL;
 
 
 typedef struct {
@@ -82,7 +84,7 @@ jml_std_fs_dir_init(int arg_count, jml_value_t *args)
 
     self->extra                 = internal;
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), args[0]);
+    jml_hashmap_set(&self->fields, name_string, args[0]);
     return NONE_VAL;
 
 err:
@@ -143,7 +145,7 @@ jml_std_fs_dir_open(int arg_count, jml_value_t *args)
     internal->handle            = handle;
     internal->open              = true;
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), args[1]);
+    jml_hashmap_set(&self->fields, name_string, args[1]);
     return NONE_VAL;
 
 err:
@@ -188,7 +190,7 @@ jml_std_fs_dir_close(int arg_count, jml_value_t *args)
     internal->handle            = NULL;
     internal->open              = false;
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), NONE_VAL);
+    jml_hashmap_set(&self->fields, name_string, NONE_VAL);
     return NONE_VAL;
 
 err:
@@ -413,8 +415,8 @@ jml_std_fs_file_init(int arg_count, jml_value_t *args)
     self->extra                 = internal;
     fseek(internal->handle, 0, SEEK_SET);
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("mode", 4), args[1]);
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), args[0]);
+    jml_hashmap_set(&self->fields, mode_string, args[1]);
+    jml_hashmap_set(&self->fields, name_string, args[0]);
 
     return NONE_VAL;
 
@@ -486,8 +488,8 @@ jml_std_fs_file_open(int arg_count, jml_value_t *args)
 
     fseek(internal->handle, 0, SEEK_SET);
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("mode", 4), args[1]);
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), args[0]);
+    jml_hashmap_set(&self->fields, mode_string, args[1]);
+    jml_hashmap_set(&self->fields, name_string, args[0]);
 
     return NONE_VAL;
 
@@ -534,8 +536,8 @@ jml_std_fs_file_close(int arg_count, jml_value_t *args)
     internal->mode              = INVALID;
     internal->open              = false;
 
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("mode", 4), NONE_VAL);
-    jml_hashmap_set(&self->fields, jml_obj_string_copy("name", 4), NONE_VAL);
+    jml_hashmap_set(&self->fields, mode_string, NONE_VAL);
+    jml_hashmap_set(&self->fields, name_string, NONE_VAL);
 
     return NONE_VAL;
 
@@ -731,7 +733,7 @@ jml_std_fs_file_free(int arg_count, jml_value_t *args)
     jml_obj_instance_t *self = AS_INSTANCE(args[arg_count - 1]);
 
     if (self->extra != NULL) {
-        jml_std_fs_dir_close(1, &args[arg_count - 1]);
+        jml_std_fs_file_close(1, &args[arg_count - 1]);
         jml_free(self->extra);
         self->extra = NULL;
     }
@@ -857,8 +859,8 @@ jml_std_fs_tempfile(int arg_count, JML_UNUSED(jml_value_t *args))
 
     file->extra = internal;
 
-    jml_hashmap_set(&file->fields, jml_obj_string_copy("mode", 4), jml_string_intern("wb+"));
-    jml_hashmap_set(&file->fields, jml_obj_string_copy("name", 4), NONE_VAL);
+    jml_hashmap_set(&file->fields, mode_string, jml_string_intern("wb+"));
+    jml_hashmap_set(&file->fields, name_string, NONE_VAL);
 
     return OBJ_VAL(file);
 
@@ -943,6 +945,10 @@ module_init(jml_obj_module_t *module)
 
     jml_module_add_class(module, "File", file_table, false);
     jml_module_add_class(module, "Dir", dir_table, false);
+
+    //FIXME
+    mode_string = jml_obj_string_copy("mode", 4);
+    name_string = jml_obj_string_copy("name", 4);
 
     jml_value_t *file_value;
     if (jml_hashmap_get(&module->globals,
