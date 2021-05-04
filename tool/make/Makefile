@@ -41,6 +41,8 @@ DEFINES=
 INCLUDES=-I$(shell pwd)/include
 LIBS=-lm -ldl
 
+AUX_SCRIPT=tool/make/aux.py
+
 
 ifneq (,$(filter $(strip $(CC)),g++ clang++))
 	CFLAGS+=-fpermissive -Wno-write-strings
@@ -101,7 +103,7 @@ $(STD_D)/%.o: $(STD_D)/%.c
 	$(CC) -c $^ -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) -fpic
 
 $(STD_D)/%.so: $(STD_D)/%.o $(TARGET_SO)
-	$(CC) $< -o $@ $(CFLAGS) $(XSHARED) $(LSHARED)
+	$(CC) $< -o $@ $(CFLAGS) $(XSHARED) $(LSHARED) $(shell ./$(AUX_SCRIPT) $@)
 
 $(TARGET_BIN): $(SRC_O) $(CLI_O)
 	$(CC) $^ -o $@ $(CFLAGS) $(LFLAGS) $(INCLUDES) $(LIBS)
