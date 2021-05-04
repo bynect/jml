@@ -45,7 +45,7 @@ typedef struct {
     jml_json_error                  error;
     size_t                          off;
     size_t                          line_no;
-    size_t                          row_no;
+    size_t                          col_no;
 } jml_json_error_t;
 
 
@@ -1244,7 +1244,7 @@ jml_json_parse(const char *src, size_t size, jml_json_mode flags,
         error.error = parser.error;
         error.off = parser.off;
         error.line_no = parser.line_no;
-        error.row_no = parser.off - parser.line_off;
+        error.col_no = parser.off - parser.line_off;
         return error;
     }
 
@@ -1285,15 +1285,29 @@ jml_std_json_parse(int arg_count, jml_value_t *args)
         string->chars, string->length, LENIENT, &value
     );
 
-    if (error.error == ERROR_NONE)
-        return value;
-    else {
+    if (error.error != ERROR_NONE) {
+        const char *errors[] = {
+            "Expected closing bracket or comma",
+            "Expected colon",
+            "Expected quote",
+            "Invalid string escape sequence",
+            "Invalid number",
+            "Invalid value",
+            "Invalid string",
+            "Unexpected eof",
+            "Unexpected trailing characters",
+            "Unknown error"
+        };
+
         exc = jml_obj_exception_format(
-            "ParseErr", "Invalid Json document (line %u row %u)",
-            error.line_no, error.row_no
+            "JsonParseErr", "%s on line %u column %u (char %u).",
+            errors[error.error - 1],
+            error.line_no, error.col_no, error.off
         );
         goto err;
     }
+
+    return value;
 
 err:
     return OBJ_VAL(exc);
