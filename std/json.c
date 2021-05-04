@@ -19,8 +19,8 @@ typedef enum {
     ALLOW_DECIMAL_POINT = 0x200,
     ALLOW_INF_NAN = 0x400,
     ALLOW_MULTILINE_STRING = 0x800,
-    STRICT = 0x00,
-    LENIENT = ALLOW_TRAILING_COMMA | ALLOW_UNQUOTED_KEYS | ALLOW_GLOBAL
+    JSON_STRICT = 0x00,
+    JSON_LENIENT = ALLOW_TRAILING_COMMA | ALLOW_UNQUOTED_KEYS | ALLOW_GLOBAL
         | ALLOW_EQUALS | ALLOW_NO_COMMAS,
     JSON5 = ALLOW_TRAILING_COMMA | ALLOW_UNQUOTED_KEYS | ALLOW_COMMENTS
         | ALLOW_SINGLE_QUOTED | ALLOW_HEX_NUMBER | ALLOW_PLUS_SIGN
@@ -1382,7 +1382,7 @@ jml_std_json_parse(int arg_count, jml_value_t *args)
     jml_value_t value;
 
     jml_json_error_t error = jml_json_parse(
-        string->chars, string->length, LENIENT, &value
+        string->chars, string->length, JSON_LENIENT, &value
     );
 
     if (error.error != ERROR_NONE) {
