@@ -1,6 +1,8 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <jml.h>
+#include <jml/jml_gc.h>
 
 
 /*parser*/
@@ -1264,6 +1266,104 @@ jml_json_parse(const char *src, size_t size, jml_json_mode flags,
 }
 
 
+static bool
+jml_json_value_unparse(char *buffer, size_t *size,
+    size_t *pos, jml_value_t value)
+{
+    if (IS_OBJ(value)) {
+        switch (OBJ_TYPE(value)) {
+            case OBJ_STRING: {
+                jml_obj_string_t *string = AS_STRING(value);
+                REALLOC(char, buffer, *size, *pos + string->length + 2);
+                *pos += sprintf(buffer + *pos, "\"");
+
+                memcpy(buffer + *pos, string->chars, string->length);
+                *pos += string->length;
+
+                *pos += sprintf(buffer + *pos, "\"");
+                break;
+            }
+
+            case OBJ_ARRAY: {
+                jml_obj_array_t *array = AS_ARRAY(value);
+                REALLOC(char, buffer, *size, *pos + 2);
+                *pos += sprintf(buffer + *pos, "[");
+
+                for (int i = 0; i < (array->values.count - 1); ++i) {
+                    jml_json_value_unparse(buffer, size, pos,
+                        array->values.values[i]);
+
+                    REALLOC(char, buffer, *size, *pos + 2);
+                    *pos += sprintf(buffer + *pos, ", ");
+                }
+
+                jml_json_value_unparse(
+                    buffer, size, pos,
+                    array->values.values[array->values.count - 1]
+                );
+
+                REALLOC(char, buffer, *size, *pos + 2);
+                *pos += sprintf(buffer + *pos, "]");
+                break;
+            }
+
+            case OBJ_MAP: {
+                jml_obj_map_t *map = AS_MAP(value);
+                jml_hashmap_entry_t *entries = jml_hashmap_iterator(&map->hashmap);
+                REALLOC(char, buffer, *size, *pos + 2);
+                *pos += sprintf(buffer + *pos, "{");
+
+                for (int i = 0; i < (map->hashmap.count - 1); ++i) {
+                    jml_json_value_unparse(buffer, size, pos,
+                        OBJ_VAL(entries[i].key));
+
+                    REALLOC(char, buffer, *size, *pos + 2);
+                    *pos += sprintf(buffer + *pos, ": ");
+
+                    jml_json_value_unparse(buffer, size, pos,
+                        entries[i].value);
+
+                    REALLOC(char, buffer, *size, *pos + 2);
+                    *pos += sprintf(buffer + *pos, ", ");
+                }
+
+                jml_json_value_unparse(buffer, size, pos,
+                    OBJ_VAL(entries[map->hashmap.count - 1].key));
+
+                REALLOC(char, buffer, *size, *pos + 2);
+                *pos += sprintf(buffer + *pos, ": ");
+
+                jml_json_value_unparse(buffer, size, pos,
+                    entries[map->hashmap.count - 1].value);
+
+                jml_realloc(entries, 0);
+                REALLOC(char, buffer, *size, *pos + 2);
+                *pos += sprintf(buffer + *pos, "}");
+                break;
+            }
+
+            default:
+                return false;
+        }
+    } else if (IS_NONE(value)) {
+        REALLOC(char, buffer, *size, *pos + 5);
+        *pos += sprintf(buffer + *pos, "null");
+
+    } else if (IS_BOOL(value)) {
+        REALLOC(char, buffer, *size, *pos + 5);
+        *pos += sprintf(buffer + *pos, BOOL_VAL(value) ? "true" : "false");
+
+    } else if (IS_NUM(value)) {
+        char numbuf[64];
+        int numlen = snprintf(numbuf, 64, "%g", AS_NUM(value));
+        REALLOC(char, buffer, *size, *pos + numlen);
+        *pos += sprintf(buffer + *pos, "%.*s", numlen, numbuf);
+    }
+
+    return true;
+}
+
+
 static jml_value_t
 jml_std_json_parse(int arg_count, jml_value_t *args)
 {
@@ -1271,7 +1371,7 @@ jml_std_json_parse(int arg_count, jml_value_t *args)
         arg_count, 1);
 
     if (exc != NULL)
-        return OBJ_VAL(exc);
+        goto err;
 
     if (!IS_STRING(args[0])) {
         exc = jml_error_types(false, 1, "string");
@@ -1300,7 +1400,7 @@ jml_std_json_parse(int arg_count, jml_value_t *args)
         };
 
         exc = jml_obj_exception_format(
-            "JsonParseErr", "%s on line %u column %u (char %u).",
+            "JsonErr", "%s on line %u column %u (char %u).",
             errors[error.error - 1],
             error.line_no, error.col_no, error.off
         );
@@ -1314,8 +1414,39 @@ err:
 }
 
 
+static jml_value_t
+jml_std_json_unparse(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_error_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    if (!IS_MAP(args[0])) {
+        exc = jml_error_types(false, 1, "map");
+        return OBJ_VAL(exc);
+    }
+
+    size_t size = 64;
+    size_t pos = 0;
+    char *buffer = jml_realloc(NULL, size);
+
+    if (!jml_json_value_unparse(buffer, &size, &pos, args[0])) {
+        jml_realloc(buffer, 0);
+        exc = jml_obj_exception_new(
+            "JsonErr", "Invalid value to unparse"
+        );
+        return OBJ_VAL(exc);
+    }
+
+    return OBJ_VAL(jml_obj_string_take(buffer, size));
+}
+
+
 /*module table*/
 MODULE_TABLE_HEAD module_table[] = {
     {"parse",                       &jml_std_json_parse},
+    {"unparse",                     &jml_std_json_unparse},
     {NULL,                          NULL}
 };
