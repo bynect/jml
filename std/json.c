@@ -19,10 +19,10 @@ typedef enum {
     ALLOW_DECIMAL_POINT = 0x200,
     ALLOW_INF_NAN = 0x400,
     ALLOW_MULTILINE_STRING = 0x800,
-    JSON_STRICT = 0x00,
-    JSON_LENIENT = ALLOW_TRAILING_COMMA | ALLOW_UNQUOTED_KEYS | ALLOW_GLOBAL
+    MODE_STRICT = 0x00,
+    MODE_LENIENT = ALLOW_TRAILING_COMMA | ALLOW_UNQUOTED_KEYS | ALLOW_GLOBAL
         | ALLOW_EQUALS | ALLOW_NO_COMMAS,
-    JSON5 = ALLOW_TRAILING_COMMA | ALLOW_UNQUOTED_KEYS | ALLOW_COMMENTS
+    MODE_JSON5 = ALLOW_TRAILING_COMMA | ALLOW_UNQUOTED_KEYS | ALLOW_COMMENTS
         | ALLOW_SINGLE_QUOTED | ALLOW_HEX_NUMBER | ALLOW_PLUS_SIGN
         | ALLOW_DECIMAL_POINT | ALLOW_INF_NAN | ALLOW_MULTILINE_STRING
 } jml_json_mode;
@@ -362,9 +362,11 @@ jml_json_string_size(jml_json_parser_t *parser)
         parser->off = offset - 1;
         return true;
     }
-    ++offset;
 
-    parser->data_size += data_size + 1;
+    parser->data_size += data_size;
+    ++parser->data_size;
+
+    ++offset;
     parser->off = offset;
     return false;
 }
@@ -917,9 +919,10 @@ jml_json_string_parse(jml_json_parser_t *parser)
             data[bytes_written++] = src[offset++];
     }
 
-    parser->off = ++offset;
-    data[bytes_written + 1] = '\0';
-    return jml_obj_string_copy(data, bytes_written);
+    parser->off = offset + 1;
+    data[bytes_written++] = '\0';
+    parser->data += bytes_written;
+    return jml_obj_string_copy(data, bytes_written - 1);
 }
 
 
@@ -1368,13 +1371,19 @@ static jml_value_t
 jml_std_json_parse(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_error_args(
-        arg_count, 1);
+        arg_count, 2);
 
     if (exc != NULL)
         goto err;
 
-    if (!IS_STRING(args[0])) {
-        exc = jml_error_types(false, 1, "string");
+    if (!IS_STRING(args[0]) || !IS_NUM(args[1])) {
+        exc = jml_error_types(false, 2, "string", "parsing mode");
+        goto err;
+    }
+
+    double mode = AS_NUM(args[1]);
+    if (mode != MODE_STRICT && mode != MODE_LENIENT && mode != MODE_JSON5) {
+        exc = jml_error_value("parsing mode");
         goto err;
     }
 
@@ -1382,7 +1391,7 @@ jml_std_json_parse(int arg_count, jml_value_t *args)
     jml_value_t value;
 
     jml_json_error_t error = jml_json_parse(
-        string->chars, string->length, JSON_LENIENT, &value
+        string->chars, string->length, (jml_json_mode)mode, &value
     );
 
     if (error.error != ERROR_NONE) {
@@ -1435,7 +1444,7 @@ jml_std_json_unparse(int arg_count, jml_value_t *args)
     if (!jml_json_value_unparse(buffer, &size, &pos, args[0])) {
         jml_realloc(buffer, 0);
         exc = jml_obj_exception_new(
-            "JsonErr", "Invalid value to unparse"
+            "JsonErr", "Invalid value to unparse."
         );
         return OBJ_VAL(exc);
     }
@@ -1450,3 +1459,12 @@ MODULE_TABLE_HEAD module_table[] = {
     {"unparse",                     &jml_std_json_unparse},
     {NULL,                          NULL}
 };
+
+
+MODULE_FUNC_HEAD
+module_init(jml_obj_module_t *module)
+{
+    jml_module_add_value(module, "MODE_STRICT",  NUM_VAL(MODE_STRICT));
+    jml_module_add_value(module, "MODE_LENIENT", NUM_VAL(MODE_LENIENT));
+    jml_module_add_value(module, "MODE_JSON5",   NUM_VAL(MODE_JSON5));
+}
