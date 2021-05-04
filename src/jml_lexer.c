@@ -268,22 +268,46 @@ jml_identifier_literal(jml_lexer_t *lexer)
 
 
 static jml_token_t
-jml_string_literal(const char delimiter, jml_lexer_t *lexer)
+jml_string_literal(char delimiter, jml_lexer_t *lexer)
 {
+    bool wide           = false;
+
+    if (jml_lexer_peek(lexer) == delimiter
+        && jml_lexer_peek_next(lexer) == delimiter) {
+        wide = true;
+        lexer->current  += 2;
+    }
+
     while (true) {
         if (jml_lexer_eof(lexer))
             return jml_token_emit_error("Unterminated string.", lexer);
 
-        char c = jml_lexer_peek(lexer);
+        char c          = jml_lexer_peek(lexer);
 
-        if (c == '\n')
+        if (c == delimiter) {
+            if (!wide)
+                break;
+
+            if (jml_lexer_peek_next(lexer) == delimiter
+                && lexer->current[2] == delimiter)
+                break;
+        } else if (c == '\n')
             jml_lexer_newline(lexer);
-        else if (c == delimiter)
-            break;
         else if (c == '\\' && jml_lexer_peek_next(lexer) == delimiter)
             jml_lexer_advance(lexer);
 
         jml_lexer_advance(lexer);
+    }
+
+    if (wide) {
+        lexer->current  += 3;
+        jml_token_t token;
+        token.type      = TOKEN_STRING;
+        token.start     = lexer->start + 2;
+        token.length    = lexer->current - lexer->start - 4;
+        token.line      = lexer->line;
+        token.offset    = lexer->start - lexer->source;
+        return token;
     }
 
     jml_lexer_advance(lexer);
