@@ -1002,7 +1002,7 @@ jml_string(jml_compiler_t *compiler, JML_UNUSED(bool assignable))
     size_t size                 = 0;
 
     for (size_t i = 0; i < length; ) {
-        uint32_t c = raw[i];
+        char c = raw[i];
 
         if (c == '\\') {
             if (i + 1 >= length) {

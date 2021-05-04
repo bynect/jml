@@ -270,12 +270,18 @@ jml_identifier_literal(jml_lexer_t *lexer)
 static jml_token_t
 jml_string_literal(const char delimiter, jml_lexer_t *lexer)
 {
-    while (jml_lexer_peek(lexer) != delimiter) {
-        char c =        jml_lexer_peek(lexer);
-        if  (c == '\n') jml_lexer_newline(lexer);
-
-        if  (jml_lexer_eof(lexer))
+    while (true) {
+        if (jml_lexer_eof(lexer))
             return jml_token_emit_error("Unterminated string.", lexer);
+
+        char c = jml_lexer_peek(lexer);
+
+        if (c == '\n')
+            jml_lexer_newline(lexer);
+        else if (c == delimiter)
+            break;
+        else if (c == '\\' && jml_lexer_peek_next(lexer) == delimiter)
+            jml_lexer_advance(lexer);
 
         jml_lexer_advance(lexer);
     }
