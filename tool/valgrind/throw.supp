@@ -1,0 +1,7 @@
+{
+   Ignore cxx_throw.
+   Memcheck:Leak
+   ...
+   fun:__cxa_throw
+   ...
+}

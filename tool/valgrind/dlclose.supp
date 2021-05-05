@@ -1,0 +1,7 @@
+{
+   Ignore dlclose leaks.
+   Memcheck:Leak
+   ...
+   fun:_dl_close
+   ...
+}
