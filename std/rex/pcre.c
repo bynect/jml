@@ -3,7 +3,7 @@
 #include <jml.h>
 
 #include <pcre.h>
-
+#include <stdio.h>
 
 static jml_obj_class_t  *pattern_class  = NULL;
 static jml_obj_string_t *pattern_string = NULL;
@@ -55,12 +55,121 @@ err:
 static jml_value_t
 jml_std_rex_pcre_patter_find(int arg_count, jml_value_t *args)
 {
-    (void)arg_count;
-    (void)args;
+    const int ovecsize = 30;
+    int ovector[30] = {0};
 
-    //TODO
+    jml_obj_exception_t *exc    = jml_error_args(
+        arg_count - 1, 1);
 
-    return NONE_VAL;
+    if (exc != NULL)
+        goto err;
+
+    if (!IS_STRING(args[0])) {
+        exc = jml_error_types(false, 1, "string");
+        goto err;
+    }
+
+    jml_obj_instance_t *self    = AS_INSTANCE(args[1]);
+    jml_obj_string_t   *subject = AS_STRING(args[0]);
+
+    jml_value_t *flags_value;
+    jml_hashmap_get(&self->fields, flags_string, &flags_value);
+
+    if (self->extra == NULL || !IS_NUM(*flags_value)) {
+        exc = jml_error_value("Pattern instance");
+        goto err;
+    }
+
+    int flags = AS_NUM(*flags_value);
+    unsigned int option_bits;
+    pcre_fullinfo(self->extra, NULL, PCRE_INFO_OPTIONS, &option_bits);
+
+    bool utf8 = option_bits & PCRE_UTF8;
+    option_bits &= PCRE_NEWLINE_CR | PCRE_NEWLINE_LF | PCRE_NEWLINE_CRLF
+        | PCRE_NEWLINE_ANY|PCRE_NEWLINE_ANYCRLF;
+
+    if (option_bits == 0) {
+        int d;
+        pcre_config(PCRE_CONFIG_NEWLINE, &d);
+
+        option_bits = (d == 13) ? PCRE_NEWLINE_CR :
+            (d == 10) ? PCRE_NEWLINE_LF :
+            (d == (13 << 8 | 10)) ? PCRE_NEWLINE_CRLF :
+            (d == -2) ? PCRE_NEWLINE_ANYCRLF :
+            (d == -1) ? PCRE_NEWLINE_ANY : 0;
+    }
+
+    bool crlf_terminator = option_bits == PCRE_NEWLINE_ANY
+        || option_bits == PCRE_NEWLINE_CRLF
+        || option_bits == PCRE_NEWLINE_ANYCRLF;
+
+    jml_obj_array_t *array = jml_obj_array_new();
+    jml_gc_exempt_push(OBJ_VAL(array));
+
+    int match;
+    while (true) {
+        int options = flags;
+        int start_offset = ovector[1];
+
+        if (ovector[0] == ovector[1]) {
+            if (ovector[0] == (int)subject->length)
+                break;
+
+            options = PCRE_NOTEMPTY_ATSTART | PCRE_ANCHORED;
+        }
+
+        match = pcre_exec(
+            self->extra, NULL, subject->chars, (int)subject->length,
+            start_offset, options, ovector, ovecsize
+        );
+
+        if (match == PCRE_ERROR_NOMATCH) {
+            if (options == 0)
+                break;
+
+            ovector[1] = start_offset + 1;
+
+            if (crlf_terminator && start_offset < (int)subject->length - 1
+                && subject->chars[start_offset] == '\r'
+                && subject->chars[start_offset + 1] == '\n')
+                ++ovector[1];
+            else if (utf8) {
+                while (ovector[1] < (int)subject->length) {
+                    if ((subject->chars[ovector[1]] & 0xc0) != 0x80) break;
+                    ++ovector[1];
+                }
+            }
+            continue;
+        } else if (match < 0) {
+            exc = jml_obj_exception_new(
+                "RexErr", "Failed to match pattern."
+            );
+            goto err;
+        }
+
+        //FIXME
+        if (match == 0)
+            match = ovecsize / 3;
+
+        for (int i = 0; i < match; ++i) {
+            char *sub_start = subject->chars + ovector[2 * i];
+            int sub_length = ovector[2 * i + 1] - ovector[2 * i];
+
+            char *buffer = jml_realloc(NULL, sub_length + 1);
+            memcpy(buffer, sub_start, sub_length);
+            buffer[sub_length] = '\0';
+
+            jml_obj_array_append(
+                array,
+                OBJ_VAL(jml_obj_string_take(buffer, sub_length))
+            );
+        }
+    }
+
+    return jml_gc_exempt_pop();
+
+err:
+    return OBJ_VAL(exc);
 }
 
 
