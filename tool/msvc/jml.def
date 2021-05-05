@@ -66,6 +66,7 @@ jml_deserialize_long
 jml_deserialize_longlong
 jml_deserialize_obj
 jml_deserialize_short
+jml_deserialize_string
 jml_deserialize_value
 jml_serialize_bytecode
 jml_serialize_bytecode_file
@@ -74,6 +75,7 @@ jml_serialize_long
 jml_serialize_longlong
 jml_serialize_obj
 jml_serialize_short
+jml_serialize_string
 jml_serialize_value
 jml_obj_print
 jml_obj_stringify
