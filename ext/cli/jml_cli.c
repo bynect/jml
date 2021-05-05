@@ -57,7 +57,7 @@ jml_cli_run(const char *path)
     char *buffer = jml_cli_fread(path);
     char *source = buffer;
 
-    if (strlen(buffer) > 2 && buffer[0] == '#' && buffer[1] == '!') {
+    if (buffer[0] == '#' && buffer[1] == '!') {
         while (*source != '\n' && *source != '\0')
             ++source;
     }

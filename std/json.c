@@ -1377,7 +1377,7 @@ jml_std_json_parse(int arg_count, jml_value_t *args)
         goto err;
 
     if (!IS_STRING(args[0]) || !IS_NUM(args[1])) {
-        exc = jml_error_types(false, 2, "string", "parsing mode");
+        exc = jml_error_types(false, 2, "string", "number");
         goto err;
     }
 

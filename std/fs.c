@@ -19,7 +19,7 @@
 #endif
 
 
-static jml_obj_class_t *file_class      = NULL;
+static jml_obj_class_t  *file_class     = NULL;
 static jml_obj_string_t *mode_string    = NULL;
 static jml_obj_string_t *name_string    = NULL;
 
