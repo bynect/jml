@@ -18,22 +18,22 @@ jml_vm_t *vm                        = NULL;
 
 
 jml_vm_t *
-jml_vm_new(void)
+jml_vm_new(jml_vm_context_t *context)
 {
     if (vm != NULL)
         return vm;
 
-    jml_vm_t *_vm = jml_alloc(sizeof(jml_vm_t));
-    vm = _vm;
-
-    jml_vm_init(_vm);
-    return _vm;
+    vm = jml_alloc(sizeof(jml_vm_t));
+    jml_vm_init(vm, context);
+    return vm;
 }
 
 
 void
-jml_vm_init(jml_vm_t *vm)
+jml_vm_init(jml_vm_t *vm, jml_vm_context_t *context)
 {
+    vm->context             = context;
+
     vm->objects             = NULL;
     vm->allocated           = 0;
     vm->next_gc             = 1024 * 1024 * 2;

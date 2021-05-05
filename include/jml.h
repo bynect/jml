@@ -171,10 +171,16 @@ typedef enum {
 } jml_interpret_result;
 
 
+typedef struct {
+    const int argc;
+    const char **argv;
+} jml_vm_context_t;
+
+
 typedef struct jml_vm jml_vm_t;
 
 
-jml_vm_t *jml_vm_new(void);
+jml_vm_t *jml_vm_new(jml_vm_context_t *context);
 
 void jml_vm_free(void);
 

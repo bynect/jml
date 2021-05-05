@@ -168,10 +168,13 @@ jml_cli_repl(void)
 
 
 int
-main(int argc, char **argv)
+main(int argc, const char **argv)
 {
-    vm = jml_vm_new();
-    if (vm == NULL) return EXIT_FAILURE;
+    jml_vm_context_t context = {argc, argv};
+    vm = jml_vm_new(&context);
+
+    if (vm == NULL)
+        return EXIT_FAILURE;
 
     bool success;
     atexit(jml_vm_free);

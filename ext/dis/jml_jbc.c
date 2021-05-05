@@ -56,8 +56,10 @@ jml_dis_dump(const char *filename)
 int
 main(int argc, char **argv)
 {
-    jml_vm_t *vm = jml_vm_new();
-    if (vm == NULL) return EXIT_FAILURE;
+    jml_vm_t *vm = jml_vm_new(NULL);
+
+    if (vm == NULL)
+        return EXIT_FAILURE;
 
     switch (argc) {
         case 2: {

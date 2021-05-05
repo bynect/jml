@@ -43,7 +43,7 @@ jml_py_vm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     static jml_vm_t *singleton_vm;
 
     if (singleton_vm == NULL) {
-        singleton_vm = jml_vm_new();
+        singleton_vm = jml_vm_new(NULL);
     }
 
     jml_py_vm *self;

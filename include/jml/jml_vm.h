@@ -7,6 +7,8 @@
 
 
 struct jml_vm {
+    jml_vm_context_t               *context;
+
     jml_obj_coroutine_t            *running;
     jml_obj_module_t               *current;
     jml_obj_cfunction_t            *external;
@@ -55,7 +57,7 @@ struct jml_vm {
 };
 
 
-void jml_vm_init(jml_vm_t *vm);
+void jml_vm_init(jml_vm_t *vm, jml_vm_context_t *context);
 
 void jml_vm_error(const char *format, ...);
 
