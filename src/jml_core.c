@@ -191,6 +191,22 @@ jml_core_print(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
+jml_core_repr(int arg_count, jml_value_t *args)
+{
+    jml_obj_exception_t *exc = jml_error_args(
+        arg_count, 1);
+
+    if (exc != NULL)
+        return OBJ_VAL(exc);
+
+    char *repr = jml_value_stringify(args[0]);
+    return OBJ_VAL(
+        jml_obj_string_take(repr, strlen(repr))
+    );
+}
+
+
+static jml_value_t
 jml_core_reverse(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_error_args(
@@ -641,6 +657,7 @@ static jml_module_function core_table[] = {
     {"printfmt",                    &jml_core_print_fmt},
     {"println",                     &jml_core_print_ln},
     {"print",                       &jml_core_print},
+    {"repr",                        &jml_core_repr},
     {"char",                        &jml_core_char},
     {"reverse",                     &jml_core_reverse},
     {"size",                        &jml_core_size},
