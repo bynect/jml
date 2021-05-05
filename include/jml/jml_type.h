@@ -232,7 +232,7 @@ jml_obj_exception_t *jml_obj_exception_new(const char *name,
     const char *message);
 
 jml_obj_exception_t *jml_obj_exception_format(const char *name,
-    char *message_format, ...);
+    char *format, ...);
 
 
 static inline bool

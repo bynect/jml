@@ -384,21 +384,29 @@ jml_obj_exception_new(const char *name, const char *message)
 
 jml_obj_exception_t *
 jml_obj_exception_format(const char *name,
-    char *message_format, ...)
+    char *format, ...)
 {
-    va_list args;
-    va_start(args, message_format);
+    va_list args, args_copy;
+    va_start(args, format);
 
-    size_t size     = strlen(message_format) * sizeof(char) * 32;
+    va_copy(args_copy, args);
+    size_t size     = vsnprintf(NULL, 0, format, args_copy) + 1;
+    va_end(args_copy);
+
     char  *message  = jml_alloc(size);
-
-    vsprintf(message, message_format, args);
+    vsnprintf(message, size, format, args);
     va_end(args);
 
-    jml_obj_exception_t *exc = jml_obj_exception_new(
-        name, message);
+    jml_obj_string_t *name_string, *message_string;
+    name_string                 = jml_obj_string_copy(name, strlen(name));
+    message_string              = jml_obj_string_take(message, size);
 
-    jml_free(message);
+    jml_obj_exception_t *exc    = ALLOCATE_OBJ(
+        jml_obj_exception_t, OBJ_EXCEPTION);
+
+    exc->name                   = name_string;
+    exc->message                = message_string;
+    exc->module                 = NULL;
 
     return exc;
 }
