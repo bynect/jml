@@ -710,4 +710,29 @@ jml_core_register(jml_vm_t *vm)
 
     jml_gc_exempt_pop();
     jml_gc_exempt_pop();
+
+    jml_obj_string_t *argv_string   = jml_obj_string_copy("argv", 4);
+    jml_gc_exempt_push(OBJ_VAL(argv_string));
+    jml_obj_string_t *argc_string   = jml_obj_string_copy("argc", 4);
+    jml_gc_exempt_push(OBJ_VAL(argc_string));
+
+    jml_obj_array_t *argv           = jml_obj_array_new();
+    jml_gc_exempt_push(OBJ_VAL(argv));
+    double argc = 0;
+
+    if (vm->context != NULL) {
+        for (int i = 0; i < vm->context->argc; ++i) {
+            jml_obj_array_append(
+                argv, jml_string_intern(vm->context->argv[i])
+            );
+        }
+        argc = vm->context->argc;
+    }
+
+    jml_hashmap_set(&core_module->globals, argv_string, OBJ_VAL(argv));
+    jml_hashmap_set(&core_module->globals, argc_string, NUM_VAL(argc));
+
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
+    jml_gc_exempt_pop();
 }
