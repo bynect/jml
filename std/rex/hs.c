@@ -4,8 +4,6 @@
 
 #include <jml.h>
 
-#include <stdio.h>
-
 
 static hs_scratch_t *scratch        = NULL;
 
@@ -53,7 +51,7 @@ jml_hs_match_array(const char *pattern,
 
     if (error != HS_SUCCESS) {
         exc = jml_obj_exception_format(
-            "hsErr", "%s", compile_err->message
+            "RexErr", "%s", compile_err->message
         );
         hs_free_compile_error(compile_err);
         return exc;
@@ -61,7 +59,7 @@ jml_hs_match_array(const char *pattern,
 
     if (hs_alloc_scratch(database, &scratch) != HS_SUCCESS) {
         exc = jml_obj_exception_new(
-            "hsErr", "Unable to allocate scratch."
+            "RexErr", "Unable to allocate scratch."
         );
         hs_free_database(database);
         return exc;
@@ -79,7 +77,7 @@ jml_hs_match_array(const char *pattern,
 
     if (error != HS_SUCCESS && error != HS_SCAN_TERMINATED) {
         exc = jml_obj_exception_new(
-            "hsErr", "Unable to scan input buffer."
+            "RexErr", "Unable to scan input buffer."
         );
         hs_free_database(database);
         return exc;
@@ -94,7 +92,7 @@ jml_hs_match_array(const char *pattern,
 
 
 static jml_value_t
-jml_std_hs_contain(int arg_count, jml_value_t *args)
+jml_std_rex_hs_contain(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_error_args(
         arg_count, 2);
@@ -117,7 +115,7 @@ jml_std_hs_contain(int arg_count, jml_value_t *args)
 
 
 static jml_value_t
-jml_std_hs_search(int arg_count, jml_value_t *args)
+jml_std_rex_hs_search(int arg_count, jml_value_t *args)
 {
     jml_obj_exception_t *exc = jml_error_args(
         arg_count, 2);
@@ -144,8 +142,8 @@ jml_std_hs_search(int arg_count, jml_value_t *args)
 
 /*module table*/
 MODULE_TABLE_HEAD module_table[] = {
-    {"contain",                     &jml_std_hs_contain},
-    {"search",                      &jml_std_hs_search},
+    {"contain",                     &jml_std_rex_hs_contain},
+    {"search",                      &jml_std_rex_hs_search},
     {NULL,                          NULL}
 };
 
