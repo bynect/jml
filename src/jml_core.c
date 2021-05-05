@@ -692,6 +692,8 @@ jml_core_register(jml_vm_t *vm)
     jml_gc_exempt_push(OBJ_VAL(main));
 
     jml_obj_closure_t *closure = jml_obj_closure_new(main);
+    jml_gc_exempt_push(OBJ_VAL(closure));
+
     jml_obj_coroutine_t *coroutine = jml_obj_coroutine_new(closure);
     jml_gc_exempt_push(OBJ_VAL(coroutine));
 
@@ -701,6 +703,7 @@ jml_core_register(jml_vm_t *vm)
     JML_UNUSED(jml_interpret_result result) = jml_vm_call_coroutine(coroutine, NULL);
     JML_ASSERT(result == INTERPRET_OK, "");
 
+    jml_gc_exempt_pop();
     jml_gc_exempt_pop();
     jml_gc_exempt_pop();
     vm->current = super;

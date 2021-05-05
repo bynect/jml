@@ -455,21 +455,15 @@ jml_gc_blacken_obj(jml_obj_t *object)
             jml_obj_coroutine_t *coro = (jml_obj_coroutine_t*)object;
 
             for (jml_value_t *slot = coro->stack;
-                slot < coro->stack_top; ++slot) {
-
+                slot < coro->stack_top; ++slot)
                 jml_gc_mark_value(*slot);
-            }
 
-            for (uint32_t i = 0; i < coro->frame_count; ++i) {
-
+            for (uint32_t i = 0; i < coro->frame_count; ++i)
                 jml_gc_mark_obj((jml_obj_t*)coro->frames[i].closure);
-            }
 
             for (jml_obj_upvalue_t *upvalue = coro->open_upvalues;
-                upvalue != NULL; upvalue = upvalue->next) {
-
+                upvalue != NULL; upvalue = upvalue->next)
                 jml_gc_mark_obj((jml_obj_t*)upvalue);
-            }
 
             jml_gc_mark_obj((jml_obj_t*)coro->caller);
             break;

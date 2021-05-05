@@ -279,15 +279,21 @@ jml_obj_function_new(void)
 jml_obj_coroutine_t *
 jml_obj_coroutine_new(jml_obj_closure_t *closure)
 {
+    jml_value_t *stack          = GROW_ARRAY(
+        jml_value_t, NULL, 0, STACK_MIN);
+
+    jml_call_frame_t *frames    = GROW_ARRAY(
+        jml_call_frame_t, NULL, 0, FRAMES_MIN);
+
     jml_obj_coroutine_t *coro   = ALLOCATE_OBJ(
         jml_obj_coroutine_t, OBJ_COROUTINE);
 
     coro->stack_capacity        = STACK_MIN;
-    coro->stack                 = GROW_ARRAY(jml_value_t, NULL, 0, STACK_MIN);
+    coro->stack                 = stack;
     coro->stack_top             = coro->stack;
 
     coro->frame_capacity        = FRAMES_MIN;
-    coro->frames                = GROW_ARRAY(jml_call_frame_t, NULL, 0, FRAMES_MIN);
+    coro->frames                = frames;
     coro->frame_count           = 0;
 
     coro->open_upvalues         = NULL;
