@@ -83,23 +83,10 @@ struct jml_obj_map {
 };
 
 
-#ifdef JML_PLATFORM_WIN
-
-#include <windows.h>
-
-typedef HINSTANCE jml_module_handle_t;
-
-#else
-
-typedef void *jml_module_handle_t;
-
-#endif
-
-
 struct jml_obj_module {
     jml_obj_t                       obj;
     jml_obj_string_t               *name;
-    jml_module_handle_t             handle;
+    void                           *handle;
     jml_hashmap_t                   globals;
 };
 

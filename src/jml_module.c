@@ -33,6 +33,7 @@
 
 #elif defined JML_PLATFORM_WIN
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #define SHARED_LIB_EXT              "dll"
@@ -168,7 +169,7 @@ jml_module_open(jml_obj_string_t *qualified,
 
 #if defined JML_PLATFORM_NIX || defined JML_PLATFORM_MAC
 
-        jml_module_handle_t handle = SHARED_LOAD(path_raw, RTLD_NOW);
+        void *handle = SHARED_LOAD(path_raw, RTLD_NOW);
 
         if (handle == NULL) {
             jml_vm_error("ImportErr: %s.", dlerror());
@@ -176,7 +177,7 @@ jml_module_open(jml_obj_string_t *qualified,
         }
 #elif defined JML_PLATFORM_WIN
 
-        jml_module_handle_t handle = SHARED_LOAD(path_raw);
+        void *handle = SHARED_LOAD(path_raw);
 
         if (handle == NULL) {
             jml_vm_error("ImportErr: Loading error.");

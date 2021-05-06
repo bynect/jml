@@ -10,6 +10,7 @@
 #elif defined JML_PLATFORM_WIN
 
 #pragma comment(lib, "rpcrt4.lib")
+#include <windows.h>
 #include <rpcdce.h>
 
 #else
@@ -53,7 +54,7 @@ jml_std_uuid_uuid(int arg_count, JML_UNUSED(jml_value_t *args))
 
         default:
             exc = jml_obj_exception_format(
-                "WinRpcErr",
+                "WinApiErr",
                 "Uuid creation failed, error code %d.",
                 status
             );
