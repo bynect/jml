@@ -1,6 +1,11 @@
-#ifdef __GNUC__
+#if defined __GNUC__
 
 #define _POSIX_C_SOURCE             200112l
+
+#elif defined JML_PLATFORM_WIN
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #endif
 
@@ -23,12 +28,25 @@ jml_std_env_getenv(int arg_count, jml_value_t *args)
         goto err;
     }
 
+#ifdef JML_PLATFORM_WIN
+    char *var = AS_CSTRING(args[0]);
+    size_t size = 0;
+
+    getenv_s(&size, NULL, 0, var);
+    if (size == 0)
+        return NONE_VAL;
+
+    char *string = jml_realloc(NULL, size * sizeof(char));
+    getenv_s(&size, string, size, var);
+
+#else
     char *string = getenv(AS_CSTRING(args[0]));
+    if (string == NULL)
+        return NONE_VAL;
 
-    if (string != NULL)
-        return jml_string_intern(string);
+#endif
 
-    return NONE_VAL;
+    return jml_string_intern(string);
 
 err:
     return OBJ_VAL(exc);
@@ -49,12 +67,17 @@ jml_std_env_setenv(int arg_count, jml_value_t *args)
         goto err;
     }
 
+#ifdef JML_PLATFORM_WIN
+    _putenv_s(AS_CSTRING(args[0]), AS_CSTRING(args[2]));
+
+#else
     if (setenv(AS_CSTRING(args[0]), AS_CSTRING(args[2]), true) == -1) {
         exc = jml_obj_exception_new(
             "EnvErr", "Setting environment variable failed."
         );
         goto err;
     }
+#endif
 
     return NONE_VAL;
 
@@ -77,6 +100,8 @@ jml_std_env_unsetenv(int arg_count, jml_value_t *args)
         goto err;
     }
 
+#if defined __GNUC__
+
     if (unsetenv(AS_CSTRING(args[0])) == -1) {
         exc = jml_obj_exception_new(
             "EnvErr", "Unsetting environment variable failed."
@@ -85,6 +110,17 @@ jml_std_env_unsetenv(int arg_count, jml_value_t *args)
     }
 
     return NONE_VAL;
+
+#else
+
+    exc = jml_obj_exception_format(
+        "NotImplemented",
+        "Function not supported on %s.",
+        JML_PLATFORM_STRING
+    );
+    goto err;
+
+#endif
 
 err:
     return OBJ_VAL(exc);
