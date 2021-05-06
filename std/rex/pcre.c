@@ -53,6 +53,88 @@ err:
 
 
 static jml_value_t
+jml_std_rex_pcre_patter_at(int arg_count, jml_value_t *args)
+{
+    const int ovecsize = 30;
+    int ovector[30] = {0};
+
+    jml_obj_exception_t *exc    = jml_error_args(
+        arg_count - 1, 2);
+
+    if (exc != NULL)
+        goto err;
+
+    if (!IS_STRING(args[0]) || !IS_NUM(args[1])) {
+        exc = jml_error_types(false, 2, "string", "number");
+        goto err;
+    }
+
+    jml_obj_instance_t *self    = AS_INSTANCE(args[2]);
+    jml_obj_string_t   *subject = AS_STRING(args[0]);
+    unsigned int        offset  = AS_NUM(args[1]);
+
+    jml_value_t *flags_value;
+    jml_hashmap_get(&self->fields, flags_string, &flags_value);
+
+    if (self->extra == NULL || !IS_NUM(*flags_value)) {
+        exc = jml_error_value("Pattern instance");
+        goto err;
+    }
+
+    int match = pcre_exec(
+        self->extra, NULL, subject->chars, (int)subject->length,
+        offset, AS_NUM(*flags_value), ovector, ovecsize
+    );
+
+    if (match == PCRE_ERROR_NOMATCH)
+        return NONE_VAL;
+    else if (match < 0) {
+        exc = jml_obj_exception_new(
+            "RexErr", "Failed to match pattern."
+        );
+        goto err;
+    }
+
+    //FIXME
+    if (match == 0)
+        match = ovecsize / 3;
+
+    if (match == 1) {
+        char *sub_start = subject->chars + ovector[0];
+        int sub_length = ovector[1] - ovector[0];
+
+        char *buffer = jml_realloc(NULL, sub_length + 1);
+        memcpy(buffer, sub_start, sub_length);
+        buffer[sub_length] = '\0';
+
+        return OBJ_VAL(jml_obj_string_take(buffer, sub_length));
+    }
+
+    jml_obj_array_t *array = jml_obj_array_new();
+    jml_gc_exempt_push(OBJ_VAL(array));
+
+    for (int i = 0; i < match; ++i) {
+        char *sub_start = subject->chars + ovector[2 * i];
+        int sub_length = ovector[2 * i + 1] - ovector[2 * i];
+
+        char *buffer = jml_realloc(NULL, sub_length + 1);
+        memcpy(buffer, sub_start, sub_length);
+        buffer[sub_length] = '\0';
+
+        jml_obj_array_append(
+            array,
+            OBJ_VAL(jml_obj_string_take(buffer, sub_length))
+        );
+    }
+
+    return jml_gc_exempt_pop();
+
+err:
+    return OBJ_VAL(exc);
+}
+
+
+static jml_value_t
 jml_std_rex_pcre_patter_find(int arg_count, jml_value_t *args)
 {
     const int ovecsize = 30;
@@ -190,6 +272,7 @@ jml_std_rex_pcre_patter_free(int arg_count, jml_value_t *args)
 /*class table*/
 MODULE_TABLE_HEAD pattern_table[] = {
     {"__init",                      &jml_std_rex_pcre_patter_init},
+    {"at",                          &jml_std_rex_pcre_patter_at},
     {"find",                        &jml_std_rex_pcre_patter_find},
     {"__free",                      &jml_std_rex_pcre_patter_free},
     {NULL,                          NULL}
