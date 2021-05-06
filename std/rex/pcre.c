@@ -3,7 +3,7 @@
 #include <jml.h>
 
 #include <pcre.h>
-#include <stdio.h>
+
 
 static jml_obj_class_t  *pattern_class  = NULL;
 static jml_obj_string_t *pattern_string = NULL;
