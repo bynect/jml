@@ -166,7 +166,7 @@ jml_std_regex_search(int arg_count, jml_value_t *args)
 
 /*module table*/
 MODULE_TABLE_HEAD module_table[] = {
-    {"match",                       &jml_std_regex_match},
+    {"_match",                      &jml_std_regex_match},
     {"search",                      &jml_std_regex_search},
     {NULL,                          NULL}
 };
@@ -182,5 +182,6 @@ module_init(JML_UNUSED(jml_obj_module_t *module))
 MODULE_FUNC_HEAD
 module_free(JML_UNUSED(jml_obj_module_t *module))
 {
-    regfree(&last_rule);
+    if (last_string != NULL)
+        regfree(&last_rule);
 }
