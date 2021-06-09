@@ -7,6 +7,8 @@
 #include <jml/jml_value.h>
 #include <jml/jml_gc.h>
 #include <jml/jml_util.h>
+
+#define JML_VM_INTERNAL
 #include <jml/jml_vm.h>
 
 

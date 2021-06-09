@@ -4,10 +4,11 @@
 #include <jml.h>
 
 #include <jml/jml_gc.h>
-#include <jml/jml_vm.h>
 #include <jml/jml_module.h>
 #include <jml/jml_compiler.h>
 
+#define JML_VM_INTERNAL
+#include <jml/jml_vm.h>
 
 #if defined JML_TRACE_GC || defined JML_ROUND_GC
 

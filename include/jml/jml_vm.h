@@ -6,6 +6,8 @@
 #include <jml/jml_compiler.h>
 
 
+#ifdef JML_VM_INTERNAL
+
 struct jml_vm {
     jml_vm_context_t               *context;
 
@@ -55,6 +57,8 @@ struct jml_vm {
     jml_obj_string_t               *str_string;
     jml_obj_string_t               *inherit_string;
 };
+
+#endif
 
 
 void jml_vm_init(jml_vm_t *vm, jml_vm_context_t *context);

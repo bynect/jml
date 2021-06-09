@@ -2,10 +2,12 @@
 #include <stdlib.h>
 
 #include <jml/jml_module.h>
-#include <jml/jml_vm.h>
 #include <jml/jml_util.h>
 #include <jml/jml_gc.h>
 #include <jml/jml_compiler.h>
+
+#define JML_VM_INTERNAL
+#include <jml/jml_vm.h>
 
 
 #ifdef JML_PLATFORM_NIX

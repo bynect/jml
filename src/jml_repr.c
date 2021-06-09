@@ -6,6 +6,8 @@
 
 #include <jml/jml_repr.h>
 #include <jml/jml_gc.h>
+
+#define JML_VM_INTERNAL
 #include <jml/jml_vm.h>
 
 
